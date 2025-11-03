@@ -1561,9 +1561,6 @@ function searchProfessionals() {
 }
 
 // OpenAI API Integration for Eye Health Q&A
-// NOTE: Replace YOUR_OPENAI_API_KEY with your actual API key
-const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'; // Set this in production
-
 async function askHealthQuestion() {
     const question = document.getElementById('health-question').value.trim();
     if (!question) {
@@ -1575,10 +1572,15 @@ async function askHealthQuestion() {
     answerDiv.innerHTML = '<p>Thinking...</p>';
     answerDiv.classList.add('show');
     
+    // Get API key from config
+    const OPENAI_API_KEY = (window.CONFIG && window.CONFIG.OPENAI_API_KEY) || 
+                          (typeof CONFIG !== 'undefined' && CONFIG.OPENAI_API_KEY) || 
+                          '';
+    
     try {
         // In production, use OpenAI API
         // For demo, use a simulated response
-        if (OPENAI_API_KEY && OPENAI_API_KEY !== 'YOUR_OPENAI_API_KEY') {
+        if (OPENAI_API_KEY && OPENAI_API_KEY !== 'YOUR_OPENAI_API_KEY' && OPENAI_API_KEY !== '') {
             // Real API call
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -2432,12 +2434,19 @@ async function checkout() {
         return;
     }
     
-    if (typeof CONFIG !== 'undefined' && CONFIG.STRIPE_PUBLISHABLE_KEY && 
-        CONFIG.STRIPE_PUBLISHABLE_KEY !== 'YOUR_STRIPE_PUBLISHABLE_KEY') {
+    const STRIPE_KEY = (window.CONFIG && window.CONFIG.STRIPE_PUBLISHABLE_KEY) ||
+                      (typeof CONFIG !== 'undefined' && CONFIG.STRIPE_PUBLISHABLE_KEY) ||
+                      '';
+    
+    if (STRIPE_KEY && STRIPE_KEY !== 'YOUR_STRIPE_PUBLISHABLE_KEY' && STRIPE_KEY !== '') {
         // Real Stripe checkout
         try {
             // In production, create checkout session on your backend
-            const response = await fetch(`${CONFIG.API_BASE_URL}/create-checkout-session`, {
+            const API_BASE = (window.CONFIG && window.CONFIG.API_BASE_URL) ||
+                           (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ||
+                           '/api';
+            
+            const response = await fetch(`${API_BASE}/create-checkout-session`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2707,17 +2716,63 @@ function showNotification(message) {
     }, 3000);
 }
 
+// Load configuration from Vercel API or use local config
+async function loadConfiguration() {
+    try {
+        // Try to load from Vercel API endpoint first
+        const response = await fetch('/api/config');
+        if (response.ok) {
+            const apiConfig = await response.json();
+            window.CONFIG = apiConfig;
+            console.log('Configuration loaded from API');
+            return apiConfig;
+        }
+    } catch (error) {
+        console.log('API config not available, using local config');
+    }
+    
+    // Fallback to local CONFIG if API fails
+    if (typeof CONFIG !== 'undefined') {
+        window.CONFIG = CONFIG;
+        return CONFIG;
+    }
+    
+    // Default config if nothing available
+    window.CONFIG = {
+        GOOGLE_PLACES_API_KEY: '',
+        OPENAI_API_KEY: '',
+        STRIPE_PUBLISHABLE_KEY: '',
+        FIREBASE_CONFIG: {},
+        FEATURES: {
+            GOOGLE_PLACES: false,
+            OPENAI_QA: false,
+            STRIPE_CHECKOUT: false,
+            FIREBASE_AUTH: false,
+            FACE_DETECTION: true
+        }
+    };
+    
+    return window.CONFIG;
+}
+
 // Initialize everything on page load
 document.addEventListener('DOMContentLoaded', async () => {
+    // Load configuration first
+    const config = await loadConfiguration();
+    
     // Load Google Places API if configured
-    if (typeof CONFIG !== 'undefined' && CONFIG.GOOGLE_PLACES_API_KEY && 
-        CONFIG.GOOGLE_PLACES_API_KEY !== 'YOUR_GOOGLE_PLACES_API_KEY') {
+    if (config.GOOGLE_PLACES_API_KEY && 
+        config.GOOGLE_PLACES_API_KEY !== 'YOUR_GOOGLE_PLACES_API_KEY' &&
+        config.GOOGLE_PLACES_API_KEY !== '') {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${CONFIG.GOOGLE_PLACES_API_KEY}&libraries=places`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${config.GOOGLE_PLACES_API_KEY}&libraries=places`;
         script.async = true;
         script.defer = true;
         script.onload = () => {
             initializePlacesAPI();
+        };
+        script.onerror = () => {
+            console.warn('Failed to load Google Maps API');
         };
         document.head.appendChild(script);
     } else {

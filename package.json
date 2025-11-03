@@ -1,0 +1,29 @@
+{
+  "name": "spect-it",
+  "version": "1.0.0",
+  "description": "Professional Vision Testing Application with LiDAR-based prescription measurement",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve .",
+    "build": "echo 'No build step required - static site'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TanyaStrauss1/Spect-IT.git"
+  },
+  "keywords": [
+    "vision-test",
+    "eye-test",
+    "health",
+    "optometry",
+    "prescription",
+    "lidar"
+  ],
+  "author": "TanyaStrauss1",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.x"
+  }
+}
+
