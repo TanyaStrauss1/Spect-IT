@@ -11,8 +11,8 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
-# Configuration files with API keys
-config.js
+# Configuration files with API keys (root level only)
+/config.js
 
 # Logs
 *.log
