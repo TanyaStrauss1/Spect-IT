@@ -1,0 +1,29 @@
+{
+  "name": "Spect-IT - Vision Testing App",
+  "short_name": "Spect-IT",
+  "description": "Professional vision testing tools including visual acuity, color blindness, and astigmatism tests",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical", "utilities"],
+  "screenshots": [],
+  "lang": "en-US",
+  "dir": "ltr"
+}
+
