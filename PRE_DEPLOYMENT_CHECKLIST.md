@@ -31,6 +31,10 @@
   - [ ] Enable Authentication
   - [ ] Copy config values for environment variables
 
+**Note:** Firebase is OPTIONAL. The app works with local storage only. You can skip this if you don't need cloud authentication.
+
+**Alternative:** Supabase can be used instead of Firebase (same purpose, different provider).
+
 ---
 
 ## 📦 Vercel Environment Variables
