@@ -90,7 +90,7 @@
   
   <!-- Iris radial lines for detail -->
   <g opacity="0.15">
-    <line x1="150" y1="150" x2="150" y3="95" stroke="#4a5568" stroke-width="1"/>
+    <line x1="150" y1="150" x2="150" y2="95" stroke="#4a5568" stroke-width="1"/>
     <line x1="150" y1="150" x2="150" y2="205" stroke="#4a5568" stroke-width="1"/>
     <line x1="150" y1="150" x2="95" y2="150" stroke="#4a5568" stroke-width="1"/>
     <line x1="150" y1="150" x2="205" y2="150" stroke="#4a5568" stroke-width="1"/>
