@@ -30,9 +30,9 @@
     <meta property="twitter:image" content="https://tanyastrauss1.github.io/Spect-IT/og-image.png">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="alternate icon" href="favicon.ico">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/svg+xml" href="logo-icon.svg">
+    <link rel="alternate icon" href="logo-icon.svg">
+    <link rel="apple-touch-icon" href="logo-icon.svg">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -79,8 +79,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>👁️ Spect-IT</h1>
-            <p class="subtitle">Professional Vision Testing Tools</p>
+            <div class="logo-container">
+                <img src="logo.svg" alt="Spect-IT Logo" class="main-logo" />
+                <div class="logo-text">
+                    <h1>Spect-IT</h1>
+                    <p class="subtitle">Professional Vision Testing Tools</p>
+                </div>
+            </div>
         </header>
 
         <nav class="test-nav">
@@ -107,8 +112,11 @@
             <!-- Home Screen -->
             <section id="home" class="test-section active">
                 <div class="welcome">
+                    <div class="welcome-logo">
+                        <img src="logo.svg" alt="Spect-IT" class="welcome-logo-img" />
+                    </div>
                     <h2>Welcome to Spect-IT</h2>
-                    <p>This application provides professional vision testing tools. Please read the instructions carefully before starting each test.</p>
+                    <p class="welcome-description">Professional vision testing platform with advanced LiDAR-based measurements. Comprehensive eye health assessment at your fingertips.</p>
                     
                     <div class="test-cards">
                         <div class="test-card" data-test="acuity">
@@ -167,7 +175,10 @@
                     </div>
 
                     <div class="instructions">
-                        <h3>General Instructions:</h3>
+                        <div class="instructions-header">
+                            <img src="logo-icon.svg" alt="Spect-IT" class="instructions-icon" />
+                            <h3>General Instructions</h3>
+                        </div>
                         <ul>
                             <li>Position yourself 6 feet (2 meters) from your screen</li>
                             <li>Ensure good lighting conditions</li>
@@ -655,7 +666,10 @@
         </main>
 
         <footer>
-            <p>Spect-IT © 2024 | For informational purposes only</p>
+            <p>
+                <img src="logo-icon.svg" alt="Spect-IT" class="footer-logo" />
+                Spect-IT © 2024 | For informational purposes only
+            </p>
         </footer>
     </div>
 
