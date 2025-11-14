@@ -679,8 +679,32 @@
         </footer>
     </div>
 
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Configuration (load first) -->
     <script src="config.js"></script>
+    
+    <!-- Supabase Client Setup -->
+    <script src="js/supabase-client.js"></script>
+    
+    <!-- Database Service -->
+    <script src="js/database-service.js"></script>
+    
+    <!-- Authentication UI -->
+    <script src="js/auth-ui.js"></script>
+    
+    <!-- Main Application -->
     <script src="app.js"></script>
+    
+    <!-- Initialize Auth UI on page load -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.AuthUI) {
+                window.AuthUI.init();
+            }
+        });
+    </script>
 </body>
 </html>
 
