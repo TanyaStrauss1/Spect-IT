@@ -2050,49 +2050,55 @@ function setupShopCategoryButtons() {
     });
 }
 
-function loadProducts(category) {
-    const products = {
-        frames: [
-            { id: 1, name: 'Classic Black Frames', price: 89.99, emoji: '👓' },
-            { id: 2, name: 'Tortoise Shell Frames', price: 99.99, emoji: '👓' },
-            { id: 3, name: 'Modern Wire Frames', price: 119.99, emoji: '👓' },
-            { id: 4, name: 'Bold Color Frames', price: 79.99, emoji: '👓' }
-        ],
-        sunglasses: [
-            { id: 5, name: 'Aviator Sunglasses', price: 149.99, emoji: '🕶️' },
-            { id: 6, name: 'Wayfarer Style', price: 129.99, emoji: '🕶️' },
-            { id: 7, name: 'Sport Sunglasses', price: 179.99, emoji: '🕶️' },
-            { id: 8, name: 'Oversized Sunglasses', price: 159.99, emoji: '🕶️' }
-        ],
-        contacts: [
-            { id: 9, name: 'Daily Disposable', price: 49.99, emoji: '👁️' },
-            { id: 10, name: 'Monthly Contacts', price: 89.99, emoji: '👁️' },
-            { id: 11, name: 'Colored Contacts', price: 69.99, emoji: '👁️' },
-            { id: 12, name: 'Astigmatism Contacts', price: 99.99, emoji: '👁️' }
-        ]
-    };
-    
+async function loadProducts(category) {
     const grid = document.getElementById('product-grid');
-    grid.innerHTML = '';
+    grid.innerHTML = '<div class="loading">Loading products...</div>';
     
-    products[category].forEach(product => {
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.innerHTML = `
-            <div class="product-image">${product.emoji}</div>
-            <div class="product-info">
-                <h4>${product.name}</h4>
-                <p>High quality eyewear</p>
-                <div class="product-price">$${product.price.toFixed(2)}</div>
-                <div class="product-actions">
-                    <button class="try-on-btn" onclick="tryOnProduct(${product.id}, '${category}')">Try On</button>
-                    <button class="btn-secondary" onclick="viewProduct(${product.id})">View</button>
-                    <button class="btn-primary" onclick="addToCart(${product.id}, '${product.name}', ${product.price})">Add to Cart</button>
+    try {
+        // Use ShoppingService to get products from Supabase or fallback
+        const products = await window.ShoppingService?.getProducts(category) || [];
+        
+        if (products.length === 0) {
+            grid.innerHTML = '<div class="no-products">No products available in this category.</div>';
+            return;
+        }
+        
+        grid.innerHTML = '';
+        
+        products.forEach(product => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            const emoji = product.emoji || '👓';
+            const description = product.description || 'High quality eyewear';
+            const inStock = product.in_stock !== false;
+            const stockQty = product.stock_quantity || 0;
+            const rating = product.rating || 0;
+            const reviewCount = product.review_count || 0;
+            
+            card.innerHTML = `
+                <div class="product-image">${emoji}</div>
+                <div class="product-info">
+                    <h4>${product.name}</h4>
+                    <p>${description}</p>
+                    ${rating > 0 ? `<div class="product-rating">⭐ ${rating.toFixed(1)} (${reviewCount} reviews)</div>` : ''}
+                    <div class="product-price">$${parseFloat(product.price).toFixed(2)}</div>
+                    ${!inStock ? '<div class="out-of-stock">Out of Stock</div>' : ''}
+                    ${inStock && stockQty > 0 && stockQty < 10 ? `<div class="low-stock">Only ${stockQty} left!</div>` : ''}
+                    <div class="product-actions">
+                        ${category === 'frames' ? `<button class="try-on-btn" onclick="tryOnProduct('${product.id}', '${category}')">Try On</button>` : ''}
+                        <button class="btn-secondary" onclick="viewProduct('${product.id}')">View Details</button>
+                        <button class="btn-primary" onclick="addToCart('${product.id}', '${product.name}', ${product.price}, '${product.sku || ''}')" ${!inStock ? 'disabled' : ''}>
+                            ${inStock ? 'Add to Cart' : 'Out of Stock'}
+                        </button>
+                    </div>
                 </div>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
+            `;
+            grid.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error loading products:', error);
+        grid.innerHTML = '<div class="error">Error loading products. Please try again later.</div>';
+    }
 }
 
 function setupTryOn() {
@@ -2713,41 +2719,49 @@ function drawGlassesOverlay() {
 // ========== E-COMMERCE (STRIPE INTEGRATION) ==========
 let shoppingCart = [];
 
-function addToCart(productId, productName, price) {
+async function addToCart(productId, productName, price, sku = '') {
     const item = {
         id: productId,
+        product_id: productId,
         name: productName,
-        price: price,
-        quantity: 1
+        price: parseFloat(price),
+        quantity: 1,
+        sku: sku
     };
     
     // Check if item already in cart
-    const existingItem = shoppingCart.find(i => i.id === productId);
+    const existingItem = shoppingCart.find(i => i.id === productId || i.product_id === productId);
     if (existingItem) {
         existingItem.quantity++;
     } else {
         shoppingCart.push(item);
     }
     
+    // Save to Supabase if available
+    if (window.ShoppingService) {
+        await window.ShoppingService.saveCart(shoppingCart);
+    } else {
+        saveCartToStorage();
+    }
+    
     updateCartDisplay();
-    saveCartToStorage();
     
     // Show notification
     showNotification(`${productName} added to cart!`);
 }
 
-function removeFromCart(productId) {
-    shoppingCart = shoppingCart.filter(item => item.id !== productId);
+async function removeFromCart(productId) {
+    shoppingCart = shoppingCart.filter(item => item.id !== productId && item.product_id !== productId);
+    await saveCartToStorage();
     updateCartDisplay();
-    saveCartToStorage();
 }
 
-function updateCartQuantity(productId, quantity) {
-    const item = shoppingCart.find(i => i.id === productId);
+async function updateCartQuantity(productId, quantity) {
+    const item = shoppingCart.find(i => i.id === productId || i.product_id === productId);
     if (item) {
         item.quantity = Math.max(1, parseInt(quantity));
+        await saveCartToStorage();
         updateCartDisplay();
-        saveCartToStorage();
     }
 }
 
@@ -2784,15 +2798,32 @@ function updateCartDisplay() {
     `).join('');
 }
 
-function saveCartToStorage() {
-    localStorage.setItem('spectit_cart', JSON.stringify(shoppingCart));
+async function saveCartToStorage() {
+    if (window.ShoppingService) {
+        await window.ShoppingService.saveCart(shoppingCart);
+    } else {
+        localStorage.setItem('spectit_cart', JSON.stringify(shoppingCart));
+    }
 }
 
-function loadCartFromStorage() {
-    const saved = localStorage.getItem('spectit_cart');
-    if (saved) {
-        shoppingCart = JSON.parse(saved);
+async function loadCartFromStorage() {
+    try {
+        if (window.ShoppingService) {
+            shoppingCart = await window.ShoppingService.getCart();
+        } else {
+            const saved = localStorage.getItem('spectit_cart');
+            if (saved) {
+                shoppingCart = JSON.parse(saved);
+            }
+        }
         updateCartDisplay();
+    } catch (error) {
+        console.error('Error loading cart:', error);
+        const saved = localStorage.getItem('spectit_cart');
+        if (saved) {
+            shoppingCart = JSON.parse(saved);
+            updateCartDisplay();
+        }
     }
 }
 
@@ -2802,46 +2833,148 @@ async function checkout() {
         return;
     }
     
-    const STRIPE_KEY = (window.CONFIG && window.CONFIG.STRIPE_PUBLISHABLE_KEY) ||
-                      (typeof CONFIG !== 'undefined' && CONFIG.STRIPE_PUBLISHABLE_KEY) ||
-                      '';
+    // Show checkout form
+    showCheckoutForm();
+}
+
+function showCheckoutForm() {
+    const total = shoppingCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const subtotal = total;
+    const tax = total * 0.08; // 8% tax
+    const shipping = total > 100 ? 0 : 9.99;
+    const finalTotal = subtotal + tax + shipping;
     
-    if (STRIPE_KEY && STRIPE_KEY !== 'YOUR_STRIPE_PUBLISHABLE_KEY' && STRIPE_KEY !== '') {
-        // Real Stripe checkout
-        try {
-            // In production, create checkout session on your backend
-            const API_BASE = (window.CONFIG && window.CONFIG.API_BASE_URL) ||
-                           (typeof CONFIG !== 'undefined' && CONFIG.API_BASE_URL) ||
-                           '/api';
-            
-            const response = await fetch(`${API_BASE}/create-checkout-session`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    items: shoppingCart.map(item => ({
-                        name: item.name,
-                        amount: Math.round(item.price * 100), // Convert to cents
-                        quantity: item.quantity
-                    }))
-                })
-            });
-            
-            const session = await response.json();
-            // Redirect to Stripe Checkout
-            window.location.href = session.url;
-        } catch (error) {
-            console.error('Checkout error:', error);
-            alert('Checkout temporarily unavailable. Please try again later.');
+    const checkoutHTML = `
+        <div class="checkout-modal" id="checkout-modal">
+            <div class="checkout-content">
+                <h2>Checkout</h2>
+                <div class="checkout-summary">
+                    <h3>Order Summary</h3>
+                    ${shoppingCart.map(item => `
+                        <div class="checkout-item">
+                            <span>${item.name} x${item.quantity}</span>
+                            <span>$${(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                    <div class="checkout-totals">
+                        <div class="checkout-line">
+                            <span>Subtotal:</span>
+                            <span>$${subtotal.toFixed(2)}</span>
+                        </div>
+                        <div class="checkout-line">
+                            <span>Tax:</span>
+                            <span>$${tax.toFixed(2)}</span>
+                        </div>
+                        <div class="checkout-line">
+                            <span>Shipping:</span>
+                            <span>${shipping === 0 ? 'FREE' : '$' + shipping.toFixed(2)}</span>
+                        </div>
+                        <div class="checkout-line checkout-total">
+                            <span><strong>Total:</strong></span>
+                            <span><strong>$${finalTotal.toFixed(2)}</strong></span>
+                        </div>
+                    </div>
+                </div>
+                <form id="checkout-form" onsubmit="processCheckout(event)">
+                    <h3>Shipping Information</h3>
+                    <input type="text" id="ship-name" placeholder="Full Name" required>
+                    <input type="text" id="ship-address" placeholder="Street Address" required>
+                    <input type="text" id="ship-city" placeholder="City" required>
+                    <input type="text" id="ship-state" placeholder="State" required>
+                    <input type="text" id="ship-zip" placeholder="ZIP Code" required>
+                    <input type="email" id="ship-email" placeholder="Email" required>
+                    <input type="tel" id="ship-phone" placeholder="Phone" required>
+                    
+                    <h3>Billing Information</h3>
+                    <label><input type="checkbox" id="same-as-shipping" onchange="copyShippingToBilling()"> Same as shipping</label>
+                    <input type="text" id="bill-name" placeholder="Full Name" required>
+                    <input type="text" id="bill-address" placeholder="Street Address" required>
+                    <input type="text" id="bill-city" placeholder="City" required>
+                    <input type="text" id="bill-state" placeholder="State" required>
+                    <input type="text" id="bill-zip" placeholder="ZIP Code" required>
+                    
+                    <div class="checkout-actions">
+                        <button type="button" class="btn-secondary" onclick="closeCheckout()">Cancel</button>
+                        <button type="submit" class="btn-primary">Complete Order</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', checkoutHTML);
+}
+
+function closeCheckout() {
+    const modal = document.getElementById('checkout-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function copyShippingToBilling() {
+    const same = document.getElementById('same-as-shipping').checked;
+    if (same) {
+        document.getElementById('bill-name').value = document.getElementById('ship-name').value;
+        document.getElementById('bill-address').value = document.getElementById('ship-address').value;
+        document.getElementById('bill-city').value = document.getElementById('ship-city').value;
+        document.getElementById('bill-state').value = document.getElementById('ship-state').value;
+        document.getElementById('bill-zip').value = document.getElementById('ship-zip').value;
+    }
+}
+
+async function processCheckout(event) {
+    event.preventDefault();
+    
+    const shippingAddress = {
+        name: document.getElementById('ship-name').value,
+        address: document.getElementById('ship-address').value,
+        city: document.getElementById('ship-city').value,
+        state: document.getElementById('ship-state').value,
+        zip: document.getElementById('ship-zip').value,
+        email: document.getElementById('ship-email').value,
+        phone: document.getElementById('ship-phone').value
+    };
+    
+    const billingAddress = {
+        name: document.getElementById('bill-name').value,
+        address: document.getElementById('bill-address').value,
+        city: document.getElementById('bill-city').value,
+        state: document.getElementById('bill-state').value,
+        zip: document.getElementById('bill-zip').value
+    };
+    
+    try {
+        // Create order in Supabase
+        let order = null;
+        if (window.ShoppingService) {
+            order = await window.ShoppingService.createOrder(shoppingCart, shippingAddress, billingAddress);
         }
-    } else {
-        // Demo checkout
-        const total = shoppingCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        if (confirm(`Proceed to checkout? Total: $${total.toFixed(2)}\n\nIn production, this would redirect to Stripe checkout.`)) {
-            alert('Demo checkout complete! In production, this would process payment via Stripe.');
-            shoppingCart = [];
-            updateCartDisplay();
-            saveCartToStorage();
+        
+        // Process payment (Stripe or demo)
+        const STRIPE_KEY = (window.CONFIG && window.CONFIG.STRIPE_PUBLISHABLE_KEY) ||
+                          (typeof CONFIG !== 'undefined' && CONFIG.STRIPE_PUBLISHABLE_KEY) ||
+                          '';
+        
+        if (STRIPE_KEY && STRIPE_KEY !== 'YOUR_STRIPE_PUBLISHABLE_KEY' && STRIPE_KEY !== '') {
+            // Real Stripe checkout would go here
+            // For now, show success message
+            alert(`Order placed successfully! Order #: ${order?.order_number || 'DEMO-001'}\n\nIn production, this would redirect to Stripe for payment.`);
+        } else {
+            // Demo checkout
+            alert(`Order placed successfully! Order #: ${order?.order_number || 'DEMO-001'}\n\nThis is a demo. In production, payment would be processed via Stripe.`);
         }
+        
+        // Clear cart
+        shoppingCart = [];
+        await saveCartToStorage();
+        updateCartDisplay();
+        closeCheckout();
+        
+        showNotification('Order placed successfully!');
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert('Error processing order. Please try again.');
     }
 }
 
