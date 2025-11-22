@@ -66,12 +66,54 @@ async function findNearbyRetailers() {
         // Search for retailers
         const retailers = await searchNearbyRetailers(userLocation);
         
-        // Scrape product information from each retailer
-        statusEl.innerHTML = '🛍️ Scraping real product information...';
+        // Scrape product information from each retailer using enhanced scraper
+        statusEl.innerHTML = '🛍️ Scraping real-time product information from web...';
         
-        for (const retailer of retailers) {
-            const products = await scrapeRetailerProducts(retailer);
-            retailerProducts.set(retailer.id, products);
+        // Use enhanced scraper to get products from all retailers at once
+        if (window.enhancedWebScraper) {
+            try {
+                const allProducts = await window.enhancedWebScraper.scrapeAllRetailers('glasses', userLocation);
+                
+                // Group products by retailer
+                const productsByRetailer = new Map();
+                allProducts.forEach(product => {
+                    const retailerId = retailers.find(r => 
+                        r.name.toLowerCase().includes(product.retailer.toLowerCase()) ||
+                        product.retailer.toLowerCase().includes(r.name.toLowerCase())
+                    )?.id || 'unknown';
+                    
+                    if (!productsByRetailer.has(retailerId)) {
+                        productsByRetailer.set(retailerId, []);
+                    }
+                    productsByRetailer.get(retailerId).push(product);
+                });
+                
+                // Update retailer products map
+                productsByRetailer.forEach((products, retailerId) => {
+                    retailerProducts.set(retailerId, products);
+                });
+                
+                // Also scrape individual retailers for any missing ones
+                for (const retailer of retailers) {
+                    if (!retailerProducts.has(retailer.id) || retailerProducts.get(retailer.id).length === 0) {
+                        const products = await scrapeRetailerProducts(retailer);
+                        retailerProducts.set(retailer.id, products);
+                    }
+                }
+            } catch (error) {
+                console.warn('Enhanced scraper failed, using individual retailer scraping:', error);
+                // Fallback to individual scraping
+                for (const retailer of retailers) {
+                    const products = await scrapeRetailerProducts(retailer);
+                    retailerProducts.set(retailer.id, products);
+                }
+            }
+        } else {
+            // Fallback if enhanced scraper not loaded
+            for (const retailer of retailers) {
+                const products = await scrapeRetailerProducts(retailer);
+                retailerProducts.set(retailer.id, products);
+            }
         }
         
         // Display results
@@ -297,9 +339,66 @@ async function scrapeRetailerWebsites(location) {
     return retailers;
 }
 
-// Scrape products from a specific retailer
+// Scrape products from a specific retailer using enhanced scraper
 async function scrapeRetailerProducts(retailer) {
     const products = [];
+    
+    // Use enhanced scraper if available
+    if (window.enhancedWebScraper) {
+        try {
+            // Determine retailer key
+            const retailerName = retailer.name.toLowerCase();
+            let retailerKey = null;
+            
+            if (retailerName.includes('spec-savers') || retailerName.includes('specsavers')) {
+                retailerKey = 'specsavers';
+            } else if (retailerName.includes('opsm')) {
+                retailerKey = 'opsm';
+            } else if (retailerName.includes('vision express')) {
+                retailerKey = 'visionexpress';
+            } else if (retailerName.includes('takealot')) {
+                retailerKey = 'takealot';
+            }
+            
+            if (retailerKey) {
+                // Use enhanced scraper
+                const scrapedProducts = await window.enhancedWebScraper.scrapeRetailer(
+                    retailerKey, 
+                    'glasses', 
+                    retailer.location || userLocation
+                );
+                
+                // Map enhanced scraper results to retailer format
+                scrapedProducts.forEach((product, index) => {
+                    products.push({
+                        id: product.id || `${retailer.id}-product-${index}`,
+                        name: product.name,
+                        price: product.price,
+                        originalPrice: product.originalPrice,
+                        onSale: product.onSale,
+                        discount: product.discount,
+                        image: product.image,
+                        description: product.description,
+                        brand: product.brand,
+                        rating: product.rating,
+                        reviewsCount: product.reviewsCount,
+                        retailer: retailer.name,
+                        retailerAddress: retailer.address,
+                        retailerPhone: retailer.phone,
+                        retailerWebsite: product.url || retailer.website,
+                        distance: retailer.distance,
+                        inStock: product.inStock !== false
+                    });
+                });
+                
+                return products;
+            }
+        } catch (error) {
+            console.warn('Enhanced scraper failed, falling back to basic scraping:', error);
+        }
+    }
+    
+    // Fallback to basic scraping if enhanced scraper not available
     const corsProxies = [
         'https://api.allorigins.win/get?url=',
         'https://corsproxy.io/?',
@@ -441,10 +540,18 @@ function displayRetailersWithProducts(retailers) {
                     <h4 style="margin-bottom: 1rem;">🛍️ Available Products (${products.length})</h4>
                     <div class="retailer-products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                         ${products.map(product => `
-                            <div class="product-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center;">
+                            <div class="product-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; position: relative;">
+                                ${product.onSale ? `<span style="position: absolute; top: 0.5rem; right: 0.5rem; background: #ef4444; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">-${product.discount || 0}%</span>` : ''}
                                 ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; margin-bottom: 0.5rem;" onerror="this.style.display='none';">` : ''}
+                                ${product.brand ? `<p style="font-size: 0.75rem; color: #666; margin: 0.25rem 0;">${product.brand}</p>` : ''}
                                 <h5 style="margin: 0.5rem 0; font-size: 0.9rem;">${product.name}</h5>
-                                <p style="margin: 0.5rem 0; font-weight: bold; color: #667eea;">R${product.price.toFixed(2)}</p>
+                                ${product.description ? `<p style="font-size: 0.8rem; color: #666; margin: 0.5rem 0; height: 40px; overflow: hidden;">${product.description.substring(0, 60)}...</p>` : ''}
+                                <div style="margin: 0.5rem 0;">
+                                    ${product.originalPrice ? `<p style="text-decoration: line-through; color: #999; font-size: 0.85rem; margin: 0;">R${product.originalPrice.toFixed(2)}</p>` : ''}
+                                    <p style="margin: 0.25rem 0; font-weight: bold; color: #667eea; font-size: 1.1rem;">R${product.price.toFixed(2)}</p>
+                                </div>
+                                ${product.rating ? `<p style="font-size: 0.75rem; color: #666; margin: 0.25rem 0;">⭐ ${product.rating.toFixed(1)}${product.reviewsCount ? ` (${product.reviewsCount})` : ''}</p>` : ''}
+                                ${product.url ? `<a href="${product.url}" target="_blank" style="font-size: 0.75rem; color: #667eea; text-decoration: none; display: block; margin-bottom: 0.5rem;">View on ${retailer.name}</a>` : ''}
                                 <button class="btn btn-primary" onclick="addProductToCart('${product.id}', '${product.name.replace(/'/g, "\\'")}', ${product.price}, '${retailer.name.replace(/'/g, "\\'")}')" style="width: 100%; font-size: 0.85rem;">
                                     Add to Cart
                                 </button>
