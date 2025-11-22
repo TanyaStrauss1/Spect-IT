@@ -40,7 +40,7 @@ localhost
    - Select "HTTP referrers (web sites)"
    - Click "Add an item"
 
-4. **Add Each Domain:**
+4. **Add Each Domain (Copy these exactly):**
    ```
    https://www.spect-it.com/*
    https://spect-it.com/*
@@ -48,7 +48,15 @@ localhost
    https://*.vercel.app/*
    http://localhost:3000/*
    http://127.0.0.1:3000/*
+   http://localhost/*
+   http://127.0.0.1/*
    ```
+   
+   **Important:** 
+   - Include the `/*` at the end of each URL
+   - Use `https://` for production domains
+   - Use `http://` for localhost
+   - The `*.vercel.app` wildcard covers all Vercel preview deployments
 
 5. **API Restrictions:**
    - Under "API restrictions"
