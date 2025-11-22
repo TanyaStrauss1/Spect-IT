@@ -320,7 +320,7 @@ async function searchByAddress() {
     try {
         // Geocode address to get coordinates
         const CONFIG = {
-            googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
+            googlePlacesApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || ''
         };
         
         // Add "South Africa" if not present for better results
@@ -972,7 +972,7 @@ function getKnownSouthAfricanOpticalRetailers(location) {
 async function geocodeAddress(address) {
     try {
         const CONFIG = {
-            googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
+            googlePlacesApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || ''
         };
         
         // Add "South Africa" if not present
@@ -1002,8 +1002,8 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 // Search for eye specialists using Google Places API - OPTIMIZED FOR SPEED
 async function searchEyeSpecialists(location, radius = 500000) { // 500km to cover all of South Africa
     const CONFIG = {
-        googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08',
-        googleMapsApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
+        googlePlacesApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || '',
+        googleMapsApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || ''
     };
     
     // Check cache first
@@ -1940,7 +1940,7 @@ async function viewSpecialistDetails(placeId) {
     
     // If not found, try Google Places API for additional details
     const CONFIG = {
-        googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
+        googlePlacesApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || ''
     };
     
     try {
@@ -2233,7 +2233,7 @@ window.testSpecialistFinder = function() {
     
     console.log('2. Checking API key...');
     const CONFIG = {
-        googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
+        googlePlacesApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || ''
     };
     console.log('API Key:', CONFIG.googlePlacesApiKey ? '✓ Present' : '✗ Missing');
     
