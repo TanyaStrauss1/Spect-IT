@@ -1,0 +1,11 @@
+.docker/
+**/.docker/
+*.sock
+**/*.sock
+mutagen/
+**/mutagen/
+node_modules/
+.DS_Store
+*.log
+**/daemon.sock
+**/mutagen/daemon/daemon.sock

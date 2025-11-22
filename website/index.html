@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spect-IT - Advanced Professional Eye Testing Platform</title>
+    <meta name="description" content="Professional-grade eye testing platform with comprehensive vision assessments. Visual acuity, color blindness, astigmatism, prescription measurement, and more.">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="user-signed-in-styles.css">
+    <link rel="stylesheet" href="premium-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@2.0.4/dist/face-landmarks-detection.min.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Premium Features -->
+    <script src="premium-features.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">
+                <span class="logo-icon">👁️</span>
+                <span>Spect-IT</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#tests" class="nav-link">Tests</a></li>
+                <li><a href="#shop" class="nav-link">Shop</a></li>
+                <li><a href="#find-specialists" class="nav-link">Find Specialists</a></li>
+                <li><a href="#results" class="nav-link">Results</a></li>
+                <li><a href="#history" class="nav-link">History</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero">
+            <div class="container">
+                <div class="premium-badge" style="margin-bottom: 1rem;">Premium Advanced Eye Testing</div>
+                <h1>The Most Advanced Eye Testing Platform</h1>
+                <p class="hero-subtitle">AI-powered professional-grade vision assessment with 3D face mapping, advanced eye tracking, and comprehensive analytics</p>
+                <div class="hero-features">
+                    <div class="feature-item">
+                        <span class="feature-icon">🔬</span>
+                        <span>Accurate Results</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📊</span>
+                        <span>Comprehensive Results</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📱</span>
+                        <span>Device Compatible</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔒</span>
+                        <span>Secure & Private</span>
+                    </div>
+                </div>
+                <a href="#tests" class="btn btn-primary">Start Testing</a>
+            </div>
+        </section>
+
+        <!-- Tests Section -->
+        <section id="tests" class="tests-section">
+            <div class="container">
+                <h2>Vision Tests</h2>
+                <p class="section-subtitle">Comprehensive eye health assessment tools</p>
+                
+                <div class="tests-grid">
+                    <!-- Visual Acuity Test -->
+                    <div class="test-card" data-test="visual-acuity">
+                        <div class="test-icon">📏</div>
+                        <h3>Visual Acuity Test</h3>
+                        <p>Measure distance and near vision using Snellen chart</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 3-5 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startVisualAcuityTest()">Start Test</button>
+                    </div>
+
+                    <!-- Color Blindness Test -->
+                    <div class="test-card" data-test="color-blindness">
+                        <div class="test-icon">🎨</div>
+                        <h3>Color Blindness Test</h3>
+                        <p>Detect color vision deficiencies (Ishihara plates)</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 2-3 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startColorBlindnessTest()">Start Test</button>
+                    </div>
+
+                    <!-- Astigmatism Test -->
+                    <div class="test-card" data-test="astigmatism">
+                        <div class="test-icon">⚫</div>
+                        <h3>Astigmatism Test</h3>
+                        <p>Check for corneal irregularities and astigmatism</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 2-3 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startAstigmatismTest()">Start Test</button>
+                    </div>
+
+                    <!-- Contrast Sensitivity Test -->
+                    <div class="test-card" data-test="contrast">
+                        <div class="test-icon">🌓</div>
+                        <h3>Contrast Sensitivity</h3>
+                        <p>Evaluate vision in low-light conditions</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 3-4 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startContrastTest()">Start Test</button>
+                    </div>
+
+                    <!-- Visual Field Test -->
+                    <div class="test-card" data-test="visual-field">
+                        <div class="test-icon">👁️</div>
+                        <h3>Visual Field Test</h3>
+                        <p>Check peripheral vision and blind spots</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 5-7 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startVisualFieldTest()">Start Test</button>
+                    </div>
+
+                    <!-- Prescription Test -->
+                    <div class="test-card" data-test="prescription">
+                        <div class="test-icon">🔍</div>
+                        <h3>Prescription Measurement</h3>
+                        <p>Estimate eyeglass prescription strength</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 5-10 min</span>
+                            <span class="test-accuracy">🎯 Medium Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startPrescriptionTest()">Start Test</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Test Modal -->
+        <div id="test-modal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeTest()">&times;</button>
+                <div id="test-container"></div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <section id="results" class="results-section">
+            <div class="container">
+                <h2>Test Results</h2>
+                <!-- Premium Dashboard -->
+                <div id="premium-dashboard"></div>
+                <div id="results-container">
+                    <div class="no-results">
+                        <p>No test results yet. Complete a test to see your results here.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Shop Section -->
+        <section id="shop" class="shop-section premium-medical-shop">
+            <div class="container">
+                <div class="shop-header-premium">
+                    <div class="premium-badge">🏥 Medical Grade</div>
+                    <h2 class="premium-title">Professional Eyewear Collection</h2>
+                    <p class="premium-subtitle">Curated selection of clinically-tested optical products from certified South African retailers. Each product meets our rigorous standards for quality, safety, and optical precision.</p>
+                    <div class="premium-trust-badges">
+                        <div class="trust-badge">
+                            <span class="trust-icon">✓</span>
+                            <span>HPCSA Certified Retailers</span>
+                        </div>
+                        <div class="trust-badge">
+                            <span class="trust-icon">✓</span>
+                            <span>Authentic Products Only</span>
+                        </div>
+                        <div class="trust-badge">
+                            <span class="trust-icon">✓</span>
+                            <span>Prescription Verified</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="shop-filters">
+                    <div class="category-tabs">
+                        <button class="category-tab active" data-category="all" onclick="filterProducts('all')">All Products</button>
+                        <button class="category-tab" data-category="contact-lenses" onclick="filterProducts('contact-lenses')">Contact Lenses</button>
+                        <button class="category-tab" data-category="frames" onclick="filterProducts('frames')">Spectacle Frames</button>
+                        <button class="category-tab" data-category="sunglasses" onclick="filterProducts('sunglasses')">Sunglasses</button>
+                        <button class="category-tab" data-category="reading-glasses" onclick="filterProducts('reading-glasses')">Reading Glasses</button>
+                    </div>
+                    <div class="search-bar">
+                        <div class="search-input-wrapper">
+                            <input type="text" id="product-search" placeholder="Search products by name, brand, or description..." 
+                                   onkeyup="searchProducts()" 
+                                   onfocus="this.placeholder='Type to search...'"
+                                   onblur="this.placeholder='Search products by name, brand, or description...'">
+                            <button class="search-clear-btn" id="search-clear-btn" onclick="clearSearch()" style="display: none;">&times;</button>
+                            <button class="btn btn-secondary" onclick="showAdvancedFilters()" style="margin-left: 0.5rem;">🔍 Filters</button>
+                        </div>
+                        <div id="search-results-count" class="search-results-count"></div>
+                        <div id="advanced-filters" class="advanced-filters" style="display: none;"></div>
+                    </div>
+                </div>
+                
+                <div id="products-container" class="products-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+                
+                <div id="products-loading" style="display: none; text-align: center; padding: 2rem;">
+                    <p>Loading products...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Shopping Cart -->
+        <div id="cart-sidebar" class="cart-sidebar">
+            <div class="cart-header">
+                <h3>Shopping Cart</h3>
+                <button class="cart-close" onclick="toggleCart()">&times;</button>
+            </div>
+            <div id="cart-items" class="cart-items">
+                <p class="cart-empty">Your cart is empty</p>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-summary">
+                    <div class="cart-row">
+                        <span>Subtotal:</span>
+                        <span id="cart-subtotal">R0.00</span>
+                    </div>
+                    <div class="cart-row">
+                        <span>VAT (15%):</span>
+                        <span id="cart-vat">R0.00</span>
+                    </div>
+                    <div class="cart-row cart-total">
+                        <span>Total:</span>
+                        <span id="cart-total">R0.00</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="checkout-btn" onclick="proceedToCheckout()" disabled>Proceed to Checkout</button>
+            </div>
+        </div>
+
+        <!-- Cart Button -->
+        <button id="cart-button" class="cart-button" onclick="toggleCart()">
+            🛒 <span id="cart-count">0</span>
+        </button>
+
+        <!-- Find Specialists Section -->
+        <section id="find-specialists" class="specialists-section">
+            <div class="container">
+                <h2>Find Eye Care Specialists</h2>
+                <p class="section-subtitle">Search all optometrists, ophthalmologists, and opticians across South Africa - organized by province and proximity</p>
+                <div id="specialists-summary"></div>
+                
+                <div class="location-controls">
+                    <div class="location-status" id="location-status">
+                        <span id="location-text">Click to find specialists near you</span>
+                        <div>
+                            <button class="btn btn-primary" id="find-specialists-btn" onclick="findNearestSpecialists()">Find Nearest Specialists</button>
+                            <button class="btn btn-secondary" onclick="showManualLocationInput()" style="margin-left: 0.5rem;">Enter Location</button>
+                            <button class="btn btn-secondary" onclick="testSpecialistFinder()" style="margin-left: 0.5rem; font-size: 0.85rem;">🔧 Test</button>
+                        </div>
+                    </div>
+                    
+                    <div class="distance-filter" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <label for="distance-slider" style="font-weight: 600; color: #333;">
+                            📏 Maximum Distance:
+                        </label>
+                        <input type="range" id="distance-slider" min="10" max="500" value="50" step="10" 
+                               oninput="updateDistanceFilter(this.value)" 
+                               style="flex: 1; min-width: 200px;">
+                        <span id="distance-value" style="font-weight: 600; color: #667eea; min-width: 80px;">
+                            50 km
+                        </span>
+                        <button class="btn btn-secondary" onclick="applyDistanceFilter()" style="font-size: 0.9rem;">
+                            Apply Filter
+                        </button>
+                    </div>
+                    
+                    <div class="filter-controls" id="filter-controls" style="display: none;">
+                        <label>Filter by type:</label>
+                        <select id="specialist-type-filter" onchange="filterSpecialists()">
+                            <option value="all">All Specialists</option>
+                            <option value="optometrist">Optometrists</option>
+                            <option value="ophthalmologist">Ophthalmologists</option>
+                            <option value="optician">Opticians</option>
+                        </select>
+                        <label style="margin-left: 1rem;">Max distance:</label>
+                        <select id="distance-filter" onchange="filterSpecialists()">
+                            <option value="5">5 km</option>
+                            <option value="10" selected>10 km</option>
+                            <option value="20">20 km</option>
+                            <option value="50">50 km</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="specialists-container" class="specialists-grid">
+                    <!-- Specialists will be loaded here -->
+                </div>
+                
+                <div id="specialists-loading" style="display: none; text-align: center; padding: 2rem;">
+                    <p>Searching for specialists...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- History Section -->
+        <section id="history" class="history-section">
+            <div class="container">
+                <h2>Test History</h2>
+                <div id="history-container">
+                    <canvas id="history-chart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Spect-IT © 2024 | Professional Eye Testing Platform</p>
+            <p class="disclaimer">For informational purposes only. Consult a professional for real results.</p>
+        </div>
+    </footer>
+
+    <script src="supabase-config.js"></script>
+    <script src="spectit-location.js"></script>
+    <script src="spectit-virtual-tryon.js"></script>
+    <script src="product-scraper.js"></script>
+    <script src="lidar-engine.js"></script>
+    <script src="email-signup-modal.js"></script>
+    <script src="premium-dashboard.js"></script>
+    <script src="tests.js"></script>
+    <script src="app.js"></script>
+    <script src="specialists.js"></script>
+    <script src="shop.js"></script>
+    <link rel="stylesheet" href="premium-shop-styles.css">
+    <link rel="stylesheet" href="email-signup-styles.css">
+    <link rel="stylesheet" href="lidar-styles.css">
+</body>
+</html>

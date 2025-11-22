@@ -1,0 +1,22 @@
+CORRECT REFERRER FORMATS FOR GOOGLE CLOUD CONSOLE:
+
+Option 1 - Exact domains (RECOMMENDED):
+https://www.spect-it.com
+https://spect-it.com
+https://spect-it-app1.vercel.app
+http://localhost
+
+Option 2 - With path wildcard:
+https://www.spect-it.com/*
+https://spect-it.com/*
+https://spect-it-app1.vercel.app/*
+http://localhost/*
+
+Option 3 - For all Vercel subdomains:
+https://*.vercel.app/*
+
+IMPORTANT:
+- Don't use wildcards in the middle (like https://*spect-it.com)
+- Start with exact domains first
+- Add wildcards only if needed
+- Each referrer on a separate line when adding

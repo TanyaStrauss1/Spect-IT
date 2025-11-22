@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "Spect-IT",
+    "slug": "spectit-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spectit.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Spect-IT uses your camera to perform professional eye tests and vision measurements. The camera analyzes your eyes to assess visual acuity, measure prescriptions, and detect vision issues. All processing is done securely on your device.",
+        "NSPhotoLibraryUsageDescription": "Spect-IT saves your test results and reports to your photo library so you can easily share them with your eye care professional or keep them for your records. Your privacy is protected - we never access photos you haven't explicitly saved from the app.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Spect-IT to save your test results and reports to your photo library for easy sharing with your eye care professional.",
+        "NSLocationWhenInUseUsageDescription": "Spect-IT uses your location to find nearby eye care professionals and retailers. Your location is only used when you actively search for stores and is never shared with third parties. This helps you find the nearest optometrists, opticians, and eyewear stores in South Africa."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "package": "com.spectit.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Spect-IT uses your camera to perform professional eye tests and vision measurements. The camera analyzes your eyes to assess visual acuity, measure prescriptions, and detect vision issues. All processing is done securely on your device."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#667eea",
+          "resizeMode": "contain",
+          "image": "./assets/splash.png"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8479efbf-f284-4b6f-a6f5-66eceee62c92"
+      }
+    },
+    "owner": "tstrauss"
+  }
+}
+

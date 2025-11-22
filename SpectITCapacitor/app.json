@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "Spect-IT Premium",
+    "slug": "spectit-premium",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spectit.app",
+      "buildNumber": "2",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Spect-IT Premium uses your camera for advanced AI-powered eye tracking, 3D face mapping, and professional vision measurements. The camera analyzes your eyes with clinical-grade precision for accurate test results.",
+        "NSPhotoLibraryUsageDescription": "Spect-IT Premium saves your premium test results and professional reports to your photo library for easy sharing with eye care professionals.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Spect-IT Premium to save your professional test results and reports.",
+        "NSLocationWhenInUseUsageDescription": "Spect-IT Premium uses your location to find nearby certified eye care professionals and retailers. Your location is only used when you actively search and is never shared with third parties."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "package": "com.spectit.app",
+      "versionCode": 2,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "@capacitor/camera",
+        {
+          "cameraPermission": "Spect-IT Premium uses your camera for advanced AI-powered eye tracking and professional vision measurements."
+        }
+      ],
+      [
+        "@capacitor/geolocation",
+        {
+          "locationPermission": "Spect-IT Premium uses your location to find nearby certified eye care professionals."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8479efbf-f284-4b6f-a6f5-66eceee62c92"
+      }
+    },
+    "owner": "tstrauss"
+  }
+}
+

@@ -1,0 +1,23 @@
+# Credentials - DO NOT COMMIT
+*.exp
+*credentials*
+*password*
+*apple_id*
+build_ios*.exp
+build_ios*.sh
+
+# Environment
+.env
+.env.local
+
+# Build files
+build/
+dist/
+*.ipa
+*.app
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store

@@ -1,0 +1,17 @@
+{
+  "name": "spect-it-website",
+  "version": "1.0.0",
+  "description": "Spect-IT Professional Vision Testing Platform",
+  "scripts": {
+    "build": "echo 'No build step required for static site'",
+    "start": "echo 'Static site - serve with any web server'"
+  },
+  "keywords": [
+    "vision-testing",
+    "eye-health",
+    "optometry"
+  ],
+  "author": "Spect-IT",
+  "license": "MIT"
+}
+

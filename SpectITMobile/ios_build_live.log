@@ -1,0 +1,46 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║          🍎 BUILDING iOS APP                                            ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 STEP 1: CHECKING EAS LOGIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Already logged in to EAS.
+tstrauss
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🍎 STEP 2: BUILDING iOS APP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Building iOS app (.ipa) for App Store...
+This may take 10-20 minutes in the Expo cloud.
+
+⚠️  Note: You may be prompted for Apple ID credentials during the build.
+   Apple ID: tanstrauss@gmail.com
+   Password: [You will be prompted]
+   2FA Code: [If enabled, you will be prompted]
+
+The field "cli.appVersionSource" is not set, but it will be required in the future. Learn more: https://docs.expo.dev/build-reference/app-versions/
+Resolved "production" environment for the build. Learn more: https://docs.expo.dev/eas/environment-variables/#setting-the-environment-for-your-builds
+No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS.
+Environment variables loaded from the "production" build profile "env" configuration: NODE_ENV.
+
+You set NODE_ENV=production in the build profile or environment variables. Remember that it will be available during the entire build process. In particular, it will make yarn/npm install only production packages.
+
+The field "cli.appVersionSource" is not set, but it will be required in the future. Learn more: https://docs.expo.dev/build-reference/app-versions/
+✔ Using remote iOS credentials (Expo server)
+
+If you provide your Apple account credentials we will be able to generate all necessary build credentials and fully validate them.
+This is optional, but without Apple account access you will need to provide all the missing values manually and we can only run minimal validation on them.
+Input is required, but stdin is not readable. Failed to display prompt: Do you want to log in to your Apple account?
+    Error: build command failed.
+
+❌ iOS build failed. Please check the Expo dashboard for errors.
+Monitor at: https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds
+
+Common issues:
+  - Apple Developer Program membership required
+  - Apple ID credentials needed
+  - 2FA verification may be required
+  - Check Apple Developer Portal access
