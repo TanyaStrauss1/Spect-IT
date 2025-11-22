@@ -184,56 +184,22 @@ function displayAcuityResults(size) {
     const resultsDiv = document.getElementById('acuity-results');
     const resultText = document.getElementById('acuity-result-text');
     
-    // Use improved interpretation if available
     let interpretation = '';
-    let recommendation = '';
-    let color = '#667eea';
+    const numericValue = parseFloat(size.split('/')[1]);
     
-    if (window.TestImprovements && window.TestImprovements.visualAcuity) {
-        const improved = window.TestImprovements.visualAcuity.getImprovedAcuityInterpretation(size);
-        interpretation = improved.message;
-        recommendation = improved.recommendation;
-        color = improved.color;
+    if (numericValue <= 20) {
+        interpretation = 'Excellent vision! You have normal or better visual acuity.';
+    } else if (numericValue <= 30) {
+        interpretation = 'Good vision. Minor correction may be beneficial.';
+    } else if (numericValue <= 40) {
+        interpretation = 'Moderate vision. You may benefit from glasses.';
+    } else if (numericValue <= 70) {
+        interpretation = 'Poor vision. Consultation with an eye doctor is recommended.';
     } else {
-        // Fallback to original
-        const numericValue = parseFloat(size.split('/')[1]);
-        
-        if (numericValue <= 20) {
-            interpretation = 'Excellent vision! You have normal or better visual acuity (20/20 or better).';
-            recommendation = 'No correction needed. Continue regular eye checkups.';
-            color = '#10b981';
-        } else if (numericValue <= 30) {
-            interpretation = 'Good vision. Minor correction may be beneficial for optimal clarity.';
-            recommendation = 'Consider an eye exam to determine if glasses would improve your vision.';
-            color = '#3b82f6';
-        } else if (numericValue <= 40) {
-            interpretation = 'Moderate vision. You may benefit from corrective lenses.';
-            recommendation = 'Schedule an eye examination to determine the appropriate prescription.';
-            color = '#f59e0b';
-        } else if (numericValue <= 70) {
-            interpretation = 'Poor vision. Consultation with an eye care professional is recommended.';
-            recommendation = 'Please consult an optometrist or ophthalmologist for a comprehensive eye exam.';
-            color = '#ef4444';
-        } else {
-            interpretation = 'Very poor vision. Professional eye examination is strongly recommended.';
-            recommendation = 'Immediate consultation with an eye care professional is advised.';
-            color = '#dc2626';
-        }
+        interpretation = 'Very poor vision. Professional eye examination is strongly recommended.';
     }
     
-    // Enhanced result display
-    if (window.TestImprovements && window.TestImprovements.ui) {
-        resultText.innerHTML = window.TestImprovements.ui.createResultCard(
-            'Visual Acuity Result',
-            size,
-            interpretation,
-            recommendation,
-            color
-        );
-    } else {
-        resultText.textContent = `Your visual acuity: ${size}. ${interpretation}`;
-    }
-    
+    resultText.textContent = `Your visual acuity: ${size}. ${interpretation}`;
     resultsDiv.style.display = 'block';
 }
 
@@ -2352,61 +2318,11 @@ async function useCurrentLocation() {
             }
         },
         (error) => {
+            alert('Could not get your location. Please enter it manually.');
             console.error('Geolocation error:', error);
-            // Show manual location input instead of alert
-            showManualLocationPrompt();
-        },
-        {
-            timeout: 15000,
-            enableHighAccuracy: false,
-            maximumAge: 300000 // 5 minutes cache
         }
     );
 }
-
-// Show manual location prompt when geolocation fails
-function showManualLocationPrompt() {
-    const locationInput = document.getElementById('location-input');
-    if (locationInput) {
-        locationInput.placeholder = 'Enter city or address (e.g., Johannesburg, South Africa)';
-        locationInput.focus();
-        locationInput.style.borderColor = '#667eea';
-        
-        // Show helpful message
-        const helpText = document.createElement('div');
-        helpText.id = 'location-help';
-        helpText.style.cssText = 'margin-top: 0.5rem; padding: 0.75rem; background: #f0f9ff; border: 1px solid #667eea; border-radius: 8px; font-size: 0.9rem; color: #1e40af;';
-        helpText.innerHTML = `
-            <strong>💡 Quick Options:</strong>
-            <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button onclick="setLocation('Johannesburg')" style="padding: 0.4rem 0.8rem; background: white; border: 1px solid #667eea; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Johannesburg</button>
-                <button onclick="setLocation('Cape Town')" style="padding: 0.4rem 0.8rem; background: white; border: 1px solid #667eea; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Cape Town</button>
-                <button onclick="setLocation('Durban')" style="padding: 0.4rem 0.8rem; background: white; border: 1px solid #667eea; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Durban</button>
-                <button onclick="setLocation('Pretoria')" style="padding: 0.4rem 0.8rem; background: white; border: 1px solid #667eea; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">Pretoria</button>
-            </div>
-        `;
-        
-        // Remove existing help text if any
-        const existing = document.getElementById('location-help');
-        if (existing) existing.remove();
-        
-        // Insert help text after input
-        locationInput.parentNode.insertBefore(helpText, locationInput.nextSibling);
-    }
-}
-
-// Set location from quick button
-function setLocation(city) {
-    const locationInput = document.getElementById('location-input');
-    if (locationInput) {
-        locationInput.value = city + ', South Africa';
-        searchProfessionals();
-    }
-}
-
-// Make functions globally available
-window.setLocation = setLocation;
-window.showManualLocationPrompt = showManualLocationPrompt;
 
 function searchProfessionals() {
     const location = document.getElementById('location-input').value;

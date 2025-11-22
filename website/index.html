@@ -3,350 +3,717 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spect-IT - Advanced Professional Eye Testing Platform</title>
-    <meta name="description" content="Professional-grade eye testing platform with comprehensive vision assessments. Visual acuity, color blindness, astigmatism, prescription measurement, and more.">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
+    <!-- Primary Meta Tags -->
+    <title>Spect-IT - Professional Vision Testing Tools</title>
+    <meta name="title" content="Spect-IT - Professional Vision Testing Tools">
+    <meta name="description" content="Free online eye testing app with visual acuity, color blindness, and astigmatism tests. Professional vision screening tools for home use.">
+    <meta name="keywords" content="eye test, vision test, visual acuity, color blindness test, astigmatism test, eye exam, vision screening, Snellen chart, Ishihara test">
+    <meta name="author" content="Spect-IT">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tanyastrauss1.github.io/Spect-IT/">
+    <meta property="og:title" content="Spect-IT - Professional Vision Testing Tools">
+    <meta property="og:description" content="Free online eye testing app with visual acuity, color blindness, and astigmatism tests. Professional vision screening tools for home use.">
+    <meta property="og:image" content="https://tanyastrauss1.github.io/Spect-IT/og-image.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://tanyastrauss1.github.io/Spect-IT/">
+    <meta property="twitter:title" content="Spect-IT - Professional Vision Testing Tools">
+    <meta property="twitter:description" content="Free online eye testing app with visual acuity, color blindness, and astigmatism tests. Professional vision screening tools for home use.">
+    <meta property="twitter:image" content="https://tanyastrauss1.github.io/Spect-IT/og-image.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="logo-icon.svg">
+    <link rel="alternate icon" href="logo-icon.svg">
+    <link rel="apple-touch-icon" href="logo-icon.svg">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- Stylesheet -->
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="user-signed-in-styles.css">
-    <link rel="stylesheet" href="premium-styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@2.0.4/dist/face-landmarks-detection.min.js"></script>
-    <!-- Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Premium Features -->
-    <script src="premium-features.js"></script>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    
+    <!-- Google Places API - Key will be loaded from config.js -->
+    <script>
+        // Google Places API will be loaded dynamically after config loads
+    </script>
+    
+    <!-- TensorFlow.js for face detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Spect-IT",
+      "description": "Professional vision testing tools including visual acuity, color blindness, and astigmatism tests",
+      "url": "https://tanyastrauss1.github.io/Spect-IT/",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.5",
+        "ratingCount": "1"
+      }
+    }
+    </script>
 </head>
 <body>
-    <header>
-        <nav class="container">
-            <div class="logo">
-                <span class="logo-icon">👁️</span>
-                <span>Spect-IT</span>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="eye-logo.jpg" 
+                     alt="Spect-IT Logo" 
+                     class="main-logo" 
+                     onerror="this.onerror=null; this.src='logo.svg';" />
+                <div class="logo-text">
+                    <h1>Spect-IT</h1>
+                    <p class="subtitle">Professional Vision Testing Tools</p>
+                </div>
             </div>
-            <ul class="nav-links">
-                <li><a href="#home" class="nav-link active">Home</a></li>
-                <li><a href="#tests" class="nav-link">Tests</a></li>
-                <li><a href="#shop" class="nav-link">Shop</a></li>
-                <li><a href="#find-specialists" class="nav-link">Find Specialists</a></li>
-                <li><a href="#results" class="nav-link">Results</a></li>
-                <li><a href="#history" class="nav-link">History</a></li>
-            </ul>
+        </header>
+
+        <nav class="test-nav">
+            <button class="nav-btn active" data-test="home">Home</button>
+            <button class="nav-btn" data-test="results">Results</button>
+            <button class="nav-btn" data-test="acuity">Visual Acuity</button>
+            <button class="nav-btn" data-test="color">Color Blindness</button>
+            <button class="nav-btn" data-test="astigmatism">Astigmatism</button>
+            <button class="nav-btn" data-test="prescription">Prescription</button>
+            <div class="nav-dropdown">
+                <button class="nav-btn" id="more-tests-btn">More Tests ▼</button>
+                <div class="dropdown-content" id="dropdown-content">
+                    <button class="nav-btn-dropdown" data-test="contrast">Contrast Sensitivity</button>
+                    <button class="nav-btn-dropdown" data-test="depth">Depth Perception</button>
+                    <button class="nav-btn-dropdown" data-test="visualfield">Visual Field</button>
+                    <button class="nav-btn-dropdown" data-test="dominance">Eye Dominance</button>
+                    <button class="nav-btn-dropdown" data-test="nearvision">Near Vision</button>
+                </div>
+            </div>
+            <button class="nav-btn" data-test="shop">Shop</button>
         </nav>
-    </header>
 
-    <main>
-        <!-- Hero Section -->
-        <section id="home" class="hero">
-            <div class="container">
-                <div class="premium-badge" style="margin-bottom: 1rem;">Premium Advanced Eye Testing</div>
-                <h1>The Most Advanced Eye Testing Platform</h1>
-                <p class="hero-subtitle">AI-powered professional-grade vision assessment with 3D face mapping, advanced eye tracking, and comprehensive analytics</p>
-                <div class="hero-features">
-                    <div class="feature-item">
-                        <span class="feature-icon">🔬</span>
-                        <span>Accurate Results</span>
+        <main>
+            <!-- Home Screen -->
+            <section id="home" class="test-section active">
+                <div class="welcome">
+                    <div class="welcome-logo">
+                        <img src="eye-logo.jpg" 
+                             alt="Spect-IT" 
+                             class="welcome-logo-img" 
+                             onerror="this.onerror=null; this.src='logo.svg';" />
                     </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">📊</span>
-                        <span>Comprehensive Results</span>
+                    <h2>Welcome to Spect-IT</h2>
+                    <p class="welcome-description">Professional vision testing platform with advanced LiDAR-based measurements. Comprehensive eye health assessment at your fingertips.</p>
+                    
+                    <div class="test-cards">
+                        <div class="test-card" data-test="acuity">
+                            <h3>Visual Acuity Test</h3>
+                            <p>Test your ability to see clearly at various distances (Snellen chart)</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="color">
+                            <h3>Color Blindness Test</h3>
+                            <p>Detect color vision deficiencies using Ishihara-style plates</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="astigmatism">
+                            <h3>Astigmatism Test</h3>
+                            <p>Check for astigmatism using radial line patterns</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="prescription">
+                            <h3>🔬 Prescription Test</h3>
+                            <p>LiDAR-based refractive error measurement for spectacle prescription</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="contrast">
+                            <h3>Contrast Sensitivity</h3>
+                            <p>Test your ability to distinguish objects from their background</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="depth">
+                            <h3>Depth Perception</h3>
+                            <p>Test your 3D vision and stereopsis ability</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="visualfield">
+                            <h3>Visual Field Test</h3>
+                            <p>Check your peripheral vision and detect blind spots</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="dominance">
+                            <h3>Eye Dominance Test</h3>
+                            <p>Determine which eye is your dominant eye</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
+                        
+                        <div class="test-card" data-test="nearvision">
+                            <h3>Near Vision Test</h3>
+                            <p>Test your ability to see clearly up close for reading</p>
+                            <button class="start-btn">Start Test</button>
+                        </div>
                     </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">📱</span>
-                        <span>Device Compatible</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">🔒</span>
-                        <span>Secure & Private</span>
+
+                    <div class="instructions">
+                        <div class="instructions-header">
+                            <img src="logo-icon.svg" alt="Spect-IT" class="instructions-icon" />
+                            <h3>General Instructions</h3>
+                        </div>
+                        <ul>
+                            <li>Position yourself 6 feet (2 meters) from your screen</li>
+                            <li>Ensure good lighting conditions</li>
+                            <li>Remove glasses or contacts if testing without them</li>
+                            <li>Cover one eye at a time during tests</li>
+                            <li>Take your time and be honest with your responses</li>
+                        </ul>
+                        <p class="disclaimer">⚠️ This app is for informational purposes only and does not replace professional eye examinations.</p>
                     </div>
                 </div>
-                <a href="#tests" class="btn btn-primary">Start Testing</a>
-            </div>
-        </section>
+            </section>
 
-        <!-- Tests Section -->
-        <section id="tests" class="tests-section">
-            <div class="container">
-                <h2>Vision Tests</h2>
-                <p class="section-subtitle">Comprehensive eye health assessment tools</p>
-                
-                <div class="tests-grid">
-                    <!-- Visual Acuity Test -->
-                    <div class="test-card" data-test="visual-acuity">
-                        <div class="test-icon">📏</div>
-                        <h3>Visual Acuity Test</h3>
-                        <p>Measure distance and near vision using Snellen chart</p>
-                        <div class="test-details">
-                            <span class="test-duration">⏱️ 3-5 min</span>
-                            <span class="test-accuracy">🎯 High Accuracy</span>
-                        </div>
-                        <button class="btn btn-test" onclick="startVisualAcuityTest()">Start Test</button>
+            <!-- Visual Acuity Test -->
+            <section id="acuity" class="test-section">
+                <div class="test-container">
+                    <h2>Visual Acuity Test</h2>
+                    <div class="test-instructions">
+                        <p>Cover one eye and read the letters from top to bottom. Click on the smallest line you can read clearly.</p>
+                        <p>Distance: <span id="distance-display">6 feet</span></p>
+                        <button id="distance-toggle" class="btn-secondary">Toggle Distance (6ft / 20ft)</button>
                     </div>
-
-                    <!-- Color Blindness Test -->
-                    <div class="test-card" data-test="color-blindness">
-                        <div class="test-icon">🎨</div>
-                        <h3>Color Blindness Test</h3>
-                        <p>Detect color vision deficiencies (Ishihara plates)</p>
-                        <div class="test-details">
-                            <span class="test-duration">⏱️ 2-3 min</span>
-                            <span class="test-accuracy">🎯 High Accuracy</span>
-                        </div>
-                        <button class="btn btn-test" onclick="startColorBlindnessTest()">Start Test</button>
+                    
+                    <div class="snellen-chart" id="snellen-chart">
+                        <!-- Will be generated by JavaScript -->
                     </div>
-
-                    <!-- Astigmatism Test -->
-                    <div class="test-card" data-test="astigmatism">
-                        <div class="test-icon">⚫</div>
-                        <h3>Astigmatism Test</h3>
-                        <p>Check for corneal irregularities and astigmatism</p>
-                        <div class="test-details">
-                            <span class="test-duration">⏱️ 2-3 min</span>
-                            <span class="test-accuracy">🎯 High Accuracy</span>
-                        </div>
-                        <button class="btn btn-test" onclick="startAstigmatismTest()">Start Test</button>
+                    
+                    <div class="test-results" id="acuity-results" style="display: none;">
+                        <h3>Your Results:</h3>
+                        <p id="acuity-result-text"></p>
                     </div>
-
-                    <!-- Contrast Sensitivity Test -->
-                    <div class="test-card" data-test="contrast">
-                        <div class="test-icon">🌓</div>
-                        <h3>Contrast Sensitivity</h3>
-                        <p>Evaluate vision in low-light conditions</p>
-                        <div class="test-details">
-                            <span class="test-duration">⏱️ 3-4 min</span>
-                            <span class="test-accuracy">🎯 High Accuracy</span>
-                        </div>
-                        <button class="btn btn-test" onclick="startContrastTest()">Start Test</button>
-                    </div>
-
-                    <!-- Visual Field Test -->
-                    <div class="test-card" data-test="visual-field">
-                        <div class="test-icon">👁️</div>
-                        <h3>Visual Field Test</h3>
-                        <p>Check peripheral vision and blind spots</p>
-                        <div class="test-details">
-                            <span class="test-duration">⏱️ 5-7 min</span>
-                            <span class="test-accuracy">🎯 High Accuracy</span>
-                        </div>
-                        <button class="btn btn-test" onclick="startVisualFieldTest()">Start Test</button>
-                    </div>
-
-                    <!-- Prescription Test -->
-                    <div class="test-card" data-test="prescription">
-                        <div class="test-icon">🔍</div>
-                        <h3>Prescription Measurement</h3>
-                        <p>Estimate eyeglass prescription strength</p>
-                        <div class="test-details">
-                            <span class="test-duration">⏱️ 5-10 min</span>
-                            <span class="test-accuracy">🎯 Medium Accuracy</span>
-                        </div>
-                        <button class="btn btn-test" onclick="startPrescriptionTest()">Start Test</button>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="resetAcuityTest()">Reset Test</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Test Modal -->
-        <div id="test-modal" class="modal">
-            <div class="modal-content">
-                <button class="modal-close" onclick="closeTest()">&times;</button>
-                <div id="test-container"></div>
-            </div>
-        </div>
-
-        <!-- Results Section -->
-        <section id="results" class="results-section">
-            <div class="container">
-                <h2>Test Results</h2>
-                <!-- Premium Dashboard -->
-                <div id="premium-dashboard"></div>
-                <div id="results-container">
-                    <div class="no-results">
-                        <p>No test results yet. Complete a test to see your results here.</p>
+            <!-- Color Blindness Test -->
+            <section id="color" class="test-section">
+                <div class="test-container">
+                    <h2>Color Blindness Test</h2>
+                    <div class="test-instructions">
+                        <p>Look at each plate and enter the number you see. If you don't see a number, enter "0".</p>
+                        <p>Plate <span id="plate-number">1</span> of <span id="total-plates">10</span></p>
+                    </div>
+                    
+                    <div class="ishihara-container">
+                        <canvas id="ishihara-canvas"></canvas>
+                    </div>
+                    
+                    <div class="input-controls">
+                        <input type="number" id="color-input" min="0" max="99" placeholder="Enter number you see" />
+                        <button class="btn-primary" onclick="submitColorAnswer()">Submit</button>
+                    </div>
+                    
+                    <div class="test-results" id="color-results" style="display: none;">
+                        <h3>Your Results:</h3>
+                        <p id="color-result-text"></p>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="resetColorTest()">Reset Test</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Shop Section -->
-        <section id="shop" class="shop-section premium-medical-shop">
-            <div class="container">
-                <div class="shop-header-premium">
-                    <div class="premium-badge">🏥 Medical Grade</div>
-                    <h2 class="premium-title">Professional Eyewear Collection</h2>
-                    <p class="premium-subtitle">Curated selection of clinically-tested optical products from certified South African retailers. Each product meets our rigorous standards for quality, safety, and optical precision.</p>
-                    <div class="premium-trust-badges">
-                        <div class="trust-badge">
-                            <span class="trust-icon">✓</span>
-                            <span>HPCSA Certified Retailers</span>
+            <!-- Astigmatism Test -->
+            <section id="astigmatism" class="test-section">
+                <div class="test-container">
+                    <h2>Astigmatism Test</h2>
+                    <div class="test-instructions">
+                        <p>Cover one eye and look at the center of the image. Do all lines appear equally dark and clear?</p>
+                        <p>If some lines appear blurry, thicker, or darker than others, you may have astigmatism.</p>
+                    </div>
+                    
+                    <div class="astigmatism-container">
+                        <canvas id="astigmatism-canvas"></canvas>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="resetAstigmatismTest()">Regenerate Pattern</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                    
+                    <div class="test-results">
+                        <h3>What to Look For:</h3>
+                        <ul>
+                            <li>All lines should appear equally sharp and dark</li>
+                            <li>If vertical lines appear blurry: possible astigmatism with vertical axis</li>
+                            <li>If horizontal lines appear blurry: possible astigmatism with horizontal axis</li>
+                            <li>If diagonal lines appear blurry: possible astigmatism with oblique axis</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prescription Test -->
+            <section id="prescription" class="test-section">
+                <div class="test-container">
+                    <h2>🔬 Prescription Test</h2>
+                    <div class="test-instructions">
+                        <p><strong>Advanced LiDAR Measurement</strong> - Uses device sensors to measure distance and calculate refractive error.</p>
+                        <p id="device-status">Checking device capabilities...</p>
+                        <p id="sensor-status"></p>
+                    </div>
+                    
+                    <div class="prescription-test-area">
+                        <div class="distance-display" id="distance-display">
+                            <h3>Distance: <span id="distance-value">--</span> cm</h3>
                         </div>
-                        <div class="trust-badge">
-                            <span class="trust-icon">✓</span>
-                            <span>Authentic Products Only</span>
+                        
+                        <canvas id="prescription-canvas" style="display: none;"></canvas>
+                        
+                        <div class="focus-test" id="focus-test">
+                            <h3>Focus Test</h3>
+                            <p>Position yourself 40-60cm from the screen. Focus on the center target.</p>
+                            <div class="focus-target" id="focus-target">
+                                <div class="target-circle"></div>
+                                <p class="target-text">FOCUS HERE</p>
+                            </div>
+                            <button class="btn-primary" id="start-measurement">Start Measurement</button>
                         </div>
-                        <div class="trust-badge">
-                            <span class="trust-icon">✓</span>
-                            <span>Prescription Verified</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="shop-filters">
-                    <div class="category-tabs">
-                        <button class="category-tab active" data-category="all" onclick="filterProducts('all')">All Products</button>
-                        <button class="category-tab" data-category="contact-lenses" onclick="filterProducts('contact-lenses')">Contact Lenses</button>
-                        <button class="category-tab" data-category="frames" onclick="filterProducts('frames')">Spectacle Frames</button>
-                        <button class="category-tab" data-category="sunglasses" onclick="filterProducts('sunglasses')">Sunglasses</button>
-                        <button class="category-tab" data-category="reading-glasses" onclick="filterProducts('reading-glasses')">Reading Glasses</button>
-                    </div>
-                    <div class="search-bar">
-                        <div class="search-input-wrapper">
-                            <input type="text" id="product-search" placeholder="Search products by name, brand, or description..." 
-                                   onkeyup="searchProducts()" 
-                                   onfocus="this.placeholder='Type to search...'"
-                                   onblur="this.placeholder='Search products by name, brand, or description...'">
-                            <button class="search-clear-btn" id="search-clear-btn" onclick="clearSearch()" style="display: none;">&times;</button>
-                            <button class="btn btn-secondary" onclick="showAdvancedFilters()" style="margin-left: 0.5rem;">🔍 Filters</button>
-                        </div>
-                        <div id="search-results-count" class="search-results-count"></div>
-                        <div id="advanced-filters" class="advanced-filters" style="display: none;"></div>
-                    </div>
-                </div>
-                
-                <div id="products-container" class="products-grid">
-                    <!-- Products will be loaded here -->
-                </div>
-                
-                <div id="products-loading" style="display: none; text-align: center; padding: 2rem;">
-                    <p>Loading products...</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Shopping Cart -->
-        <div id="cart-sidebar" class="cart-sidebar">
-            <div class="cart-header">
-                <h3>Shopping Cart</h3>
-                <button class="cart-close" onclick="toggleCart()">&times;</button>
-            </div>
-            <div id="cart-items" class="cart-items">
-                <p class="cart-empty">Your cart is empty</p>
-            </div>
-            <div class="cart-footer">
-                <div class="cart-summary">
-                    <div class="cart-row">
-                        <span>Subtotal:</span>
-                        <span id="cart-subtotal">R0.00</span>
-                    </div>
-                    <div class="cart-row">
-                        <span>VAT (15%):</span>
-                        <span id="cart-vat">R0.00</span>
-                    </div>
-                    <div class="cart-row cart-total">
-                        <span>Total:</span>
-                        <span id="cart-total">R0.00</span>
-                    </div>
-                </div>
-                <button class="btn btn-primary" id="checkout-btn" onclick="proceedToCheckout()" disabled>Proceed to Checkout</button>
-            </div>
-        </div>
-
-        <!-- Cart Button -->
-        <button id="cart-button" class="cart-button" onclick="toggleCart()">
-            🛒 <span id="cart-count">0</span>
-        </button>
-
-        <!-- Find Specialists Section -->
-        <section id="find-specialists" class="specialists-section">
-            <div class="container">
-                <h2>Find Eye Care Specialists</h2>
-                <p class="section-subtitle">Search all optometrists, ophthalmologists, and opticians across South Africa - organized by province and proximity</p>
-                <div id="specialists-summary"></div>
-                
-                <div class="location-controls">
-                    <div class="location-status" id="location-status">
-                        <span id="location-text">Click to find specialists near you</span>
-                        <div>
-                            <button class="btn btn-primary" id="find-specialists-btn" onclick="findNearestSpecialists()">Find Nearest Specialists</button>
-                            <button class="btn btn-secondary" onclick="showManualLocationInput()" style="margin-left: 0.5rem;">Enter Location</button>
-                            <button class="btn btn-secondary" onclick="testSpecialistFinder()" style="margin-left: 0.5rem; font-size: 0.85rem;">🔧 Test</button>
+                        
+                        <div class="measurement-progress" id="measurement-progress" style="display: none;">
+                            <h3>Measuring...</h3>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <p>Keep focusing on the target. Hold still.</p>
+                            <p id="measurement-countdown"></p>
                         </div>
                     </div>
                     
-                    <div class="distance-filter" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                        <label for="distance-slider" style="font-weight: 600; color: #333;">
-                            📏 Maximum Distance:
-                        </label>
-                        <input type="range" id="distance-slider" min="10" max="500" value="50" step="10" 
-                               oninput="updateDistanceFilter(this.value)" 
-                               style="flex: 1; min-width: 200px;">
-                        <span id="distance-value" style="font-weight: 600; color: #667eea; min-width: 80px;">
-                            50 km
-                        </span>
-                        <button class="btn btn-secondary" onclick="applyDistanceFilter()" style="font-size: 0.9rem;">
-                            Apply Filter
-                        </button>
+                    <div class="prescription-results" id="prescription-results" style="display: none;">
+                        <h3>Your Prescription Estimate</h3>
+                        <div class="prescription-card">
+                            <div class="prescription-eye">
+                                <h4>Right Eye (OD)</h4>
+                                <div class="prescription-values">
+                                    <p><strong>Sphere:</strong> <span id="rx-od-sphere">--</span> D</p>
+                                    <p><strong>Cylinder:</strong> <span id="rx-od-cylinder">--</span> D</p>
+                                    <p><strong>Axis:</strong> <span id="rx-od-axis">--</span>°</p>
+                                </div>
+                            </div>
+                            <div class="prescription-eye">
+                                <h4>Left Eye (OS)</h4>
+                                <div class="prescription-values">
+                                    <p><strong>Sphere:</strong> <span id="rx-os-sphere">--</span> D</p>
+                                    <p><strong>Cylinder:</strong> <span id="rx-os-cylinder">--</span> D</p>
+                                    <p><strong>Axis:</strong> <span id="rx-os-axis">--</span>°</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="prescription-notes">
+                            <p><strong>Estimated PD (Pupillary Distance):</strong> <span id="rx-pd">--</span> mm</p>
+                            <p class="disclaimer">⚠️ This is an estimate based on distance measurements. For accurate prescriptions, consult an optometrist.</p>
+                        </div>
+                        <div class="prescription-actions">
+                            <button class="btn-primary" onclick="downloadPrescription()">Download Prescription</button>
+                            <button class="btn-secondary" onclick="resetPrescriptionTest()">Test Again</button>
+                        </div>
                     </div>
                     
-                    <div class="filter-controls" id="filter-controls" style="display: none;">
-                        <label>Filter by type:</label>
-                        <select id="specialist-type-filter" onchange="filterSpecialists()">
-                            <option value="all">All Specialists</option>
-                            <option value="optometrist">Optometrists</option>
-                            <option value="ophthalmologist">Ophthalmologists</option>
-                            <option value="optician">Opticians</option>
-                        </select>
-                        <label style="margin-left: 1rem;">Max distance:</label>
-                        <select id="distance-filter" onchange="filterSpecialists()">
-                            <option value="5">5 km</option>
-                            <option value="10" selected>10 km</option>
-                            <option value="20">20 km</option>
-                            <option value="50">50 km</option>
-                        </select>
+                    <div class="test-controls">
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
                     </div>
                 </div>
-                
-                <div id="specialists-container" class="specialists-grid">
-                    <!-- Specialists will be loaded here -->
-                </div>
-                
-                <div id="specialists-loading" style="display: none; text-align: center; padding: 2rem;">
-                    <p>Searching for specialists...</p>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- History Section -->
-        <section id="history" class="history-section">
-            <div class="container">
-                <h2>Test History</h2>
-                <div id="history-container">
-                    <canvas id="history-chart"></canvas>
+            <!-- Contrast Sensitivity Test -->
+            <section id="contrast" class="test-section">
+                <div class="test-container">
+                    <h2>Contrast Sensitivity Test</h2>
+                    <div class="test-instructions">
+                        <p>Cover one eye and look at the center. Can you see the letters? Click "Yes" if visible, "No" if not.</p>
+                        <p>Level <span id="contrast-level">1</span> of <span id="contrast-total">8</span></p>
+                    </div>
+                    
+                    <div class="contrast-test-area" id="contrast-test-area">
+                        <canvas id="contrast-canvas"></canvas>
+                    </div>
+                    
+                    <div class="input-controls">
+                        <button class="btn-primary" onclick="contrastAnswer(true)">Yes, I can see it</button>
+                        <button class="btn-secondary" onclick="contrastAnswer(false)">No, I cannot see it</button>
+                    </div>
+                    
+                    <div class="test-results" id="contrast-results" style="display: none;">
+                        <h3>Your Results:</h3>
+                        <p id="contrast-result-text"></p>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="resetContrastTest()">Reset Test</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
                 </div>
-            </div>
-        </section>
-    </main>
+            </section>
 
-    <footer>
-        <div class="container">
-            <p>Spect-IT © 2024 | Professional Eye Testing Platform</p>
-            <p class="disclaimer">For informational purposes only. Consult a professional for real results.</p>
-        </div>
-    </footer>
+            <!-- Depth Perception Test -->
+            <section id="depth" class="test-section">
+                <div class="test-container">
+                    <h2>Depth Perception (Stereopsis) Test</h2>
+                    <div class="test-instructions">
+                        <p>Look at the image below. Which circle appears to float in front? This test requires both eyes open.</p>
+                        <p>Trial <span id="depth-trial">1</span> of <span id="depth-total">5</span></p>
+                    </div>
+                    
+                    <div class="stereo-test-area">
+                        <canvas id="stereo-canvas"></canvas>
+                    </div>
+                    
+                    <div class="stereo-options" id="stereo-options">
+                        <!-- Options will be generated by JavaScript -->
+                    </div>
+                    
+                    <div class="test-results" id="depth-results" style="display: none;">
+                        <h3>Your Results:</h3>
+                        <p id="depth-result-text"></p>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="resetDepthTest()">Reset Test</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                </div>
+            </section>
 
+            <!-- Visual Field Test -->
+            <section id="visualfield" class="test-section">
+                <div class="test-container">
+                    <h2>Visual Field Test</h2>
+                    <div class="test-instructions">
+                        <p>Cover one eye and focus on the center cross. Click when you see a flash of light appear.</p>
+                        <p>Testing: <span id="field-eye">Right Eye</span></p>
+                        <p>Progress: <span id="field-progress">0</span>%</p>
+                    </div>
+                    
+                    <div class="visual-field-area">
+                        <canvas id="visual-field-canvas"></canvas>
+                    </div>
+                    
+                    <div class="test-results" id="visualfield-results" style="display: none;">
+                        <h3>Your Visual Field Map:</h3>
+                        <canvas id="field-map-canvas"></canvas>
+                        <p id="field-result-text"></p>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" id="start-field-test">Start Test</button>
+                        <button class="btn-primary" onclick="resetVisualFieldTest()" style="display: none;" id="reset-field-btn">Reset Test</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Eye Dominance Test -->
+            <section id="dominance" class="test-section">
+                <div class="test-container">
+                    <h2>Eye Dominance Test</h2>
+                    <div class="test-instructions">
+                        <p>Hold your device at arm's length. Focus on the target with both eyes open.</p>
+                        <p>Step <span id="dominance-step">1</span> of <span id="dominance-total">3</span></p>
+                    </div>
+                    
+                    <div class="dominance-test-area">
+                        <div class="dominance-target" id="dominance-target">
+                            <div class="target-hole">🔍</div>
+                            <p>Focus here with both eyes</p>
+                        </div>
+                        <div class="dominance-instruction" id="dominance-instruction">
+                            <p>Cover your right eye with your hand</p>
+                            <button class="btn-primary" onclick="dominanceStep(1)">Right Eye Covered</button>
+                        </div>
+                        <div class="dominance-instruction" id="dominance-instruction-2" style="display: none;">
+                            <p>Now cover your left eye</p>
+                            <button class="btn-primary" onclick="dominanceStep(2)">Left Eye Covered</button>
+                        </div>
+                    </div>
+                    
+                    <div class="test-results" id="dominance-results" style="display: none;">
+                        <h3>Your Result:</h3>
+                        <p id="dominance-result-text"></p>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="resetDominanceTest()">Reset Test</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Account Section -->
+            <section id="account" class="test-section">
+                <div class="test-container">
+                    <h2>👤 Your Account</h2>
+                    <div class="account-container">
+                        <div class="login-section" id="login-section">
+                            <h3>Sign In / Sign Up</h3>
+                            <div class="account-form">
+                                <input type="email" id="user-email" placeholder="Email address" />
+                                <input type="password" id="user-password" placeholder="Password" />
+                                <button class="btn-primary" onclick="signIn()">Sign In</button>
+                                <button class="btn-secondary" onclick="signUp()">Create Account</button>
+                                <p class="account-note">Or continue without account (data stored locally)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="user-dashboard" id="user-dashboard" style="display: none;">
+                            <div class="user-info">
+                                <h3>Welcome, <span id="user-name">User</span>!</h3>
+                                <p>Email: <span id="user-email-display"></span></p>
+                                <button class="btn-secondary" onclick="signOut()">Sign Out</button>
+                            </div>
+                            
+                            <div class="test-history">
+                                <h3>Your Test History</h3>
+                                <div id="test-history-list" class="history-list">
+                                    <!-- Test history will be displayed here -->
+                                </div>
+                            </div>
+                            
+                            <div class="saved-prescriptions">
+                                <h3>Saved Prescriptions</h3>
+                                <div id="saved-prescriptions-list" class="prescriptions-list">
+                                    <!-- Prescriptions will be displayed here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Dashboard -->
+            <section id="results" class="test-section">
+                <div class="test-container">
+                    <h2>📊 Your Vision Test Results</h2>
+                    <div class="results-dashboard">
+                        <div class="results-summary">
+                            <h3>Test Summary</h3>
+                            <div class="results-grid" id="results-grid">
+                                <!-- Results will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="recommendations-section">
+                            <h3>💡 Recommendations</h3>
+                            <div id="recommendations-content">
+                                <p>Complete tests to see personalized recommendations.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="find-professional">
+                            <h3>👨‍⚕️ Find Local Eye Care Professional</h3>
+                            <div class="search-professional">
+                                <input type="text" id="location-input" placeholder="Enter your city or ZIP code" />
+                                <button class="btn-primary" onclick="searchProfessionals()">Search</button>
+                                <button class="btn-secondary" onclick="useCurrentLocation()">📍 Use Current Location</button>
+                            </div>
+                            <div class="search-filters">
+                                <select id="professional-type">
+                                    <option value="optometrist">Optometrist</option>
+                                    <option value="ophthalmologist">Ophthalmologist</option>
+                                    <option value="optician">Optician</option>
+                                    <option value="">All Types</option>
+                                </select>
+                                <select id="distance-filter">
+                                    <option value="5000">Within 5 km</option>
+                                    <option value="10000" selected>Within 10 km</option>
+                                    <option value="25000">Within 25 km</option>
+                                </select>
+                            </div>
+                            <div id="professionals-list" class="professionals-list">
+                                <!-- Professionals will be listed here -->
+                            </div>
+                        </div>
+                        
+                        <div class="eye-health-qa">
+                            <h3>❓ Ask Eye Health Questions</h3>
+                            <p>Get answers to your eye health questions powered by AI</p>
+                            <div class="qa-input-area">
+                                <textarea id="health-question" placeholder="Ask any question about eye health, vision, or eye care..."></textarea>
+                                <button class="btn-primary" onclick="askHealthQuestion()">Ask Question</button>
+                            </div>
+                            <div id="health-answer" class="health-answer">
+                                <!-- Answers will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="saveTestResults()">💾 Save Results</button>
+                        <button class="btn-primary" onclick="downloadFullReport()">Download Full Report</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Eyewear Shop -->
+            <section id="shop" class="test-section">
+                <div class="test-container">
+                    <h2>🛍️ Eyewear Shop</h2>
+                    <div class="shop-container">
+                        <div class="shop-categories">
+                            <button class="shop-category-btn active" data-category="frames">Glasses Frames</button>
+                            <button class="shop-category-btn" data-category="sunglasses">Sunglasses</button>
+                            <button class="shop-category-btn" data-category="contacts">Contact Lenses</button>
+                        </div>
+                        
+                        <div class="virtual-tryon-section">
+                            <h3>Virtual Try-On</h3>
+                            <p>Use your camera to see how frames look on you</p>
+                            <div class="tryon-area">
+                                <canvas id="tryon-canvas"></canvas>
+                                <video id="tryon-video" autoplay playsinline style="display: none;"></video>
+                                <div class="tryon-controls">
+                                    <button class="btn-primary" id="start-tryon">Start Camera</button>
+                                    <button class="btn-secondary" id="stop-tryon" style="display: none;">Stop Camera</button>
+                                    <button class="btn-primary" id="capture-tryon" style="display: none;">Capture Photo</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="product-grid" id="product-grid">
+                            <!-- Products will be loaded here -->
+                        </div>
+                        
+                        <div class="local-retailers">
+                            <h3>📍 Find Local Retailers</h3>
+                            <div class="search-retailer">
+                                <input type="text" id="retailer-location" placeholder="Enter your location" />
+                                <button class="btn-primary" onclick="searchRetailers()">Search Retailers</button>
+                                <button class="btn-secondary" onclick="useCurrentLocationForRetailers()">📍 Use Current Location</button>
+                            </div>
+                            <div id="retailers-list" class="retailers-list"></div>
+                        </div>
+                        
+                        <div class="shopping-cart-section">
+                            <h3>🛒 Shopping Cart (<span id="cart-count">0</span>)</h3>
+                            <div id="cart-items" class="cart-items"></div>
+                            <div class="cart-total">
+                                <p><strong>Total: $<span id="cart-total">0.00</span></strong></p>
+                                <button class="btn-primary" onclick="checkout()">Proceed to Checkout</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Near Vision Test -->
+            <section id="nearvision" class="test-section">
+                <div class="test-container">
+                    <h2>Near Vision Test</h2>
+                    <div class="test-instructions">
+                        <p>Hold your device at your normal reading distance (about 14-16 inches). Cover one eye and read the smallest text you can clearly see.</p>
+                        <p>Distance: <span id="near-distance">14 inches</span></p>
+                        <button id="near-distance-toggle" class="btn-secondary">Change Distance</button>
+                    </div>
+                    
+                    <div class="near-vision-chart" id="near-vision-chart">
+                        <!-- Will be generated by JavaScript -->
+                    </div>
+                    
+                    <div class="test-results" id="nearvision-results" style="display: none;">
+                        <h3>Your Results:</h3>
+                        <p id="nearvision-result-text"></p>
+                    </div>
+                    
+                    <div class="test-controls">
+                        <button class="btn-primary" onclick="resetNearVisionTest()">Reset Test</button>
+                        <button class="btn-secondary" onclick="showTest('home')">Back to Home</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>
+                <img src="logo-icon.svg" alt="Spect-IT" class="footer-logo" />
+                Spect-IT © 2025 | For informational purposes only
+            </p>
+        </footer>
+    </div>
+
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Supabase Configuration -->
     <script src="supabase-config.js"></script>
-    <script src="spectit-location.js"></script>
-    <script src="spectit-virtual-tryon.js"></script>
-    <script src="product-scraper.js"></script>
-    <script src="lidar-engine.js"></script>
-    <script src="email-signup-modal.js"></script>
-    <script src="premium-dashboard.js"></script>
-    <script src="tests.js"></script>
+    
+    <!-- Configuration (load first) -->
+    <script src="config.js"></script>
+    
+    <!-- Supabase Client Setup -->
+    <script src="js/supabase-client.js"></script>
+    
+    <!-- Database Service -->
+    <script src="js/database-service.js"></script>
+    
+    <!-- Shopping Service -->
+    <script src="js/shopping-service.js"></script>
+    
+    <!-- Authentication UI -->
+    <script src="js/auth-ui.js"></script>
+    
+    <!-- Test Improvements -->
+    <script src="test-improvements.js"></script>
+    
+    <!-- Main Application -->
     <script src="app.js"></script>
-    <script src="specialists.js"></script>
-    <script src="shop.js"></script>
-    <link rel="stylesheet" href="premium-shop-styles.css">
-    <link rel="stylesheet" href="email-signup-styles.css">
-    <link rel="stylesheet" href="lidar-styles.css">
+    
+    <!-- Initialize Auth UI on page load -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.AuthUI) {
+                window.AuthUI.init();
+            }
+        });
+    </script>
 </body>
 </html>
+

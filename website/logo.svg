@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <!-- Gradient for eye -->
+    <linearGradient id="eyeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#667eea;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Gradient for iris -->
+    <radialGradient id="irisGradient" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.3" />
+      <stop offset="70%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="url(#eyeGradient)" opacity="0.1"/>
+  
+  <!-- Eye shape (almond) -->
+  <path d="M 50 100 Q 50 60, 100 60 Q 150 60, 150 100 Q 150 140, 100 140 Q 50 140, 50 100" 
+        fill="url(#eyeGradient)" 
+        stroke="#ffffff" 
+        stroke-width="2"
+        filter="url(#glow)"/>
+  
+  <!-- Upper eyelid -->
+  <path d="M 50 100 Q 50 60, 100 60 Q 150 60, 150 100" 
+        fill="none" 
+        stroke="#764ba2" 
+        stroke-width="3"
+        opacity="0.6"/>
+  
+  <!-- Iris -->
+  <circle cx="100" cy="100" r="35" fill="url(#irisGradient)" opacity="0.9"/>
+  
+  <!-- Iris detail rings -->
+  <circle cx="100" cy="100" r="35" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
+  <circle cx="100" cy="100" r="28" fill="none" stroke="#764ba2" stroke-width="1" opacity="0.4"/>
+  
+  <!-- Pupil -->
+  <circle cx="100" cy="100" r="18" fill="#000000" opacity="0.8"/>
+  
+  <!-- Highlight -->
+  <ellipse cx="95" cy="95" rx="6" ry="8" fill="#ffffff" opacity="0.9"/>
+  
+  <!-- Eyelashes (top) -->
+  <path d="M 60 65 L 62 55" stroke="#764ba2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 75 60 L 77 50" stroke="#764ba2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 90 58 L 92 48" stroke="#764ba2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 105 58 L 107 48" stroke="#764ba2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 120 60 L 122 50" stroke="#764ba2" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 135 65 L 137 55" stroke="#764ba2" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Eyelashes (bottom) -->
+  <path d="M 65 135 L 67 145" stroke="#764ba2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 80 138 L 82 148" stroke="#764ba2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 95 140 L 97 150" stroke="#764ba2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 110 140 L 112 150" stroke="#764ba2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 125 138 L 127 148" stroke="#764ba2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 140 135 L 142 145" stroke="#764ba2" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+</svg>
+
