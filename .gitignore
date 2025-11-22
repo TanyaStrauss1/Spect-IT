@@ -112,3 +112,12 @@ mutagen/
 .capacitor/
 ios/App/Pods/
 android/app/build/
+
+# Security: Sensitive configuration files
+website/supabase-config.js
+website/spectit-location.js
+website/set-api-keys.sh
+website/config/.env*
+**/config.js
+**/*-config.js
+**/*-keys.js
