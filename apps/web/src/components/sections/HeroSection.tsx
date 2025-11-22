@@ -6,7 +6,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Button } from '@spect-it/ui'
+import { Button } from '../components/ui'
 
 export function HeroSection() {
   return (

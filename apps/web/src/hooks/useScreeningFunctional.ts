@@ -12,7 +12,7 @@ import {
   type ScreeningInputs,
   type ScreeningOutputs,
   type ScreeningBackend,
-} from "@spect-it/models";
+} from "../lib/models/screening/model-functional";
 
 type UseScreeningFunctionalOptions = {
   modelUrl: string;

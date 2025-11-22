@@ -7,8 +7,8 @@
 
 import React, { useState } from "react";
 import { useScreeningModel, type ScreeningInput } from "../hooks/useScreeningModel";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@spect-it/ui";
-import { LiDARDetector, EyeLandmarkDetector, PupilGeometryExtractor } from "@spect-it/cv";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "../components/ui";
+import { LiDARDetector, EyeLandmarkDetector, PupilGeometryExtractor } from "@/lib/cv"";
 
 export function ScreeningTestComponent() {
   const { isLoading, error, predict, modelStatus } = useScreeningModel({

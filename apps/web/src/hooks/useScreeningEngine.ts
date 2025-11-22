@@ -9,7 +9,7 @@ import {
   runScreening,
   type ScreeningInputs,
   type ScreeningOutputs,
-} from "@spect-it/models";
+} from "../lib/models/screening/model-functional";
 
 export function useScreeningEngine() {
   const [loading, setLoading] = useState(true);

@@ -5,7 +5,7 @@
 'use client'
 
 import { HowItWorksSection } from '@/components/sections/HowItWorksSection'
-import { Card, CardContent } from '@spect-it/ui'
+import { Card, CardContent } from '../components/ui'
 
 export default function HowItWorksPage() {
   return (

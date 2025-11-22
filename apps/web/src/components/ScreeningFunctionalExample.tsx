@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { useScreeningFunctional, type ScreeningInputs } from "../hooks/useScreeningFunctional";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@spect-it/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "../components/ui";
 
 export function ScreeningFunctionalExample() {
   const { isLoading, error, predict, isLoaded } = useScreeningFunctional({

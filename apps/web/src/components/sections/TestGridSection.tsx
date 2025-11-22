@@ -5,7 +5,7 @@
 
 'use client'
 
-import { TestCard } from '@spect-it/ui'
+import { TestCard } from '../components/ui'
 import Link from 'next/link'
 
 const tests = [

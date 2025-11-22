@@ -6,8 +6,8 @@
 
 import { useState, useEffect } from 'react'
 import { supabase, TestResult } from '@/lib/supabase'
-import { ResultCard } from '@spect-it/ui'
-import { Card, CardHeader, CardTitle, CardContent } from '@spect-it/ui'
+import { ResultCard } from '../components/ui'
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui'
 
 export default function DashboardPage() {
   const [results, setResults] = useState<TestResult[]>([])

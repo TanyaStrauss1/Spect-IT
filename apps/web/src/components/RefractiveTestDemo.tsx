@@ -7,8 +7,8 @@
 
 import React, { useState } from "react";
 import { useScreeningEngine } from "../hooks/useScreeningEngine";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@spect-it/ui";
-import { LiDARDetector, EyeLandmarkDetector, PupilGeometryExtractor } from "@spect-it/cv";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "../components/ui";
+import { LiDARDetector, EyeLandmarkDetector, PupilGeometryExtractor } from "@/lib/cv"";
 
 export function RefractiveTestDemo() {
   const { status, error, predictRefractive, engineStatus } = useScreeningEngine("webgl", true);

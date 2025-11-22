@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ScreeningInput, ScreeningModel, ScreeningOutput } from "@spect-it/models";
+import { ScreeningInput, ScreeningModel, ScreeningOutput } from "../lib/models/screening/screening-model";
 
 type UseScreeningModelOptions = {
   modelUrl: string;

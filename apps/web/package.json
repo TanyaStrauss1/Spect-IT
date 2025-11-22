@@ -13,9 +13,6 @@
     "next": "^15.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@spect-it/ui": "workspace:*",
-    "@spect-it/cv": "workspace:*",
-    "@spect-it/models": "workspace:*",
     "@supabase/supabase-js": "^2.39.0",
     "@tensorflow/tfjs": "^4.10.0",
     "@tensorflow-models/face-landmarks-detection": "^2.0.4"

@@ -5,7 +5,7 @@
 
 'use client'
 
-import { Card, CardContent } from '@spect-it/ui'
+import { Card, CardContent } from '../components/ui'
 
 const steps = [
   {

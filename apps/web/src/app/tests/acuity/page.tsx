@@ -5,9 +5,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { LiDARDetector, DistanceCalibrator, EyeLandmarkDetector } from '@spect-it/cv'
-import { AcuityScorer } from '@spect-it/models'
-import { Button, Card, CardContent } from '@spect-it/ui'
+import { LiDARDetector, DistanceCalibrator, EyeLandmarkDetector } from "@/lib/cv"'
+import { AcuityScorer } from "@/lib/models/screening/model-functional"'
+import { Button, Card, CardContent } from '../components/ui'
 
 export default function AcuityTestPage() {
   const [distance, setDistance] = useState<number | null>(null)

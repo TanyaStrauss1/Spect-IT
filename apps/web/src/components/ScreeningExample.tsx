@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { useScreeningModel, type ScreeningInput } from "../hooks/useScreeningModel";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@spect-it/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "../components/ui";
 
 export function ScreeningExample() {
   const { isLoading, error, predict } = useScreeningModel({
