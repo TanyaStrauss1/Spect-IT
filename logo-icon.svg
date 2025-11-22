@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#764ba2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#667eea;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="iconIris" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.5" />
+      <stop offset="50%" style="stop-color:#a8c0ff;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#667eea;stop-opacity:1" />
+    </radialGradient>
+    <filter id="iconGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#iconGrad)" opacity="0.2" filter="url(#iconGlow)"/>
+  
+  <!-- Eye shape -->
+  <path d="M 20 50 
+           Q 20 25, 50 25 
+           Q 80 25, 80 50 
+           Q 80 75, 50 75 
+           Q 20 75, 20 50" 
+        fill="url(#iconGrad)" 
+        stroke="#ffffff" 
+        stroke-width="2"
+        filter="url(#iconGlow)"/>
+  
+  <!-- Upper eyelid -->
+  <path d="M 20 50 Q 20 25, 50 25 Q 80 25, 80 50" 
+        fill="none" 
+        stroke="#764ba2" 
+        stroke-width="2.5"
+        stroke-linecap="round"
+        opacity="0.7"/>
+  
+  <!-- Iris -->
+  <circle cx="50" cy="50" r="20" fill="url(#iconIris)"/>
+  
+  <!-- Iris ring -->
+  <circle cx="50" cy="50" r="20" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Pupil -->
+  <circle cx="50" cy="50" r="11" fill="#000000"/>
+  
+  <!-- Main highlight -->
+  <ellipse cx="47" cy="47" rx="5" ry="7" fill="#ffffff" opacity="0.9"/>
+  
+  <!-- Secondary highlight -->
+  <ellipse cx="52" cy="52" rx="3" ry="4" fill="#ffffff" opacity="0.6"/>
+  
+  <!-- Sparkle -->
+  <circle cx="48" cy="48" r="1.5" fill="#ffffff" opacity="1"/>
+  
+  <!-- Top eyelashes -->
+  <path d="M 30 35 Q 28 32, 26 29" stroke="#764ba2" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 40 32 Q 38 29, 36 26" stroke="#764ba2" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+  <path d="M 50 31 Q 50 28, 50 25" stroke="#764ba2" stroke-width="2" stroke-linecap="round" opacity="1"/>
+  <path d="M 60 32 Q 62 29, 64 26" stroke="#764ba2" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+  <path d="M 70 35 Q 72 32, 74 29" stroke="#764ba2" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+</svg>

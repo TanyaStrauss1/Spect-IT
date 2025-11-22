@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://tanyastrauss1.github.io/Spect-IT/sitemap.xml
+
