@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Spect-IT",
+    "slug": "spect-it-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spectit.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Spect-IT uses your camera to perform professional eye tests and vision measurements.",
+        "NSPhotoLibraryUsageDescription": "Spect-IT saves your test results and reports to your photo library.",
+        "NSLocationWhenInUseUsageDescription": "Spect-IT uses your location to find nearby eye care professionals and retailers."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "package": "com.spectit.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-location"
+    ]
+  }
+}
+

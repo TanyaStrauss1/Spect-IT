@@ -5,69 +5,90 @@ node_modules/
 
 # Testing
 coverage/
+.nyc_output
 
-# Production
+# Next.js
+.next/
+out/
 build/
 dist/
 
-# Misc
-.DS_Store
-.env.local
+# Production
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Environment variables
+.env
+.env*.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Vercel
+.vercel
 
-# Credentials - DO NOT COMMIT
-*.exp
-*credentials*
-*password*
-*apple_id*
-SpectITMobile/build_ios*.exp
-SpectITMobile/build_with_password.exp
-SpectITMobile/.env
-
-# Build artifacts
-*.ipa
-*.app
-*.aab
-*.apk
+# Turbo
+.turbo
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Other projects (monorepo)
-EquiLedger*/
-event*/
-*Platform*/
+# Expo
+.expo/
+.expo-shared/
 
-# Docker and socket files
-.docker/
-*.sock
-mutagen/
+# iOS
+ios/Pods/
+ios/build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
 
-# Xcode build artifacts
-Library/
-*.xcworkspace
-*.xcodeproj
-!SpectITMobile/*.xcodeproj
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+*.apk
+*.aab
+*.ap_
+*.aab
+local.properties
+.gradle/
 
-# Ignore files outside project directory
-Spect-IT/SpectITMobile/
+# Capacitor
+.capacitor/
 
-# Docker and socket files (for EAS builds)
-.docker/
-mutagen/
-*.sock
-**/*.sock
+# TypeScript
+*.tsbuildinfo
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,29 @@
+# Supabase Configuration
+project_id = "lecwenhoatzpnvmhoiua"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[functions]
+verify_jwt = false
+
+[storage]
+file_size_limit = "50MiB"
+
+[edge_runtime]
+enabled = true
+ip_version = "ipv4"
+

@@ -1,29 +1,30 @@
 {
-  "name": "spect-it",
+  "name": "spect-it-monorepo",
   "version": "1.0.0",
-  "description": "Professional Vision Testing Application with LiDAR-based prescription measurement",
-  "main": "index.html",
-  "scripts": {
-    "dev": "npx serve .",
-    "start": "npx serve .",
-    "build": "echo 'No build step required - static site'"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/TanyaStrauss1/Spect-IT.git"
-  },
-  "keywords": [
-    "vision-test",
-    "eye-test",
-    "health",
-    "optometry",
-    "prescription",
-    "lidar"
+  "private": true,
+  "description": "Spect-IT - Advanced Professional Eye Testing Platform Monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
   ],
-  "author": "TanyaStrauss1",
-  "license": "MIT",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "web:dev": "turbo run dev --filter=web",
+    "web:build": "turbo run build --filter=web",
+    "mobile:dev": "turbo run dev --filter=mobile",
+    "mobile:build": "turbo run build --filter=mobile"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.0"
+  },
   "engines": {
-    "node": ">=14.x"
-  }
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "packageManager": "npm@9.0.0"
 }
-

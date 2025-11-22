@@ -1,123 +1,101 @@
-# 👁️ Spect-IT
+# Spect-IT Monorepo
 
-A professional web application for vision testing, featuring multiple eye examination tools. 
+Advanced Professional Eye Testing Platform with AI-powered vision assessments.
 
-**🌐 Live Website**: [https://tanyastrauss1.github.io/Spect-IT/](https://tanyastrauss1.github.io/Spect-IT/)
+## 🏗️ Monorepo Structure
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PWA](https://img.shields.io/badge/PWA-Ready-673ab7.svg)](https://web.dev/progressive-web-apps/)
-
-## Features
-
-### 1. Visual Acuity Test (Snellen Chart)
-- Traditional Snellen chart for testing visual acuity
-- Adjustable distance (6 feet / 20 feet)
-- Interactive line selection
-- Results interpretation based on your score
-
-### 2. Color Blindness Test
-- Ishihara-style color plates
-- 10 test plates with numbers
-- Detects color vision deficiencies
-- Detailed results with interpretation
-
-### 3. Astigmatism Test
-- Radial line pattern test
-- Helps identify astigmatism
-- Clear instructions on what to look for
-
-## 🚀 Quick Start
-
-### Local Development
-
-1. **Clone or Download**: Get the files from this repository
-2. **Open**: Simply open `index.html` in a modern web browser
-3. **No Installation Required**: Everything runs in the browser!
-
-### Online Deployment (GitHub Pages)
-
-1. **Create GitHub Repository**: 
-   - Create a new repository named `Spect-IT`
-   - Push all files to the repository
-
-2. **Enable GitHub Pages**:
-   - Go to Settings → Pages
-   - Select source branch (usually `main` or `master`)
-   - Select root folder
-   - Click Save
-
-3. **URLs** (Already Configured!):
-   - ✅ All URLs are already set with your GitHub username
-   - Repository name: `Spect-IT`
-
-4. **Access Your Site**: 
-   - Your site will be available at: `https://tanyastrauss1.github.io/Spect-IT/`
-
-## 📱 How to Use
-
-1. **Open the App**: Visit the website or open `index.html` locally
-2. **Choose a Test**: Navigate using the top menu or click on test cards
-3. **Follow Instructions**: Each test has specific instructions - read them carefully
-4. **Take the Test**: Follow the prompts and interact with the test elements
-5. **View Results**: Get instant feedback on your vision test results
-6. **Install as PWA**: On mobile/desktop, you can install the app for offline access!
-
-## General Instructions
-
-Before taking any test:
-- Position yourself 6 feet (2 meters) from your screen
-- Ensure good lighting conditions
-- Remove glasses or contacts if testing without them
-- Cover one eye at a time during tests
-- Take your time and be honest with your responses
-
-## Requirements
-
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- No additional installations required - runs entirely in the browser
-
-## 🛠️ Technical Details
-
-### Technologies
-- **Frontend**: Pure HTML5, CSS3, JavaScript (ES6+)
-- **No Dependencies**: Zero external libraries required
-- **PWA Ready**: Progressive Web App with manifest.json
-- **SEO Optimized**: Meta tags, Open Graph, Structured Data
-- **Responsive**: Works on desktop, tablet, and mobile devices
-- **Canvas API**: For rendering visual test patterns
-
-### Features
-- ✅ Mobile-responsive design
-- ✅ Progressive Web App (PWA) support
-- ✅ SEO optimized with meta tags
-- ✅ Social media sharing (Open Graph)
-- ✅ Accessible UI/UX
-- ✅ No server required
-- ✅ Works offline (when installed as PWA)
-- ✅ Fast loading (no external dependencies)
-
-### File Structure
 ```
 spect-it/
-├── index.html          # Main HTML file
-├── styles.css          # All styles
-├── app.js             # Application logic
-├── manifest.json      # PWA manifest
-├── favicon.svg        # App icon
-├── robots.txt         # SEO crawler instructions
-├── sitemap.xml        # Site map for search engines
-├── .gitignore        # Git ignore file
-├── .nojekyll         # Disable Jekyll for GitHub Pages
-└── README.md         # This file
+├── apps/
+│   ├── web/           → Next.js 15 (Vision tests + Marketplace + Dashboard)
+│   └── mobile/        → Expo React Native (iOS + Android Vision Tests)
+│
+├── packages/
+│   ├── ui/            → Shared UI component library (shadcn/ui + NativeBase)
+│   ├── cv/            → Computer vision + LiDAR utilities
+│   ├── api/           → Supabase edge functions
+│   └── models/        → ML models (TensorFlow.js + ONNX)
+│
+└── turbo.json         → Turborepo configuration
 ```
 
-## Important Disclaimer
+## 🚀 Getting Started
 
-⚠️ **This app is for informational purposes only and does not replace professional eye examinations.**
+### Prerequisites
 
-The results provided by this application are estimates and should not be used as a substitute for a comprehensive eye examination by a qualified optometrist or ophthalmologist. If you have concerns about your vision, please consult with an eye care professional.
+- Node.js 18+
+- npm 9+
+- Expo CLI (for mobile development)
+- Supabase account (for backend)
 
-## License
+### Installation
 
-Free to use for personal and educational purposes.
+```bash
+# Install all dependencies
+npm install
 
+# Install dependencies for a specific workspace
+npm install --workspace=apps/web
+npm install --workspace=apps/mobile
+```
+
+## 📱 Development
+
+### Web App (Next.js 15)
+
+```bash
+# Start development server
+npm run web:dev
+
+# Build for production
+npm run web:build
+```
+
+### Mobile App (Expo React Native)
+
+```bash
+# Start Expo development server
+npm run mobile:dev
+
+# Build for iOS/Android
+npm run mobile:build
+```
+
+### All Apps
+
+```bash
+# Run all apps in development mode
+npm run dev
+
+# Build all apps
+npm run build
+
+# Lint all packages
+npm run lint
+```
+
+## 📦 Packages
+
+### `packages/ui`
+Shared UI component library using shadcn/ui for web and NativeBase for mobile.
+
+### `packages/cv`
+Computer vision utilities including LiDAR distance measurement, face detection, and eye tracking.
+
+### `packages/api`
+Supabase edge functions for backend API endpoints.
+
+### `packages/models`
+ML models for vision testing, including TensorFlow.js and ONNX models.
+
+## 🔧 Tech Stack
+
+- **Web**: Next.js 15, React, TypeScript, Tailwind CSS, shadcn/ui
+- **Mobile**: Expo, React Native, TypeScript, NativeBase
+- **Backend**: Supabase (PostgreSQL, Edge Functions, Auth)
+- **AI/ML**: TensorFlow.js, ONNX, MediaPipe, Face Landmarks Detection
+- **Build System**: Turborepo, npm workspaces
+
+## 📄 License
+
+© 2025 Spect-IT. All rights reserved.
