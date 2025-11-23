@@ -1060,13 +1060,18 @@ function startAstigmatismTestInternal() {
 function generateFanChartTests() {
     const tests = [];
     // Test at 15-degree intervals for comprehensive coverage
+    const lineCounts = [16, 18, 20, 22, 24, 26, 28, 30, 32, 20, 24, 28]; // Vary line counts
+    let lineIndex = 0;
     for (let angle = 0; angle < 180; angle += 15) {
         tests.push({
             type: 'fan',
-            lines: 24, // More lines for better detection
+            lines: lineCounts[lineIndex % lineCounts.length], // Vary line count for visual distinction
             angle: angle,
-            difficulty: angle % 30 === 0 ? 'standard' : 'detailed'
+            difficulty: angle % 30 === 0 ? 'standard' : 'detailed',
+            lineWidth: angle % 30 === 0 ? 2 : (angle % 15 === 0 ? 2.5 : 2), // Vary line thickness
+            radius: 180 + (lineIndex % 3) * 10 // Vary radius slightly
         });
+        lineIndex++;
     }
     return tests;
 }
@@ -1074,14 +1079,17 @@ function generateFanChartTests() {
 // Generate clock dial tests (12-hour positions)
 function generateClockDialTests() {
     const tests = [];
-    // Test all 12 clock positions
+    // Test all 12 clock positions with variations
+    const sizes = [280, 300, 320, 310, 290, 300, 315, 305, 295, 300, 325, 300]; // Vary dial size
     for (let hour = 1; hour <= 12; hour++) {
         const angle = (hour * 30) - 90; // Convert to degrees (12 o'clock = -90°)
         tests.push({
             type: 'clock',
             hour: hour,
             angle: angle,
-            lines: 12
+            lines: 12,
+            dialSize: sizes[hour - 1], // Vary dial size for visual distinction
+            markerStyle: hour % 3 === 0 ? 'bold' : 'normal' // Vary marker style
         });
     }
     return tests;
@@ -1090,14 +1098,19 @@ function generateClockDialTests() {
 // Generate parallel lines tests
 function generateParallelLinesTests() {
     const tests = [];
-    // Test parallel lines at various angles
+    // Test parallel lines at various angles with different configurations
     const angles = [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165];
-    angles.forEach(angle => {
+    const lineCounts = [6, 7, 8, 9, 10, 8, 7, 9, 8, 10, 7, 8]; // Vary line counts
+    const spacings = [18, 20, 22, 20, 19, 21, 20, 22, 19, 20, 21, 20]; // Vary spacing
+    const lineWidths = [2, 2.5, 2, 3, 2, 2.5, 2, 3, 2, 2.5, 2, 2.5]; // Vary line width
+    
+    angles.forEach((angle, index) => {
         tests.push({
             type: 'parallel',
             angle: angle,
-            lineCount: 8,
-            spacing: 20
+            lineCount: lineCounts[index], // Vary line count
+            spacing: spacings[index], // Vary spacing
+            lineWidth: lineWidths[index] // Vary line width
         });
     });
     return tests;
@@ -1106,14 +1119,19 @@ function generateParallelLinesTests() {
 // Generate cross pattern tests
 function generateCrossPatternTests() {
     const tests = [];
-    // Test cross patterns at different orientations
+    // Test cross patterns at different orientations with variations
     const angles = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5];
-    angles.forEach(angle => {
+    const sizes = [280, 300, 320, 310, 290, 300, 315, 305]; // Vary cross size
+    const lineWidths = [2.5, 3, 3.5, 3, 2.5, 3, 3.5, 3]; // Vary line width
+    const styles = ['standard', 'bold', 'standard', 'bold', 'standard', 'bold', 'standard', 'bold']; // Vary style
+    
+    angles.forEach((angle, index) => {
         tests.push({
             type: 'cross',
             angle: angle,
-            lineWidth: 3,
-            size: 300
+            lineWidth: lineWidths[index], // Vary line width
+            size: sizes[index], // Vary cross size
+            style: styles[index] // Vary style
         });
     });
     return tests;
@@ -1122,20 +1140,26 @@ function generateCrossPatternTests() {
 // Generate star burst tests
 function generateStarBurstTests() {
     const tests = [];
-    // Test star patterns with varying complexity
+    // Test star patterns with varying complexity and visual distinction
     const configurations = [
-        { points: 8, angle: 0 },
-        { points: 8, angle: 22.5 },
-        { points: 12, angle: 0 },
-        { points: 12, angle: 15 },
-        { points: 16, angle: 0 },
-        { points: 16, angle: 11.25 }
+        { points: 8, angle: 0, radius: 180, lineWidth: 2 },
+        { points: 8, angle: 22.5, radius: 190, lineWidth: 2.5 },
+        { points: 10, angle: 18, radius: 185, lineWidth: 2 },
+        { points: 12, angle: 0, radius: 180, lineWidth: 2.5 },
+        { points: 12, angle: 15, radius: 195, lineWidth: 2 },
+        { points: 14, angle: 12.86, radius: 190, lineWidth: 2.5 },
+        { points: 16, angle: 0, radius: 185, lineWidth: 2 },
+        { points: 16, angle: 11.25, radius: 200, lineWidth: 2.5 },
+        { points: 18, angle: 10, radius: 195, lineWidth: 2 },
+        { points: 20, angle: 9, radius: 190, lineWidth: 2.5 }
     ];
-    configurations.forEach(config => {
+    configurations.forEach((config, index) => {
         tests.push({
             type: 'starburst',
             points: config.points,
-            angle: config.angle
+            angle: config.angle,
+            radius: config.radius, // Vary radius
+            lineWidth: config.lineWidth // Vary line width
         });
     });
     return tests;
@@ -1212,40 +1236,42 @@ function generateTestPattern(image, testTypeName) {
     
     switch (testTypeName) {
         case 'Fan Chart Test':
-            svg += generateFanChartSVG(size, image.lines, image.angle);
+            svg += generateFanChartSVG(size, image.lines, image.angle, image.lineWidth, image.radius);
             break;
         case 'Clock Dial Test':
-            svg += generateClockDialSVG(size, image.hour, image.angle);
+            svg += generateClockDialSVG(size, image.hour, image.angle, image.dialSize, image.markerStyle);
             break;
         case 'Parallel Lines Test':
-            svg += generateParallelLinesSVG(size, image.angle, image.lineCount, image.spacing);
+            svg += generateParallelLinesSVG(size, image.angle, image.lineCount, image.spacing, image.lineWidth);
             break;
         case 'Cross Pattern Test':
-            svg += generateCrossPatternSVG(size, image.angle, image.size);
+            svg += generateCrossPatternSVG(size, image.angle, image.size, image.lineWidth, image.style);
             break;
         case 'Star Burst Test':
-            svg += generateStarBurstSVG(size, image.points, image.angle);
+            svg += generateStarBurstSVG(size, image.points, image.angle, image.radius, image.lineWidth);
             break;
         default:
-            svg += generateFanChartSVG(size, 24, 0);
+            svg += generateFanChartSVG(size, 24, 0, 2, 180);
     }
     
     svg += '</svg>';
     return svg;
 }
 
-function generateFanChartSVG(size, lineCount, angle) {
+function generateFanChartSVG(size, lineCount, angle, lineWidth = 2, radiusOverride = null) {
     const centerX = size / 2;
     const centerY = size / 2;
-    const radius = size / 2 - 20;
+    const baseRadius = size / 2 - 20;
+    const radius = radiusOverride ? radiusOverride : baseRadius;
     const angleStep = 360 / lineCount;
+    const strokeWidth = lineWidth || 2;
     let svg = '';
     
     for (let i = 0; i < lineCount; i++) {
         const lineAngle = (i * angleStep + angle) * Math.PI / 180;
         const x2 = centerX + Math.cos(lineAngle) * radius;
         const y2 = centerY + Math.sin(lineAngle) * radius;
-        svg += `<line x1="${centerX}" y1="${centerY}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="2"/>`;
+        svg += `<line x1="${centerX}" y1="${centerY}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="${strokeWidth}"/>`;
     }
     
     // Add center circle
@@ -1253,10 +1279,11 @@ function generateFanChartSVG(size, lineCount, angle) {
     return svg;
 }
 
-function generateClockDialSVG(size, hour, angle) {
+function generateClockDialSVG(size, hour, angle, dialSize = null, markerStyle = 'normal') {
     const centerX = size / 2;
     const centerY = size / 2;
-    const radius = size / 2 - 30;
+    const baseRadius = size / 2 - 30;
+    const radius = dialSize ? (dialSize / 2) : baseRadius;
     let svg = '';
     
     // Draw clock face circle
@@ -1265,16 +1292,18 @@ function generateClockDialSVG(size, hour, angle) {
     // Draw hour markers
     for (let h = 1; h <= 12; h++) {
         const hourAngle = ((h * 30) - 90) * Math.PI / 180;
-        const x1 = centerX + Math.cos(hourAngle) * (radius - 15);
-        const y1 = centerY + Math.sin(hourAngle) * (radius - 15);
+        const markerLength = markerStyle === 'bold' ? 20 : 15;
+        const x1 = centerX + Math.cos(hourAngle) * (radius - markerLength);
+        const y1 = centerY + Math.sin(hourAngle) * (radius - markerLength);
         const x2 = centerX + Math.cos(hourAngle) * radius;
         const y2 = centerY + Math.sin(hourAngle) * radius;
         const isHighlighted = h === hour;
-        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${isHighlighted ? '#ff0000' : '#000000'}" stroke-width="${isHighlighted ? '4' : '2'}"/>`;
+        const strokeWidth = isHighlighted ? '4' : (markerStyle === 'bold' ? '3' : '2');
+        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${isHighlighted ? '#ff0000' : '#000000'}" stroke-width="${strokeWidth}"/>`;
         // Hour numbers
         const textX = centerX + Math.cos(hourAngle) * (radius - 25);
         const textY = centerY + Math.sin(hourAngle) * (radius - 25);
-        svg += `<text x="${textX}" y="${textY}" text-anchor="middle" font-size="16" font-weight="${isHighlighted ? 'bold' : 'normal'}" fill="${isHighlighted ? '#ff0000' : '#000000'}">${h}</text>`;
+        svg += `<text x="${textX}" y="${textY}" text-anchor="middle" font-size="16" font-weight="${isHighlighted ? 'bold' : (markerStyle === 'bold' ? 'bold' : 'normal')}" fill="${isHighlighted ? '#ff0000' : '#000000'}">${h}</text>`;
     }
     
     // Center point
@@ -1282,11 +1311,12 @@ function generateClockDialSVG(size, hour, angle) {
     return svg;
 }
 
-function generateParallelLinesSVG(size, angle, lineCount, spacing) {
+function generateParallelLinesSVG(size, angle, lineCount, spacing, lineWidth = 2) {
     const centerX = size / 2;
     const centerY = size / 2;
     const angleRad = angle * Math.PI / 180;
     const totalHeight = (lineCount - 1) * spacing;
+    const strokeWidth = lineWidth || 2;
     let svg = '';
     
     for (let i = 0; i < lineCount; i++) {
@@ -1295,17 +1325,19 @@ function generateParallelLinesSVG(size, angle, lineCount, spacing) {
         const y1 = centerY - Math.sin(angleRad) * (size / 2) + Math.cos(angleRad) * offset;
         const x2 = centerX + Math.cos(angleRad) * (size / 2) - Math.sin(angleRad) * offset;
         const y2 = centerY + Math.sin(angleRad) * (size / 2) + Math.cos(angleRad) * offset;
-        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="2"/>`;
+        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="${strokeWidth}"/>`;
     }
     
     return svg;
 }
 
-function generateCrossPatternSVG(size, angle, patternSize) {
+function generateCrossPatternSVG(size, angle, patternSize, lineWidth = 3, style = 'standard') {
     const centerX = size / 2;
     const centerY = size / 2;
     const angleRad = angle * Math.PI / 180;
     const halfSize = patternSize / 2;
+    const strokeWidth = lineWidth || 3;
+    const strokeColor = style === 'bold' ? '#000000' : '#000000';
     let svg = '';
     
     // Horizontal line
@@ -1313,33 +1345,35 @@ function generateCrossPatternSVG(size, angle, patternSize) {
     const hy1 = centerY - Math.sin(angleRad) * halfSize;
     const hx2 = centerX + Math.cos(angleRad) * halfSize;
     const hy2 = centerY + Math.sin(angleRad) * halfSize;
-    svg += `<line x1="${hx1}" y1="${hy1}" x2="${hx2}" y2="${hy2}" stroke="#000000" stroke-width="3"/>`;
+    svg += `<line x1="${hx1}" y1="${hy1}" x2="${hx2}" y2="${hy2}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>`;
     
     // Vertical line
     const vx1 = centerX - Math.cos(angleRad + Math.PI / 2) * halfSize;
     const vy1 = centerY - Math.sin(angleRad + Math.PI / 2) * halfSize;
     const vx2 = centerX + Math.cos(angleRad + Math.PI / 2) * halfSize;
     const vy2 = centerY + Math.sin(angleRad + Math.PI / 2) * halfSize;
-    svg += `<line x1="${vx1}" y1="${vy1}" x2="${vx2}" y2="${vy2}" stroke="#000000" stroke-width="3"/>`;
+    svg += `<line x1="${vx1}" y1="${vy1}" x2="${vx2}" y2="${vy2}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>`;
     
     // Center point
     svg += `<circle cx="${centerX}" cy="${centerY}" r="5" fill="#ff0000"/>`;
     return svg;
 }
 
-function generateStarBurstSVG(size, points, angle) {
+function generateStarBurstSVG(size, points, angle, radiusOverride = null, lineWidth = 2) {
     const centerX = size / 2;
     const centerY = size / 2;
-    const radius = size / 2 - 20;
+    const baseRadius = size / 2 - 20;
+    const radius = radiusOverride ? radiusOverride : baseRadius;
     const angleStep = (360 / points) * Math.PI / 180;
     const startAngle = angle * Math.PI / 180;
+    const strokeWidth = lineWidth || 2;
     let svg = '';
     
     for (let i = 0; i < points; i++) {
         const lineAngle = startAngle + i * angleStep;
         const x2 = centerX + Math.cos(lineAngle) * radius;
         const y2 = centerY + Math.sin(lineAngle) * radius;
-        svg += `<line x1="${centerX}" y1="${centerY}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="2"/>`;
+        svg += `<line x1="${centerX}" y1="${centerY}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="${strokeWidth}"/>`;
     }
     
     // Center circle
