@@ -1,9 +1,21 @@
+# Google API Key Website Restrictions
+# Copy each line below into Google Cloud Console → API Key → Application restrictions → HTTP referrers
+
+# PRODUCTION DOMAINS (Required)
 https://www.spect-it.com/*
 https://spect-it.com/*
 https://spect-it.vercel.app/*
+
+# VERCEL PREVIEW DEPLOYMENTS (Required for preview URLs)
 https://*.vercel.app/*
+
+# LOCAL DEVELOPMENT (Required for testing)
 http://localhost:3000/*
 http://127.0.0.1:3000/*
 http://localhost/*
 http://127.0.0.1/*
 
+# OPTIONAL: Additional ports for development
+http://localhost:8080/*
+http://localhost:5173/*
+http://localhost:5000/*

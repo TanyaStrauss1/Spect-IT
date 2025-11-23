@@ -1,15 +1,23 @@
 /**
  * Next.js 15 App Router - Root Layout
- * World-Class Structure
+ * Advanced Platform with All Providers
  */
 
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { QueryProvider } from '@/lib/providers/QueryProvider'
+import { ToastProvider } from '@/components/ui/Toast'
+import { Analytics } from '@/lib/analytics/analytics'
+import { SpeedInsights } from '@/lib/analytics/analytics'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'Spect-IT – LiDAR-Enhanced Digital Vision Screening for Emerging Markets',
@@ -21,6 +29,15 @@ export const metadata: Metadata = {
     description: 'Professional-grade eye testing powered by AI and computer vision',
     type: 'website',
   },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
 }
 
 export default function RootLayout({
@@ -29,11 +46,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body className={inter.className}>
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        <QueryProvider>
+          <Header />
+          <main className="min-h-screen">{children}</main>
+          <Footer />
+          <ToastProvider />
+          <Analytics />
+          <SpeedInsights />
+        </QueryProvider>
       </body>
     </html>
   )

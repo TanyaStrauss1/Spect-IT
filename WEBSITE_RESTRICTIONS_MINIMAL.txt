@@ -1,0 +1,10 @@
+# Minimal Required Restrictions (Copy these first)
+https://www.spect-it.com/*
+https://spect-it.com/*
+https://spect-it.vercel.app/*
+https://*.vercel.app/*
+http://localhost:3000/*
+http://127.0.0.1:3000/*
+http://localhost/*
+http://127.0.0.1/*
+

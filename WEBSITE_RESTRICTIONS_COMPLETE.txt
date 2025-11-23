@@ -1,0 +1,43 @@
+# Complete Website Restrictions List
+# Copy each URL (without the # comment) into Google Cloud Console
+
+# ============================================
+# PRODUCTION DOMAINS (Required)
+# ============================================
+https://www.spect-it.com/*
+https://spect-it.com/*
+https://spect-it.vercel.app/*
+
+# ============================================
+# VERCEL DEPLOYMENTS (Required)
+# ============================================
+https://*.vercel.app/*
+
+# ============================================
+# LOCAL DEVELOPMENT (Required)
+# ============================================
+http://localhost:3000/*
+http://127.0.0.1:3000/*
+http://localhost/*
+http://127.0.0.1/*
+
+# ============================================
+# ADDITIONAL DEVELOPMENT PORTS (Optional)
+# ============================================
+http://localhost:8080/*
+http://localhost:5173/*
+http://localhost:5000/*
+http://localhost:4000/*
+
+# ============================================
+# INSTRUCTIONS:
+# ============================================
+# 1. Go to: https://console.cloud.google.com/apis/credentials
+# 2. Click on your API key
+# 3. Under "Application restrictions" → Select "HTTP referrers (web sites)"
+# 4. Click "Add an item" for each URL above (skip lines starting with #)
+# 5. Paste one URL per field (include the /* at the end)
+# 6. Click "Save"
+# 
+# Note: Lines starting with # are comments - do NOT copy those
+
