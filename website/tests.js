@@ -996,7 +996,7 @@ function finishColorBlindnessTest() {
     showResult(result);
 }
 
-// Astigmatism Test
+// Enhanced Astigmatism Test with Multiple Test Types
 function startAstigmatismTest() {
     // Check if user has email before starting test
     if (window.requireEmailBeforeTest) {
@@ -1010,67 +1010,379 @@ function startAstigmatismTest() {
 }
 
 function startAstigmatismTestInternal() {
+    // Initialize AI Vision Engine for enhanced accuracy
+    if (window.aiVisionEngine && window.aiVisionEngine.startEyeTracking) {
+        window.aiVisionEngine.startEyeTracking();
+    }
+    
     currentTest = {
         type: 'astigmatism',
-        name: 'Astigmatism Test',
+        name: 'Enhanced Astigmatism Test',
+        currentTestType: 0,
         currentImage: 0,
         answers: [],
-        images: [
-            { lines: 12, angle: 0 },
-            { lines: 12, angle: 30 },
-            { lines: 12, angle: 60 },
-            { lines: 12, angle: 90 },
-            { lines: 12, angle: 120 },
-            { lines: 12, angle: 150 },
-        ]
+        testTypes: [
+            {
+                name: 'Fan Chart Test',
+                description: 'Radiating lines at multiple angles',
+                images: generateFanChartTests()
+            },
+            {
+                name: 'Clock Dial Test',
+                description: 'Clock face pattern for axis detection',
+                images: generateClockDialTests()
+            },
+            {
+                name: 'Parallel Lines Test',
+                description: 'Parallel lines at various orientations',
+                images: generateParallelLinesTests()
+            },
+            {
+                name: 'Cross Pattern Test',
+                description: 'Cross patterns for detailed analysis',
+                images: generateCrossPatternTests()
+            },
+            {
+                name: 'Star Burst Test',
+                description: 'Star pattern for comprehensive detection',
+                images: generateStarBurstTests()
+            }
+        ],
+        eyeTrackingData: [],
+        startTime: Date.now()
     };
+    
     showTestModal();
     renderAstigmatismTest();
 }
 
+// Generate comprehensive fan chart tests (radiating lines)
+function generateFanChartTests() {
+    const tests = [];
+    // Test at 15-degree intervals for comprehensive coverage
+    for (let angle = 0; angle < 180; angle += 15) {
+        tests.push({
+            type: 'fan',
+            lines: 24, // More lines for better detection
+            angle: angle,
+            difficulty: angle % 30 === 0 ? 'standard' : 'detailed'
+        });
+    }
+    return tests;
+}
+
+// Generate clock dial tests (12-hour positions)
+function generateClockDialTests() {
+    const tests = [];
+    // Test all 12 clock positions
+    for (let hour = 1; hour <= 12; hour++) {
+        const angle = (hour * 30) - 90; // Convert to degrees (12 o'clock = -90°)
+        tests.push({
+            type: 'clock',
+            hour: hour,
+            angle: angle,
+            lines: 12
+        });
+    }
+    return tests;
+}
+
+// Generate parallel lines tests
+function generateParallelLinesTests() {
+    const tests = [];
+    // Test parallel lines at various angles
+    const angles = [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165];
+    angles.forEach(angle => {
+        tests.push({
+            type: 'parallel',
+            angle: angle,
+            lineCount: 8,
+            spacing: 20
+        });
+    });
+    return tests;
+}
+
+// Generate cross pattern tests
+function generateCrossPatternTests() {
+    const tests = [];
+    // Test cross patterns at different orientations
+    const angles = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5];
+    angles.forEach(angle => {
+        tests.push({
+            type: 'cross',
+            angle: angle,
+            lineWidth: 3,
+            size: 300
+        });
+    });
+    return tests;
+}
+
+// Generate star burst tests
+function generateStarBurstTests() {
+    const tests = [];
+    // Test star patterns with varying complexity
+    const configurations = [
+        { points: 8, angle: 0 },
+        { points: 8, angle: 22.5 },
+        { points: 12, angle: 0 },
+        { points: 12, angle: 15 },
+        { points: 16, angle: 0 },
+        { points: 16, angle: 11.25 }
+    ];
+    configurations.forEach(config => {
+        tests.push({
+            type: 'starburst',
+            points: config.points,
+            angle: config.angle
+        });
+    });
+    return tests;
+}
+
 function renderAstigmatismTest() {
     const container = document.getElementById('test-container');
-    const image = currentTest.images[currentTest.currentImage];
+    const testType = currentTest.testTypes[currentTest.currentTestType];
+    const image = testType.images[currentTest.currentImage];
+    const totalTests = currentTest.testTypes.reduce((sum, tt) => sum + tt.images.length, 0);
+    const currentTestNumber = currentTest.testTypes.slice(0, currentTest.currentTestType)
+        .reduce((sum, tt) => sum + tt.images.length, 0) + currentTest.currentImage + 1;
+    
+    // Collect eye tracking data if available
+    if (window.aiVisionEngine && window.aiVisionEngine.getEyeMeasurements) {
+        const eyeData = window.aiVisionEngine.getEyeMeasurements();
+        if (eyeData) {
+            currentTest.eyeTrackingData.push({
+                timestamp: Date.now(),
+                data: eyeData
+            });
+        }
+    }
     
     container.innerHTML = `
         <div class="test-interface">
-            <h2 class="test-title">Astigmatism Test</h2>
+            <h2 class="test-title">Enhanced Astigmatism Test</h2>
             <div class="test-instructions">
+                <p><strong>Test Type:</strong> ${testType.name}</p>
                 <p><strong>Instructions:</strong></p>
-                <p>Cover one eye and look at the center of the circle.</p>
-                <p>Do all the lines appear equally dark and clear?</p>
-                <p>Image ${currentTest.currentImage + 1} of ${currentTest.images.length}</p>
+                <p>${getTestTypeInstructions(testType.name)}</p>
+                <p style="font-size: 0.9rem; color: #667eea; margin-top: 0.5rem;">
+                    Test ${currentTestNumber} of ${totalTests} | ${testType.name} (${currentTest.currentImage + 1}/${testType.images.length})
+                </p>
+                ${image.angle !== undefined ? `<p style="font-size: 0.85rem; color: #6b7280;">Orientation: ${image.angle}°</p>` : ''}
             </div>
-            <div class="test-display">
-                <div class="astigmatism-circle">
-                    <div class="astigmatism-lines">
-                        ${generateAstigmatismLines(image.lines, image.angle)}
-                    </div>
-                </div>
+            <div class="test-display" style="display: flex; justify-content: center; align-items: center; min-height: 400px; padding: 20px;">
+                ${generateTestPattern(image, testType.name)}
             </div>
-            <div class="test-controls">
-                <button class="btn-correct" onclick="answerAstigmatism(true)">All lines equal</button>
-                <button class="btn-incorrect" onclick="answerAstigmatism(false)">Some lines darker/clearer</button>
+            <div class="test-controls" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="btn-correct" onclick="answerAstigmatism(true, 'equal')" style="padding: 1rem 2rem; font-size: 1.1rem;">
+                    ✓ All lines equal
+                </button>
+                <button class="btn-incorrect" onclick="answerAstigmatism(false, 'unequal')" style="padding: 1rem 2rem; font-size: 1.1rem;">
+                    ✗ Some lines darker/clearer
+                </button>
+                <button class="btn-secondary" onclick="answerAstigmatism(false, 'blurry')" style="padding: 1rem 2rem; font-size: 1.1rem; background: #f59e0b;">
+                    ⊙ Some lines blurry
+                </button>
+            </div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <button class="btn-link" onclick="skipCurrentTestType()" style="color: #6b7280; text-decoration: underline; background: none; border: none; cursor: pointer;">
+                    Skip this test type
+                </button>
             </div>
         </div>
     `;
 }
 
-function generateAstigmatismLines(count, angle) {
-    let html = '';
-    const angleStep = 360 / count;
-    for (let i = 0; i < count; i++) {
-        const lineAngle = (angleStep * i) + angle;
-        html += `<div class="astigmatism-line" style="transform: translate(-50%, -50%) rotate(${lineAngle}deg);"></div>`;
-    }
-    return html;
+function getTestTypeInstructions(testTypeName) {
+    const instructions = {
+        'Fan Chart Test': 'Look at the radiating lines. Are all lines equally dark and clear? Cover one eye and test each eye separately.',
+        'Clock Dial Test': 'Imagine this is a clock face. Are all the hour positions equally clear? Which positions appear darker or blurrier?',
+        'Parallel Lines Test': 'Look at the parallel lines. Are they all equally sharp and clear? Do some appear thicker or blurrier?',
+        'Cross Pattern Test': 'Focus on the center of the cross. Are both arms of the cross equally clear?',
+        'Star Burst Test': 'Look at the star pattern. Are all the rays equally sharp and clear?'
+    };
+    return instructions[testTypeName] || 'Look carefully at the pattern and assess if all lines are equally clear.';
 }
 
-function answerAstigmatism(equal) {
-    currentTest.answers.push(equal);
+function generateTestPattern(image, testTypeName) {
+    const size = 400;
+    let svg = `<svg width="${size}" height="${size}" style="border-radius: 8px; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">`;
+    
+    switch (testTypeName) {
+        case 'Fan Chart Test':
+            svg += generateFanChartSVG(size, image.lines, image.angle);
+            break;
+        case 'Clock Dial Test':
+            svg += generateClockDialSVG(size, image.hour, image.angle);
+            break;
+        case 'Parallel Lines Test':
+            svg += generateParallelLinesSVG(size, image.angle, image.lineCount, image.spacing);
+            break;
+        case 'Cross Pattern Test':
+            svg += generateCrossPatternSVG(size, image.angle, image.size);
+            break;
+        case 'Star Burst Test':
+            svg += generateStarBurstSVG(size, image.points, image.angle);
+            break;
+        default:
+            svg += generateFanChartSVG(size, 24, 0);
+    }
+    
+    svg += '</svg>';
+    return svg;
+}
+
+function generateFanChartSVG(size, lineCount, angle) {
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 20;
+    const angleStep = 360 / lineCount;
+    let svg = '';
+    
+    for (let i = 0; i < lineCount; i++) {
+        const lineAngle = (i * angleStep + angle) * Math.PI / 180;
+        const x2 = centerX + Math.cos(lineAngle) * radius;
+        const y2 = centerY + Math.sin(lineAngle) * radius;
+        svg += `<line x1="${centerX}" y1="${centerY}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="2"/>`;
+    }
+    
+    // Add center circle
+    svg += `<circle cx="${centerX}" cy="${centerY}" r="5" fill="#ff0000"/>`;
+    return svg;
+}
+
+function generateClockDialSVG(size, hour, angle) {
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 30;
+    let svg = '';
+    
+    // Draw clock face circle
+    svg += `<circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="#000000" stroke-width="2"/>`;
+    
+    // Draw hour markers
+    for (let h = 1; h <= 12; h++) {
+        const hourAngle = ((h * 30) - 90) * Math.PI / 180;
+        const x1 = centerX + Math.cos(hourAngle) * (radius - 15);
+        const y1 = centerY + Math.sin(hourAngle) * (radius - 15);
+        const x2 = centerX + Math.cos(hourAngle) * radius;
+        const y2 = centerY + Math.sin(hourAngle) * radius;
+        const isHighlighted = h === hour;
+        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${isHighlighted ? '#ff0000' : '#000000'}" stroke-width="${isHighlighted ? '4' : '2'}"/>`;
+        // Hour numbers
+        const textX = centerX + Math.cos(hourAngle) * (radius - 25);
+        const textY = centerY + Math.sin(hourAngle) * (radius - 25);
+        svg += `<text x="${textX}" y="${textY}" text-anchor="middle" font-size="16" font-weight="${isHighlighted ? 'bold' : 'normal'}" fill="${isHighlighted ? '#ff0000' : '#000000'}">${h}</text>`;
+    }
+    
+    // Center point
+    svg += `<circle cx="${centerX}" cy="${centerY}" r="5" fill="#ff0000"/>`;
+    return svg;
+}
+
+function generateParallelLinesSVG(size, angle, lineCount, spacing) {
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const angleRad = angle * Math.PI / 180;
+    const totalHeight = (lineCount - 1) * spacing;
+    let svg = '';
+    
+    for (let i = 0; i < lineCount; i++) {
+        const offset = (i - (lineCount - 1) / 2) * spacing;
+        const x1 = centerX - Math.cos(angleRad) * (size / 2) - Math.sin(angleRad) * offset;
+        const y1 = centerY - Math.sin(angleRad) * (size / 2) + Math.cos(angleRad) * offset;
+        const x2 = centerX + Math.cos(angleRad) * (size / 2) - Math.sin(angleRad) * offset;
+        const y2 = centerY + Math.sin(angleRad) * (size / 2) + Math.cos(angleRad) * offset;
+        svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="2"/>`;
+    }
+    
+    return svg;
+}
+
+function generateCrossPatternSVG(size, angle, patternSize) {
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const angleRad = angle * Math.PI / 180;
+    const halfSize = patternSize / 2;
+    let svg = '';
+    
+    // Horizontal line
+    const hx1 = centerX - Math.cos(angleRad) * halfSize;
+    const hy1 = centerY - Math.sin(angleRad) * halfSize;
+    const hx2 = centerX + Math.cos(angleRad) * halfSize;
+    const hy2 = centerY + Math.sin(angleRad) * halfSize;
+    svg += `<line x1="${hx1}" y1="${hy1}" x2="${hx2}" y2="${hy2}" stroke="#000000" stroke-width="3"/>`;
+    
+    // Vertical line
+    const vx1 = centerX - Math.cos(angleRad + Math.PI / 2) * halfSize;
+    const vy1 = centerY - Math.sin(angleRad + Math.PI / 2) * halfSize;
+    const vx2 = centerX + Math.cos(angleRad + Math.PI / 2) * halfSize;
+    const vy2 = centerY + Math.sin(angleRad + Math.PI / 2) * halfSize;
+    svg += `<line x1="${vx1}" y1="${vy1}" x2="${vx2}" y2="${vy2}" stroke="#000000" stroke-width="3"/>`;
+    
+    // Center point
+    svg += `<circle cx="${centerX}" cy="${centerY}" r="5" fill="#ff0000"/>`;
+    return svg;
+}
+
+function generateStarBurstSVG(size, points, angle) {
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 20;
+    const angleStep = (360 / points) * Math.PI / 180;
+    const startAngle = angle * Math.PI / 180;
+    let svg = '';
+    
+    for (let i = 0; i < points; i++) {
+        const lineAngle = startAngle + i * angleStep;
+        const x2 = centerX + Math.cos(lineAngle) * radius;
+        const y2 = centerY + Math.sin(lineAngle) * radius;
+        svg += `<line x1="${centerX}" y1="${centerY}" x2="${x2}" y2="${y2}" stroke="#000000" stroke-width="2"/>`;
+    }
+    
+    // Center circle
+    svg += `<circle cx="${centerX}" cy="${centerY}" r="5" fill="#ff0000"/>`;
+    return svg;
+}
+
+function answerAstigmatism(equal, responseType) {
+    const testType = currentTest.testTypes[currentTest.currentTestType];
+    const image = testType.images[currentTest.currentImage];
+    
+    currentTest.answers.push({
+        equal: equal,
+        responseType: responseType,
+        angle: image.angle,
+        testType: testType.name,
+        imageIndex: currentTest.currentImage,
+        timestamp: Date.now()
+    });
+    
     currentTest.currentImage++;
     
-    if (currentTest.currentImage >= currentTest.images.length) {
+    // Move to next test type if current one is complete
+    if (currentTest.currentImage >= testType.images.length) {
+        currentTest.currentTestType++;
+        currentTest.currentImage = 0;
+        
+        // Check if all test types are complete
+        if (currentTest.currentTestType >= currentTest.testTypes.length) {
+            finishAstigmatismTest();
+        } else {
+            renderAstigmatismTest();
+        }
+    } else {
+        renderAstigmatismTest();
+    }
+}
+
+function skipCurrentTestType() {
+    currentTest.currentTestType++;
+    currentTest.currentImage = 0;
+    
+    if (currentTest.currentTestType >= currentTest.testTypes.length) {
         finishAstigmatismTest();
     } else {
         renderAstigmatismTest();
@@ -1078,23 +1390,118 @@ function answerAstigmatism(equal) {
 }
 
 function finishAstigmatismTest() {
-    const unequalCount = currentTest.answers.filter(a => !a).length;
+    // Stop eye tracking
+    if (window.aiVisionEngine && window.aiVisionEngine.stopEyeTracking) {
+        window.aiVisionEngine.stopEyeTracking();
+    }
+    
+    // Comprehensive analysis
+    const totalAnswers = currentTest.answers.length;
+    const unequalAnswers = currentTest.answers.filter(a => !a.equal);
+    const unequalCount = unequalAnswers.length;
+    const blurryAnswers = currentTest.answers.filter(a => a.responseType === 'blurry');
+    
+    // Calculate score
+    const score = totalAnswers > 0 ? 1 - (unequalCount / totalAnswers) : 1;
+    
+    // Analyze by test type
+    const testTypeAnalysis = {};
+    currentTest.testTypes.forEach(tt => {
+        const typeAnswers = currentTest.answers.filter(a => a.testType === tt.name);
+        const typeUnequal = typeAnswers.filter(a => !a.equal).length;
+        testTypeAnalysis[tt.name] = {
+            total: typeAnswers.length,
+            unequal: typeUnequal,
+            score: typeAnswers.length > 0 ? 1 - (typeUnequal / typeAnswers.length) : 1
+        };
+    });
+    
+    // Detect astigmatism axis (angle where most problems occur)
+    const angleProblems = {};
+    unequalAnswers.forEach(answer => {
+        if (answer.angle !== undefined) {
+            const normalizedAngle = ((answer.angle % 180) + 180) % 180;
+            angleProblems[normalizedAngle] = (angleProblems[normalizedAngle] || 0) + 1;
+        }
+    });
+    
+    // Find most problematic angle (likely astigmatism axis)
+    let detectedAxis = null;
+    let maxProblems = 0;
+    Object.keys(angleProblems).forEach(angle => {
+        if (angleProblems[angle] > maxProblems) {
+            maxProblems = angleProblems[angle];
+            detectedAxis = parseFloat(angle);
+        }
+    });
+    
+    // Calculate severity
+    let severity = 'none';
     let resultText = '';
+    let cylinderEstimate = 0;
     
     if (unequalCount === 0) {
-        resultText = 'No significant astigmatism detected';
-    } else if (unequalCount <= 2) {
-        resultText = 'Mild astigmatism possible';
+        severity = 'none';
+        resultText = 'No significant astigmatism detected - Excellent vision';
+    } else if (unequalCount <= totalAnswers * 0.1) {
+        severity = 'minimal';
+        resultText = 'Minimal astigmatism detected - Very mild irregularity';
+        cylinderEstimate = 0.25;
+    } else if (unequalCount <= totalAnswers * 0.25) {
+        severity = 'mild';
+        resultText = 'Mild astigmatism detected - Minor correction may be beneficial';
+        cylinderEstimate = 0.5;
+    } else if (unequalCount <= totalAnswers * 0.5) {
+        severity = 'moderate';
+        resultText = 'Moderate astigmatism detected - Correction recommended';
+        cylinderEstimate = 1.0;
     } else {
-        resultText = 'Astigmatism detected - consult an eye care professional';
+        severity = 'significant';
+        resultText = 'Significant astigmatism detected - Professional consultation strongly recommended';
+        cylinderEstimate = 1.5;
+    }
+    
+    // AI-enhanced analysis if available
+    let aiAnalysis = null;
+    if (window.aiVisionEngine && window.aiVisionEngine.detectAstigmatism) {
+        try {
+            aiAnalysis = window.aiVisionEngine.detectAstigmatism(currentTest.answers, currentTest.eyeTrackingData);
+            if (aiAnalysis && aiAnalysis.confidence > 0.7) {
+                // Use AI results if high confidence
+                if (aiAnalysis.axis !== undefined) detectedAxis = aiAnalysis.axis;
+                if (aiAnalysis.cylinder !== undefined) cylinderEstimate = aiAnalysis.cylinder;
+                if (aiAnalysis.severity) severity = aiAnalysis.severity;
+            }
+        } catch (error) {
+            console.log('AI analysis not available:', error);
+        }
+    }
+    
+    // Format axis text
+    let axisText = '';
+    if (detectedAxis !== null) {
+        axisText = `Detected axis: ${Math.round(detectedAxis)}°`;
     }
     
     const result = {
         type: 'astigmatism',
-        name: 'Astigmatism Test',
-        score: 1 - (unequalCount / currentTest.answers.length),
+        name: 'Enhanced Astigmatism Test',
+        score: score,
+        accuracy: (score * 100).toFixed(1) + '%',
         result: resultText,
-        date: new Date().toISOString()
+        severity: severity,
+        cylinderEstimate: cylinderEstimate.toFixed(2) + ' D',
+        axis: detectedAxis !== null ? Math.round(detectedAxis) : null,
+        axisText: axisText,
+        totalTests: totalAnswers,
+        unequalCount: unequalCount,
+        blurryCount: blurryAnswers.length,
+        testTypeAnalysis: testTypeAnalysis,
+        aiEnhanced: !!aiAnalysis,
+        aiConfidence: aiAnalysis ? aiAnalysis.confidence : null,
+        testDuration: ((Date.now() - currentTest.startTime) / 1000).toFixed(1) + 's',
+        date: new Date().toISOString(),
+        note: `Comprehensive astigmatism test with ${currentTest.testTypes.length} test types and ${totalAnswers} individual tests. ${aiAnalysis ? 'AI-enhanced analysis included.' : 'Standard analysis.'}`
     };
     
     saveResult(result);
