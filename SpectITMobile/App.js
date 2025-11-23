@@ -28,18 +28,20 @@ export default function App() {
   const handleError = (syntheticEvent) => {
     const { nativeEvent } = syntheticEvent;
     console.warn('WebView error: ', nativeEvent);
+    // Set error state to show error overlay with retry button
     setError(true);
     setLoading(false);
     SplashScreen.hideAsync();
   };
 
   const handleRetry = () => {
-    // Reset all states and force WebView remount
-    // Reset error FIRST to immediately hide error overlay
+    console.log('Retry button pressed - resetting error and reloading...');
+    // CRITICAL: Reset error state FIRST to immediately hide error overlay
     setError(false);
+    // Set loading to show loading indicator
     setLoading(true);
     // Force WebView to remount by changing key
-    // This will trigger onLoadStart which also resets error state
+    // This creates a fresh WebView instance and triggers onLoadStart
     setWebViewKey(prev => prev + 1);
   };
 
@@ -125,7 +127,13 @@ export default function App() {
           <Text style={styles.errorText}>
             Unable to load Spect-IT.{'\n'}Please check your internet connection and try again.
           </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={handleRetry}
+            activeOpacity={0.7}
+            accessibilityLabel="Retry loading Spect-IT"
+            accessibilityRole="button"
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
