@@ -7,44 +7,30 @@ node_modules/
 coverage/
 .nyc_output
 
-# Production
-build/
-dist/
+# Next.js
 .next/
 out/
-.turbo/
+build/
+dist/
+
+# Production
+*.log
+*.pid
+*.seed
+*.pid.lock
 
 # Environment variables
 .env
-.env.local
+.env*.local
 .env.development.local
 .env.test.local
 .env.production.local
-*.env
-.env*
-
-# API Keys and Secrets
-**/api-keys.js
-**/secrets.js
-**/config.js
-**/*-config.js
-**/*-keys.js
-**/*secret*
-**/*password*
-**/*token*
-**/*.key
-**/*.pem
-**/*.p12
-**/*.pfx
-
-# Supabase
-supabase/.env
-supabase/.env.local
-supabase/.env.*.local
 
 # Vercel
 .vercel
-.vercel.json
+
+# Turbo
+.turbo
 
 # IDE
 .vscode/
@@ -57,67 +43,52 @@ supabase/.env.*.local
 .DS_Store
 Thumbs.db
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-.pnpm-debug.log*
+# Expo
+.expo/
+.expo-shared/
+
+# iOS
+ios/Pods/
+ios/build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+*.apk
+*.aab
+*.ap_
+*.aab
+local.properties
+.gradle/
+
+# Capacitor
+.capacitor/
+
+# TypeScript
+*.tsbuildinfo
 
 # Cache
 .cache/
 .parcel-cache/
-.eslintcache
-.stylelintcache
 
 # Temporary files
 tmp/
 temp/
 *.tmp
-
-# Sensitive files
-**/supabase-config.js
-**/spectit-location.js
-**/set-api-keys.sh
-**/*api*.js
-**/*API*.js
-
-# Build artifacts
-*.tsbuildinfo
-.next/
-.turbo/
-
-# Docker
-.docker/
-*.sock
-mutagen/
-
-# EAS
-.eas/
-
-# iOS
-*.xcworkspace
-*.xcodeproj
-!*.xcworkspace/contents.xcworkspacedata
-!*.xcodeproj/project.pbxproj
-
-# Android
-*.apk
-*.aab
-.keystore
-
-# Capacitor
-.capacitor/
-ios/App/Pods/
-android/app/build/
-
-# Security: Sensitive configuration files
-website/supabase-config.js
-website/spectit-location.js
-website/set-api-keys.sh
-website/config/.env*
-**/config.js
-**/*-config.js
-**/*-keys.js

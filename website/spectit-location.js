@@ -7,8 +7,8 @@
   
   // Configuration - SET YOUR API KEY HERE
   const CONFIG = {
-    googlePlacesApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || '', // Google Maps API Key
-    googleMapsApiKey: (window.ENV && window.ENV.GOOGLE_PLACES_API_KEY) || (window.CONFIG && window.CONFIG.googlePlacesApiKey) || '' // Google Maps API Key
+    googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08', // Google Maps API Key
+    googleMapsApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08' // Google Maps API Key
   };
   
   let userLocation = null;
