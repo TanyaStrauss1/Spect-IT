@@ -171,6 +171,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
     padding: 20,
+    zIndex: 9999, // Ensure error overlay is on top
+    elevation: 9999, // Android elevation
   },
   errorText: {
     fontSize: 16,
@@ -184,6 +186,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 10,
+    minWidth: 120, // Ensure button has minimum width for touch target
+    minHeight: 44, // Ensure button meets accessibility touch target size
   },
   retryButtonText: {
     color: '#ffffff',
