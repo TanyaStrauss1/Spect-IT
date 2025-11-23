@@ -1056,113 +1056,70 @@ function startAstigmatismTestInternal() {
     renderAstigmatismTest();
 }
 
-// Generate comprehensive fan chart tests (radiating lines)
+// Generate essential fan chart tests (radiating lines) - Only 1 test needed
 function generateFanChartTests() {
-    const tests = [];
-    // Test at 15-degree intervals for comprehensive coverage
-    const lineCounts = [16, 18, 20, 22, 24, 26, 28, 30, 32, 20, 24, 28]; // Vary line counts
-    let lineIndex = 0;
-    for (let angle = 0; angle < 180; angle += 15) {
-        tests.push({
-            type: 'fan',
-            lines: lineCounts[lineIndex % lineCounts.length], // Vary line count for visual distinction
-            angle: angle,
-            difficulty: angle % 30 === 0 ? 'standard' : 'detailed',
-            lineWidth: angle % 30 === 0 ? 2 : (angle % 15 === 0 ? 2.5 : 2), // Vary line thickness
-            radius: 180 + (lineIndex % 3) * 10 // Vary radius slightly
-        });
-        lineIndex++;
-    }
-    return tests;
+    return [{
+        type: 'fan',
+        lines: 24,
+        angle: 0,
+        difficulty: 'standard',
+        lineWidth: 2,
+        radius: 180
+    }];
 }
 
-// Generate clock dial tests (12-hour positions)
+// Generate essential clock dial test - Only 1 test needed
 function generateClockDialTests() {
-    const tests = [];
-    // Test all 12 clock positions with variations
-    const sizes = [280, 300, 320, 310, 290, 300, 315, 305, 295, 300, 325, 300]; // Vary dial size
-    for (let hour = 1; hour <= 12; hour++) {
-        const angle = (hour * 30) - 90; // Convert to degrees (12 o'clock = -90°)
-        tests.push({
-            type: 'clock',
-            hour: hour,
-            angle: angle,
-            lines: 12,
-            dialSize: sizes[hour - 1], // Vary dial size for visual distinction
-            markerStyle: hour % 3 === 0 ? 'bold' : 'normal' // Vary marker style
-        });
-    }
-    return tests;
+    return [{
+        type: 'clock',
+        hour: 12,
+        angle: -90, // 12 o'clock position
+        lines: 12,
+        dialSize: 300,
+        markerStyle: 'normal'
+    }];
 }
 
-// Generate parallel lines tests
+// Generate essential parallel lines tests - Only 2 tests needed (0° and 90°)
 function generateParallelLinesTests() {
-    const tests = [];
-    // Test parallel lines at various angles with different configurations
-    const angles = [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165];
-    const lineCounts = [6, 7, 8, 9, 10, 8, 7, 9, 8, 10, 7, 8]; // Vary line counts
-    const spacings = [18, 20, 22, 20, 19, 21, 20, 22, 19, 20, 21, 20]; // Vary spacing
-    const lineWidths = [2, 2.5, 2, 3, 2, 2.5, 2, 3, 2, 2.5, 2, 2.5]; // Vary line width
-    
-    angles.forEach((angle, index) => {
-        tests.push({
+    return [
+        {
             type: 'parallel',
-            angle: angle,
-            lineCount: lineCounts[index], // Vary line count
-            spacing: spacings[index], // Vary spacing
-            lineWidth: lineWidths[index] // Vary line width
-        });
-    });
-    return tests;
-}
-
-// Generate cross pattern tests
-function generateCrossPatternTests() {
-    const tests = [];
-    // Test cross patterns at different orientations with variations
-    const angles = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5];
-    const sizes = [280, 300, 320, 310, 290, 300, 315, 305]; // Vary cross size
-    const lineWidths = [2.5, 3, 3.5, 3, 2.5, 3, 3.5, 3]; // Vary line width
-    const styles = ['standard', 'bold', 'standard', 'bold', 'standard', 'bold', 'standard', 'bold']; // Vary style
-    
-    angles.forEach((angle, index) => {
-        tests.push({
-            type: 'cross',
-            angle: angle,
-            lineWidth: lineWidths[index], // Vary line width
-            size: sizes[index], // Vary cross size
-            style: styles[index] // Vary style
-        });
-    });
-    return tests;
-}
-
-// Generate star burst tests
-function generateStarBurstTests() {
-    const tests = [];
-    // Test star patterns with varying complexity and visual distinction
-    const configurations = [
-        { points: 8, angle: 0, radius: 180, lineWidth: 2 },
-        { points: 8, angle: 22.5, radius: 190, lineWidth: 2.5 },
-        { points: 10, angle: 18, radius: 185, lineWidth: 2 },
-        { points: 12, angle: 0, radius: 180, lineWidth: 2.5 },
-        { points: 12, angle: 15, radius: 195, lineWidth: 2 },
-        { points: 14, angle: 12.86, radius: 190, lineWidth: 2.5 },
-        { points: 16, angle: 0, radius: 185, lineWidth: 2 },
-        { points: 16, angle: 11.25, radius: 200, lineWidth: 2.5 },
-        { points: 18, angle: 10, radius: 195, lineWidth: 2 },
-        { points: 20, angle: 9, radius: 190, lineWidth: 2.5 }
+            angle: 0,
+            lineCount: 8,
+            spacing: 20,
+            lineWidth: 2
+        },
+        {
+            type: 'parallel',
+            angle: 90,
+            lineCount: 8,
+            spacing: 20,
+            lineWidth: 2
+        }
     ];
-    configurations.forEach((config, index) => {
-        tests.push({
-            type: 'starburst',
-            points: config.points,
-            angle: config.angle,
-            radius: config.radius, // Vary radius
-            lineWidth: config.lineWidth // Vary line width
-        });
-    });
-    return tests;
+}
+
+// Generate essential cross pattern test - Only 1 test needed
+function generateCrossPatternTests() {
+    return [{
+        type: 'cross',
+        angle: 0,
+        lineWidth: 3,
+        size: 300,
+        style: 'standard'
+    }];
+}
+
+// Generate essential star burst test - Only 1 test needed
+function generateStarBurstTests() {
+    return [{
+        type: 'starburst',
+        points: 16,
+        angle: 0,
+        radius: 180,
+        lineWidth: 2
+    }];
 }
 
 function renderAstigmatismTest() {
@@ -1423,7 +1380,7 @@ function skipCurrentTestType() {
     }
 }
 
-function finishAstigmatismTest() {
+async function finishAstigmatismTest() {
     // Stop eye tracking
     if (window.aiVisionEngine && window.aiVisionEngine.stopEyeTracking) {
         window.aiVisionEngine.stopEyeTracking();
@@ -1495,11 +1452,12 @@ function finishAstigmatismTest() {
         cylinderEstimate = 1.5;
     }
     
-    // AI-enhanced analysis if available
+    // AI-enhanced analysis if available - properly await async call
     let aiAnalysis = null;
     if (window.aiVisionEngine && window.aiVisionEngine.detectAstigmatism) {
         try {
-            aiAnalysis = window.aiVisionEngine.detectAstigmatism(currentTest.answers, currentTest.eyeTrackingData);
+            // Properly await the async AI detection
+            aiAnalysis = await window.aiVisionEngine.detectAstigmatism(currentTest.answers, currentTest.eyeTrackingData);
             if (aiAnalysis && aiAnalysis.confidence > 0.7) {
                 // Use AI results if high confidence
                 if (aiAnalysis.axis !== undefined) detectedAxis = aiAnalysis.axis;
@@ -1535,7 +1493,7 @@ function finishAstigmatismTest() {
         aiConfidence: aiAnalysis ? aiAnalysis.confidence : null,
         testDuration: ((Date.now() - currentTest.startTime) / 1000).toFixed(1) + 's',
         date: new Date().toISOString(),
-        note: `Comprehensive astigmatism test with ${currentTest.testTypes.length} test types and ${totalAnswers} individual tests. ${aiAnalysis ? 'AI-enhanced analysis included.' : 'Standard analysis.'}`
+        note: `Essential astigmatism test with ${currentTest.testTypes.length} test types and ${totalAnswers} individual tests. ${aiAnalysis ? 'AI-enhanced analysis included.' : 'Standard analysis.'}`
     };
     
     saveResult(result);

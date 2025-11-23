@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ActivityIndicator, SafeAreaView, StatusBar, Platform, Text } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, SafeAreaView, StatusBar, Platform, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -9,11 +9,13 @@ SplashScreen.preventAutoHideAsync();
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [webViewKey, setWebViewKey] = useState(0); // Key to force WebView remount
 
   const websiteUrl = 'https://www.spect-it.com';
 
   const handleLoadEnd = () => {
     setLoading(false);
+    setError(false); // Reset error state on successful load
     SplashScreen.hideAsync();
   };
 
@@ -25,10 +27,17 @@ export default function App() {
     SplashScreen.hideAsync();
   };
 
+  const handleRetry = () => {
+    setError(false);
+    setLoading(true);
+    setWebViewKey(prev => prev + 1); // Force WebView to remount
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#667eea" />
       <WebView
+        key={webViewKey}
         source={{ uri: websiteUrl }}
         style={styles.webview}
         onLoadEnd={handleLoadEnd}
@@ -102,10 +111,12 @@ export default function App() {
       )}
       {error && (
         <View style={styles.errorContainer}>
-          <ActivityIndicator size="large" color="#667eea" style={{ marginBottom: 20 }} />
           <Text style={styles.errorText}>
             Unable to load Spect-IT.{'\n'}Please check your internet connection and try again.
           </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
     </SafeAreaView>
@@ -145,6 +156,20 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
     textAlign: 'center',
   },
 });
