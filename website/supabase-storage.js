@@ -394,6 +394,171 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSupabaseStorage();
 });
 
+// ============================================
+// OPTOMETRIST DATABASE FUNCTIONS
+// ============================================
+
+// Save optometrist to Supabase database
+async function saveOptometristToSupabase(optometrist) {
+    if (!isSupabaseReady || !supabaseClient) {
+        console.warn('Supabase not ready, skipping optometrist save');
+        return null;
+    }
+    
+    try {
+        // Check if optometrist already exists (by place_id or name+address)
+        const { data: existing } = await supabaseClient
+            .from('optometrists')
+            .select('id')
+            .or(`place_id.eq.${optometrist.place_id},and(name.eq.${optometrist.name},address.eq.${optometrist.address})`)
+            .limit(1)
+            .single();
+        
+        if (existing) {
+            // Update existing record
+            const { data, error } = await supabaseClient
+                .from('optometrists')
+                .update({
+                    name: optometrist.name,
+                    type: optometrist.type,
+                    address: optometrist.address,
+                    location: optometrist.location,
+                    phone: optometrist.phone || '',
+                    email: optometrist.email || '',
+                    website: optometrist.website || '',
+                    rating: optometrist.rating || 0,
+                    rating_count: optometrist.rating_count || 0,
+                    open_now: optometrist.open_now,
+                    licensed: optometrist.licensed || 'unknown',
+                    license_info: optometrist.license_info || '',
+                    license_verify_url: optometrist.license_verify_url || '',
+                    source: optometrist.source || 'unknown',
+                    price_level: optometrist.price_level,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id)
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
+        } else {
+            // Insert new record
+            const { data, error } = await supabaseClient
+                .from('optometrists')
+                .insert([{
+                    place_id: optometrist.place_id,
+                    name: optometrist.name,
+                    type: optometrist.type,
+                    address: optometrist.address,
+                    location: optometrist.location,
+                    phone: optometrist.phone || '',
+                    email: optometrist.email || '',
+                    website: optometrist.website || '',
+                    rating: optometrist.rating || 0,
+                    rating_count: optometrist.rating_count || 0,
+                    open_now: optometrist.open_now,
+                    licensed: optometrist.licensed || 'unknown',
+                    license_info: optometrist.license_info || '',
+                    license_verify_url: optometrist.license_verify_url || '',
+                    source: optometrist.source || 'unknown',
+                    price_level: optometrist.price_level
+                }])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            return data;
+        }
+    } catch (error) {
+        console.error('Error saving optometrist to Supabase:', error);
+        return null;
+    }
+}
+
+// Batch save multiple optometrists
+async function saveOptometristsBatchToSupabase(optometrists) {
+    if (!isSupabaseReady || !supabaseClient) {
+        console.warn('Supabase not ready, skipping batch save');
+        return { saved: 0, failed: optometrists.length };
+    }
+    
+    let saved = 0;
+    let failed = 0;
+    
+    // Process in batches of 50 to avoid overwhelming the database
+    const batchSize = 50;
+    for (let i = 0; i < optometrists.length; i += batchSize) {
+        const batch = optometrists.slice(i, i + batchSize);
+        const promises = batch.map(opt => saveOptometristToSupabase(opt));
+        const results = await Promise.allSettled(promises);
+        
+        results.forEach(result => {
+            if (result.status === 'fulfilled' && result.value) {
+                saved++;
+            } else {
+                failed++;
+            }
+        });
+    }
+    
+    console.log(`✅ Saved ${saved} optometrists to database, ${failed} failed`);
+    return { saved, failed };
+}
+
+// Get optometrists from Supabase (with location filtering)
+async function getOptometristsFromSupabase(location, maxDistance = 500) {
+    if (!isSupabaseReady || !supabaseClient) {
+        return [];
+    }
+    
+    try {
+        // Get all optometrists (we'll filter by distance in JavaScript)
+        // For large datasets, consider using PostGIS for spatial queries
+        const { data, error } = await supabaseClient
+            .from('optometrists')
+            .select('*')
+            .order('rating', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            return [];
+        }
+        
+        // Filter by distance and calculate distances
+        const optometrists = data.map(opt => {
+            if (opt.location && location) {
+                const distance = calculateDistance(location, opt.location);
+                return { ...opt, distance };
+            }
+            return { ...opt, distance: 999 };
+        })
+        .filter(opt => opt.distance <= maxDistance)
+        .sort((a, b) => a.distance - b.distance);
+        
+        return optometrists;
+    } catch (error) {
+        console.error('Error fetching optometrists from Supabase:', error);
+        return [];
+    }
+}
+
+// Helper function to calculate distance (if not already available)
+function calculateDistance(loc1, loc2) {
+    if (!loc1 || !loc2 || !loc1.lat || !loc2.lat) return 999;
+    
+    const R = 6371; // Earth's radius in km
+    const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
+    const dLon = (loc2.lng - loc1.lng) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(loc1.lat * Math.PI / 180) * Math.cos(loc2.lat * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
 // Export functions
 window.saveTestResultToSupabase = saveTestResultToSupabase;
 window.getTestResultsFromSupabase = getTestResultsFromSupabase;
@@ -401,4 +566,7 @@ window.saveCartToSupabase = saveCartToSupabase;
 window.getCartFromSupabase = getCartFromSupabase;
 window.saveOrderToSupabase = saveOrderToSupabase;
 window.isSupabaseReady = () => isSupabaseReady;
+window.saveOptometristToSupabase = saveOptometristToSupabase;
+window.saveOptometristsBatchToSupabase = saveOptometristsBatchToSupabase;
+window.getOptometristsFromSupabase = getOptometristsFromSupabase;
 
