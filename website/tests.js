@@ -209,6 +209,13 @@ async function renderVisualAcuityTestWithLiDAR() {
                 <button class="btn-skip-distance" onclick="skipDistanceLock()" style="margin-top: 0.5rem; background: #e2e8f0; color: #4a5568; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem;">
                     Skip Distance Setup (Use Default)
                 </button>
+                ${currentTest.aiEngineAvailable ? `
+                <div style="margin-top: 1rem; padding: 1rem; background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea; border-radius: 6px;">
+                    <p style="margin: 0; font-size: 0.9rem; color: #667eea;">
+                        🤖 <strong>AI-Powered Accuracy:</strong> Real-time eye tracking and AI validation enabled for maximum precision
+                    </p>
+                </div>
+                ` : ''}
             </div>
             ` : `
             <div class="test-instructions">
