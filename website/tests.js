@@ -44,9 +44,10 @@ async function startVisualAcuityTest() {
 }
 
 async function startVisualAcuityTestInternal() {
-    // Standard Snellen chart distance: 3 meters
-    const targetDistance = 3.0; // meters
-    const tolerance = 0.1; // 10% tolerance
+    // Standard Snellen chart distance: 6 meters (20 feet) - Medical standard
+    // Note: 3 meters is acceptable but 6 meters is the gold standard for clinical accuracy
+    const targetDistance = 6.0; // meters (20 feet) - Standard clinical distance
+    const tolerance = 0.15; // 15% tolerance (slightly more for longer distance)
     
     // Initialize AI Vision Engine for maximum accuracy
     let aiEngineInitialized = false;
