@@ -2368,7 +2368,15 @@ window.startPrescriptionTest = startPrescriptionTest;
 window.closeImmediateResult = closeImmediateResult;
 window.closeOverallResults = closeOverallResults;
 window.closeTest = closeTest;
-// answerVisualAcuity, lockDistanceForTest, skipDistanceLock already set above
+window.answerVisualAcuity = answerVisualAcuity;
+window.checkSnellenAnswer = checkSnellenAnswer;
+window.lockDistanceForTest = lockDistanceForTest;
+window.skipDistanceLock = skipDistanceLock;
+window.answerColorBlindness = answerColorBlindness;
+window.initiatePrescriptionMeasurement = initiatePrescriptionMeasurement;
+window.finishPrescriptionTest = finishPrescriptionTest;
+window.stopPrescriptionMeasurement = stopPrescriptionMeasurement;
+window.resumeTestAfterMovement = resumeTestAfterMovement;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {

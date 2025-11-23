@@ -257,14 +257,13 @@
             try {
                 // Wait for all scripts to load
                 setTimeout(function() {
-                    // Initialize navigation
-                    if (typeof initializeNavigation === 'function') {
-                        initializeNavigation();
-                    }
+                    // Initialize navigation (app.js handles this automatically)
+                    // Navigation is already set up in app.js DOMContentLoaded
                     
-                    // Initialize premium dashboard
-                    if (typeof initializePremiumDashboard === 'function') {
-                        initializePremiumDashboard();
+                    // Initialize premium dashboard if available
+                    const dashboardEl = document.getElementById('premium-dashboard');
+                    if (dashboardEl && typeof updateResultsDisplay === 'function') {
+                        updateResultsDisplay();
                     }
                     
                     // Load test history if available
@@ -273,86 +272,39 @@
                     }
                     
                     // Initialize shop if available
-                    if (typeof loadProducts === 'function') {
-                        loadProducts();
-                    }
+                    // Shop will load products when section is viewed
                 }, 500);
             } catch (error) {
                 console.error('Initialization error:', error);
             }
         });
         
-        // Make functions globally available
-        window.startVisualAcuityTest = function() {
-            if (typeof startVisualAcuityTest === 'function') {
-                startVisualAcuityTest();
+        // Ensure functions are available after scripts load
+        // These will be overridden by the actual functions from tests.js
+        // This is just a safety fallback
+        setTimeout(function() {
+            // Verify all test functions are available
+            const requiredFunctions = [
+                'startVisualAcuityTest',
+                'startColorBlindnessTest',
+                'startAstigmatismTest',
+                'startContrastTest',
+                'startVisualFieldTest',
+                'startPrescriptionTest',
+                'closeTest',
+                'closeImmediateResult',
+                'closeOverallResults',
+                'findNearestSpecialists',
+                'showManualLocationInput'
+            ];
+            
+            const missing = requiredFunctions.filter(fn => typeof window[fn] !== 'function');
+            if (missing.length > 0) {
+                console.warn('Some functions not yet loaded:', missing);
             } else {
-                console.error('startVisualAcuityTest not available');
+                console.log('✅ All functions loaded successfully');
             }
-        };
-        
-        window.startColorBlindnessTest = function() {
-            if (typeof startColorBlindnessTest === 'function') {
-                startColorBlindnessTest();
-            }
-        };
-        
-        window.startAstigmatismTest = function() {
-            if (typeof startAstigmatismTest === 'function') {
-                startAstigmatismTest();
-            }
-        };
-        
-        window.startContrastTest = function() {
-            if (typeof startContrastTest === 'function') {
-                startContrastTest();
-            }
-        };
-        
-        window.startVisualFieldTest = function() {
-            if (typeof startVisualFieldTest === 'function') {
-                startVisualFieldTest();
-            }
-        };
-        
-        window.startPrescriptionTest = function() {
-            if (typeof startPrescriptionTest === 'function') {
-                startPrescriptionTest();
-            }
-        };
-        
-        window.closeTest = function() {
-            if (typeof closeTest === 'function') {
-                closeTest();
-            } else {
-                const modal = document.getElementById('test-modal');
-                if (modal) modal.style.display = 'none';
-            }
-        };
-        
-        window.findNearestSpecialists = function() {
-            if (typeof findNearestSpecialists === 'function') {
-                findNearestSpecialists();
-            }
-        };
-        
-        window.showManualLocationInput = function() {
-            if (typeof showManualLocationInput === 'function') {
-                showManualLocationInput();
-            }
-        };
-        
-        window.updateDistanceFilter = function(value) {
-            const display = document.getElementById('distance-value');
-            if (display) display.textContent = value + ' km';
-        };
-        
-        window.applyDistanceFilter = function() {
-            const slider = document.getElementById('distance-slider');
-            if (slider && typeof findNearestSpecialists === 'function') {
-                findNearestSpecialists();
-            }
-        };
+        }, 1000);
     </script>
 </body>
 </html>
