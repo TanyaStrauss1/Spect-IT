@@ -5,9 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Spect-IT',
   webDir: '../website',
   server: {
-    // For production, remove this or set to your live URL
+    // For production, uncomment and set to your live URL
     // url: 'https://www.spect-it.com',
-    // cleartext: true
+    // cleartext: true,
+    androidScheme: 'https'
   },
   plugins: {
     SplashScreen: {
@@ -35,9 +36,6 @@ const config: CapacitorConfig = {
         location: "Spect-IT uses your location to find nearby eye care professionals and retailers."
       }
     }
-  },
-  server: {
-    androidScheme: 'https'
   }
 };
 
