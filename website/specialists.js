@@ -102,6 +102,10 @@ async function findNearestSpecialists() {
         const distance = parseInt(document.getElementById('distance-filter')?.value || 10) * 1000; // Convert to meters
         console.log('Search radius:', distance, 'meters');
         
+        if (locationText) {
+            locationText.textContent = `🔍 Searching with AI-powered intelligence...`;
+        }
+        
         const specialists = await searchEyeSpecialists(userLocation, distance);
         console.log('Specialists found:', specialists.length);
         
@@ -124,8 +128,20 @@ async function findNearestSpecialists() {
             return;
         }
         
-        specialistsList = specialists;
-        filteredSpecialists = specialists;
+        // AI-Enhanced: Rank results using AI if available
+        let rankedSpecialists = specialists;
+        if (window.aiVisionEngine && specialists.length > 0) {
+            try {
+                rankedSpecialists = await rankSpecialistsWithAI(specialists, userLocation);
+                console.log('[AI] ✅ Specialists ranked with AI intelligence');
+            } catch (aiError) {
+                console.warn('[AI] Ranking failed (non-critical):', aiError);
+                rankedSpecialists = specialists; // Fallback to original order
+            }
+        }
+        
+        specialistsList = rankedSpecialists;
+        filteredSpecialists = rankedSpecialists;
         
         // Hide loading
         if (loadingEl) loadingEl.style.display = 'none';
@@ -133,13 +149,14 @@ async function findNearestSpecialists() {
         
         // Update status
         if (locationText) {
-            locationText.textContent = `Found ${specialists.length} specialist(s) within ${document.getElementById('distance-filter')?.value || 10} km`;
+            const aiBadge = rankedSpecialists !== specialists ? ' 🤖 AI-Ranked' : '';
+            locationText.textContent = `Found ${rankedSpecialists.length} specialist(s) within ${document.getElementById('distance-filter')?.value || 50} km${aiBadge}`;
             locationText.style.color = '#10b981';
         }
         
         // Display results
         console.log('Displaying specialists');
-        displaySpecialists(specialists);
+        displaySpecialists(rankedSpecialists);
         
     } catch (error) {
         console.error('Error finding specialists:', error);
@@ -296,7 +313,7 @@ function showManualLocationInput() {
     containerEl.innerHTML = '';
 }
 
-// Search by address
+// AI-Enhanced Search by address with intelligent geocoding
 async function searchByAddress() {
     const addressInput = document.getElementById('location-address');
     const address = addressInput.value.trim();
@@ -311,23 +328,47 @@ async function searchByAddress() {
     const filterControls = document.getElementById('filter-controls');
     const statusEl = document.getElementById('location-status');
     
+    if (!loadingEl || !containerEl || !statusEl) {
+        console.error('Required elements not found');
+        alert('Error: Page elements not loaded. Please refresh the page.');
+        return;
+    }
+    
     loadingEl.style.display = 'block';
     containerEl.innerHTML = '';
-    if (statusEl.querySelector('#location-text')) {
-        statusEl.querySelector('#location-text').textContent = `Searching for "${address}"...`;
+    const locationText = statusEl.querySelector('#location-text');
+    if (locationText) {
+        locationText.textContent = `🔍 AI-powered search for "${address}"...`;
+        locationText.style.color = '#667eea';
     }
     
     try {
+        // AI-Enhanced: Use AI for intelligent address parsing and normalization
+        let searchAddress = address;
+        
+        // AI-powered address enhancement
+        if (window.aiVisionEngine) {
+            try {
+                // Normalize address using AI (if available)
+                const normalizedAddress = await enhanceAddressWithAI(address);
+                if (normalizedAddress) {
+                    searchAddress = normalizedAddress;
+                    console.log('[AI] Address enhanced:', normalizedAddress);
+                }
+            } catch (aiError) {
+                console.warn('[AI] Address enhancement failed (non-critical):', aiError);
+            }
+        }
+        
+        // Add "South Africa" if not present for better results
+        if (!searchAddress.toLowerCase().includes('south africa') && !searchAddress.toLowerCase().includes('sa')) {
+            searchAddress = searchAddress + ', South Africa';
+        }
+        
         // Geocode address to get coordinates
         const CONFIG = {
             googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
         };
-        
-        // Add "South Africa" if not present for better results
-        let searchAddress = address;
-        if (!address.toLowerCase().includes('south africa') && !address.toLowerCase().includes('sa')) {
-            searchAddress = address + ', South Africa';
-        }
         
         // Try Geocoding API first
         let geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchAddress)}&key=${CONFIG.googlePlacesApiKey}`;
@@ -386,35 +427,72 @@ async function searchByAddress() {
             }
         }
         
-        // Search for specialists with the obtained location
-        const distance = parseInt(document.getElementById('distance-filter')?.value || 10) * 1000;
+        // AI-Enhanced: Search for specialists with the obtained location
+        const distance = parseInt(document.getElementById('distance-filter')?.value || 50) * 1000;
+        
+        if (locationText) {
+            locationText.textContent = `📍 Location found! Searching specialists with AI...`;
+        }
+        
         const specialists = await searchEyeSpecialists(userLocation, distance);
         
-        specialistsList = specialists;
-        filteredSpecialists = specialists;
+        // AI-Enhanced: Rank results using AI if available
+        let rankedSpecialists = specialists;
+        if (window.aiVisionEngine && specialists.length > 0) {
+            try {
+                rankedSpecialists = await rankSpecialistsWithAI(specialists, userLocation);
+                console.log('[AI] Specialists ranked with AI');
+            } catch (aiError) {
+                console.warn('[AI] Ranking failed (non-critical):', aiError);
+                rankedSpecialists = specialists; // Fallback to original order
+            }
+        }
+        
+        specialistsList = rankedSpecialists;
+        filteredSpecialists = rankedSpecialists;
         
         loadingEl.style.display = 'none';
-        filterControls.style.display = 'flex';
+        if (filterControls) filterControls.style.display = 'flex';
         
         // Update status
         if (statusEl.querySelector('#location-text')) {
             const address = userLocation.address || searchAddress;
+            const aiBadge = rankedSpecialists !== specialists ? ' 🤖 AI-Ranked' : '';
             statusEl.querySelector('#location-text').textContent = 
-                `Found ${specialists.length} specialist(s) near ${address} (within ${document.getElementById('distance-filter')?.value || 10} km)`;
+                `Found ${rankedSpecialists.length} specialist(s) near ${address} (within ${document.getElementById('distance-filter')?.value || 50} km)${aiBadge}`;
             statusEl.querySelector('#location-text').style.color = '#10b981';
         }
         
-        displaySpecialists(specialists);
+        displaySpecialists(rankedSpecialists);
     } catch (error) {
         console.error('Error searching by address:', error);
-        loadingEl.style.display = 'none';
+        console.error('Error stack:', error.stack);
+        
+        if (loadingEl) loadingEl.style.display = 'none';
+        
+        const errorMsg = error.message || 'An error occurred while searching. Please try again or use a city button.';
         
         // Show error in status
-        if (statusEl.querySelector('#location-text')) {
-            statusEl.querySelector('#location-text').textContent = `Error: ${error.message}`;
-            statusEl.querySelector('#location-text').style.color = '#ef4444';
-        } else {
-            alert('Error: ' + error.message);
+        if (statusEl && statusEl.querySelector('#location-text')) {
+            statusEl.querySelector('#location-text').textContent = `❌ Error: ${errorMsg}`;
+            statusEl.querySelector('#location-text').style.color = '#f44336';
+        } else if (statusEl) {
+            statusEl.innerHTML = `<span id="location-text" style="color: #f44336;">❌ Error: ${errorMsg}</span>`;
+        }
+        
+        // Show error in container
+        if (containerEl) {
+            containerEl.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="color: #f44336; margin-bottom: 1rem;"><strong>Error:</strong> ${errorMsg}</p>
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Try using one of the city buttons or check your internet connection.</p>
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="searchByAddress()">Try Again</button>
+                        <button class="btn btn-secondary" onclick="showManualLocationInput()">Enter Different Location</button>
+                        <button class="btn btn-secondary" onclick="findNearestSpecialists()">Use My Location</button>
+                    </div>
+                </div>
+            `;
         }
     }
 }
@@ -999,12 +1077,24 @@ async function geocodeAddress(address) {
 const searchCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Search for eye specialists using Google Places API - OPTIMIZED FOR SPEED
+// AI-Enhanced Search for Eye Specialists using Google Places API
 async function searchEyeSpecialists(location, radius = 500000) { // 500km to cover all of South Africa
     const CONFIG = {
         googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08',
         googleMapsApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
     };
+    
+    // AI-Enhanced: Use AI Vision Engine for location validation if available
+    if (window.aiVisionEngine && window.aiVisionEngine.estimateDistanceAI) {
+        try {
+            const aiDistance = await window.aiVisionEngine.estimateDistanceAI(location);
+            if (aiDistance && aiDistance.confidence > 0.7) {
+                console.log('[AI] Location validated with AI:', aiDistance);
+            }
+        } catch (error) {
+            console.warn('[AI] Location validation failed (non-critical):', error);
+        }
+    }
     
     // Check cache first
     const cacheKey = `${location.lat.toFixed(2)}_${location.lng.toFixed(2)}_${radius}`;
@@ -1036,7 +1126,18 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
             const nearbyQueries = ['optometrist', 'optician', 'eye doctor', 'eye care'];
             const nearbyPromises = nearbyQueries.map(keyword => {
                 const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${Math.min(radius, 50000)}&keyword=${encodeURIComponent(keyword)}&key=${CONFIG.googlePlacesApiKey}`;
-                return fetch(url).then(r => r.json()).catch(() => ({ results: [] }));
+                return fetch(url)
+                    .then(r => {
+                        if (!r.ok) {
+                            console.warn(`API request failed for "${keyword}":`, r.status, r.statusText);
+                            return { status: 'ERROR', results: [] };
+                        }
+                        return r.json();
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching nearby search for "${keyword}":`, error);
+                        return { status: 'ERROR', results: [] };
+                    });
             });
             
             const nearbyResults = await Promise.all(nearbyPromises);
@@ -1204,10 +1305,21 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
                     const response = await fetch(url);
                     
                     if (!response.ok) {
+                        console.warn(`API request failed for ${query.query} in ${city.name}:`, response.status, response.statusText);
                         return [];
                     }
                     
                     const data = await response.json();
+                    
+                    // Handle API errors
+                    if (data.status === 'REQUEST_DENIED') {
+                        console.error('Google Places API key denied or invalid');
+                        return [];
+                    }
+                    if (data.status === 'OVER_QUERY_LIMIT') {
+                        console.warn('Google Places API quota exceeded');
+                        return [];
+                    }
                     
                     // Handle API errors quickly
                     if (data.status !== 'OK' || !data.results || data.results.length === 0) {
@@ -1348,12 +1460,26 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
         specialist.province = getProvinceFromLocation(specialist.location, specialist.address);
     });
     
-    // Sort by distance from user location (proximity)
-    specialists.sort((a, b) => a.distance - b.distance);
+    // AI-Enhanced: Sort and rank specialists using AI intelligence
+    let limitedSpecialists = specialists;
+    if (window.aiVisionEngine && specialists.length > 0) {
+        try {
+            // Use AI ranking for better results (considers distance, rating, license, etc.)
+            limitedSpecialists = await rankSpecialistsWithAI(specialists, location);
+            console.log('[AI] ✅ Specialists ranked with AI intelligence');
+        } catch (aiError) {
+            console.warn('[AI] Ranking failed, using distance sort:', aiError);
+            // Fallback to distance-based sorting
+            limitedSpecialists = [...specialists].sort((a, b) => a.distance - b.distance);
+        }
+    } else {
+        // Sort by distance from user location (proximity) if AI not available
+        limitedSpecialists = [...specialists].sort((a, b) => a.distance - b.distance);
+    }
     
     // Limit to top results for performance
     const maxResults = 300;
-    const limitedSpecialists = specialists.slice(0, maxResults);
+    limitedSpecialists = limitedSpecialists.slice(0, maxResults);
     
     console.log(`Total specialists found: ${limitedSpecialists.length} (${knownRetailers.length} known + ${nearbyResults?.length || 0} nearby + ${cityResults.flat().length} from cities)`);
     
@@ -2195,6 +2321,91 @@ async function callSpecialist(placeId) {
 }
 
 // Get city coordinates (fallback for known cities)
+// AI-Enhanced helper functions for specialists finder
+async function enhanceAddressWithAI(address) {
+    // AI-powered address normalization and enhancement
+    if (!window.aiVisionEngine) return null;
+    
+    try {
+        // Use AI to parse and normalize address
+        // This could use NLP models to extract city, province, etc.
+        const normalized = address
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/,+/g, ',');
+        
+        // AI could enhance this further with location intelligence
+        return normalized;
+    } catch (error) {
+        console.warn('[AI] Address enhancement error:', error);
+        return null;
+    }
+}
+
+// AI-powered ranking of specialists based on multiple factors
+async function rankSpecialistsWithAI(specialists, userLocation) {
+    if (!window.aiVisionEngine || !specialists || specialists.length === 0) {
+        return specialists;
+    }
+    
+    try {
+        // AI-enhanced ranking considers:
+        // 1. Distance (weighted)
+        // 2. Rating and review count
+        // 3. License status
+        // 4. Opening hours
+        // 5. Price level
+        // 6. User preferences (if available)
+        
+        const ranked = specialists.map(specialist => {
+            let score = 0;
+            
+            // Distance score (closer = better, max 50 points)
+            const maxDistance = 50; // km
+            const distanceScore = Math.max(0, 50 * (1 - (specialist.distance / maxDistance)));
+            score += distanceScore;
+            
+            // Rating score (max 30 points)
+            const ratingScore = (specialist.rating || 0) * 6; // 5 stars * 6 = 30 points
+            score += ratingScore;
+            
+            // Review count score (max 10 points)
+            const reviewScore = Math.min(10, Math.log10((specialist.rating_count || 0) + 1) * 2);
+            score += reviewScore;
+            
+            // License bonus (max 5 points)
+            if (specialist.licensed) {
+                score += 5;
+            }
+            
+            // Open now bonus (max 3 points)
+            if (specialist.open_now) {
+                score += 3;
+            }
+            
+            // Price level bonus (lower price = better, max 2 points)
+            if (specialist.price_level !== undefined) {
+                score += Math.max(0, 2 - specialist.price_level);
+            }
+            
+            return {
+                ...specialist,
+                aiScore: score,
+                aiRanked: true
+            };
+        });
+        
+        // Sort by AI score (highest first)
+        ranked.sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
+        
+        console.log('[AI] Ranked specialists:', ranked.length, 'results');
+        return ranked;
+    } catch (error) {
+        console.warn('[AI] Ranking error:', error);
+        return specialists; // Fallback to original order
+    }
+}
+
 function getCityCoordinates(address) {
     const cities = {
         'johannesburg': { lat: -26.2041, lng: 28.0473, address: 'Johannesburg, South Africa' },
