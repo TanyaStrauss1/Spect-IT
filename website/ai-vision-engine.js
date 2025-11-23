@@ -79,24 +79,42 @@ class AIVisionEngine {
      */
     async initializeFaceMesh() {
         try {
+            // Check for faceLandmarksDetection (TensorFlow.js model)
             if (typeof faceLandmarksDetection !== 'undefined') {
-                this.models.faceMesh = await faceLandmarksDetection.createDetector(
-                    faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
-                    {
-                        runtime: 'mediapipe',
-                        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
-                        refineLandmarks: true, // Enable 468 landmarks
-                        maxFaces: 1,
-                        detectorModelUrl: 'https://tfhub.dev/mediapipe/models/face_detection_short_range/1',
-                        landmarkModelUrl: 'https://tfhub.dev/mediapipe/models/face_landmarks/1'
+                try {
+                    this.models.faceMesh = await faceLandmarksDetection.createDetector(
+                        faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
+                        {
+                            runtime: 'mediapipe',
+                            solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
+                            refineLandmarks: true, // Enable 468 landmarks
+                            maxFaces: 1
+                        }
+                    );
+                    console.log('[AI Vision Engine] ✅ MediaPipe Face Mesh initialized (468 landmarks)');
+                } catch (tfError) {
+                    console.warn('[AI Vision Engine] TensorFlow.js Face Mesh failed, trying alternative:', tfError);
+                    // Fallback: Try without refineLandmarks
+                    try {
+                        this.models.faceMesh = await faceLandmarksDetection.createDetector(
+                            faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
+                            {
+                                runtime: 'mediapipe',
+                                solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
+                                maxFaces: 1
+                            }
+                        );
+                        console.log('[AI Vision Engine] ✅ MediaPipe Face Mesh initialized (basic mode)');
+                    } catch (fallbackError) {
+                        console.warn('[AI Vision Engine] ⚠️ Face Mesh initialization failed, will use fallback methods');
                     }
-                );
-                console.log('[AI Vision Engine] ✅ MediaPipe Face Mesh initialized (468 landmarks)');
+                }
             } else {
-                console.warn('[AI Vision Engine] ⚠️ MediaPipe not available, using fallback');
+                console.warn('[AI Vision Engine] ⚠️ faceLandmarksDetection not available, using fallback');
             }
         } catch (error) {
             console.error('[AI Vision Engine] Face Mesh initialization error:', error);
+            // Continue without face mesh - tests will still work with fallback methods
         }
     }
 
@@ -140,16 +158,25 @@ class AIVisionEngine {
         try {
             // Check if ONNX Runtime is available
             if (typeof Ort !== 'undefined') {
-                const session = await Ort.InferenceSession.create('/models/vision-assessment.onnx')
-                    .catch(() => null);
-                
-                if (session) {
-                    this.models.onnxSession = session;
-                    console.log('[AI Vision Engine] ✅ ONNX Runtime initialized');
+                try {
+                    // Try to load ONNX model (if available)
+                    const session = await Ort.InferenceSession.create('/models/vision-assessment.onnx')
+                        .catch(() => null);
+                    
+                    if (session) {
+                        this.models.onnxSession = session;
+                        console.log('[AI Vision Engine] ✅ ONNX Runtime initialized');
+                    } else {
+                        console.log('[AI Vision Engine] ONNX model not found, using TensorFlow.js models');
+                    }
+                } catch (error) {
+                    console.log('[AI Vision Engine] ONNX Runtime available but model loading failed:', error.message);
                 }
+            } else {
+                console.log('[AI Vision Engine] ONNX Runtime not available, using TensorFlow.js');
             }
         } catch (error) {
-            console.log('[AI Vision Engine] ONNX Runtime not available');
+            console.log('[AI Vision Engine] ONNX Runtime initialization skipped:', error.message);
         }
     }
 
@@ -210,33 +237,51 @@ class AIVisionEngine {
         const startTime = performance.now();
 
         try {
+            // Check if video is ready
+            if (!this.video || this.video.readyState < 2) {
+                // Video not ready, try again next frame
+                if (this.eyeTrackingActive) {
+                    requestAnimationFrame(() => this.trackEyes(callback));
+                }
+                return;
+            }
+
             // Draw video frame to canvas
-            this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+            if (this.video.videoWidth > 0 && this.video.videoHeight > 0) {
+                this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+            }
 
             // Detect face landmarks
             if (this.models.faceMesh) {
-                const faces = await this.models.faceMesh.estimateFaces(this.video, {
-                    flipHorizontal: false,
-                    staticImageMode: false
-                });
+                try {
+                    const faces = await this.models.faceMesh.estimateFaces(this.video, {
+                        flipHorizontal: false,
+                        staticImageMode: false
+                    });
 
-                if (faces.length > 0) {
-                    const face = faces[0];
-                    const landmarks = face.keypoints;
+                    if (faces && faces.length > 0) {
+                        const face = faces[0];
+                        const landmarks = face.keypoints || face.landmarks;
 
-                    // Extract eye measurements
-                    const measurements = this.extractEyeMeasurements(landmarks);
-                    this.currentMeasurements = measurements;
+                        if (landmarks && landmarks.length > 0) {
+                            // Extract eye measurements
+                            const measurements = this.extractEyeMeasurements(landmarks);
+                            this.currentMeasurements = measurements;
 
-                    // Calculate metrics
-                    const endTime = performance.now();
-                    this.metrics.latency = endTime - startTime;
-                    this.metrics.fps = 1000 / this.metrics.latency;
+                            // Calculate metrics
+                            const endTime = performance.now();
+                            this.metrics.latency = endTime - startTime;
+                            this.metrics.fps = this.metrics.latency > 0 ? 1000 / this.metrics.latency : 0;
 
-                    // Callback with measurements
-                    if (callback) {
-                        callback(measurements, this.metrics);
+                            // Callback with measurements
+                            if (callback) {
+                                callback(measurements, this.metrics);
+                            }
+                        }
                     }
+                } catch (detectionError) {
+                    // Silently handle detection errors - continue tracking
+                    console.debug('[AI Vision Engine] Face detection error (continuing):', detectionError.message);
                 }
             }
         } catch (error) {
