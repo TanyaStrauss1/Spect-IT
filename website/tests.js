@@ -2102,7 +2102,7 @@ async function sendEmailViaMailto(email, subject, body) {
     localStorage.setItem('spectit_sent_emails', JSON.stringify(savedEmails));
 }
 
-// Show notification that results will be sent to email
+// Show notification that results have been sent to email
 function showEmailNotification(email) {
     // Remove any existing notification
     const existing = document.getElementById('email-notification');

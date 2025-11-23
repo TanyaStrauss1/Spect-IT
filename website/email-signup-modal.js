@@ -155,7 +155,7 @@ function showEmailSignupModalForTesting() {
     }, 100);
 }
 
-function handleEmailSignup(event) {
+async function handleEmailSignup(event) {
     event.preventDefault();
     
     const email = document.getElementById('user-email').value.trim();
@@ -191,7 +191,7 @@ function handleEmailSignup(event) {
     closeEmailSignupModal();
     
     // Show success message
-    showEmailSuccessMessage(email, 'You are now signed in! You can start any test without signing in again.');
+    showEmailSuccessMessage(email, 'You are now signed in! Test results will be automatically sent to your email after each test.');
     
     // If there's a pending test function, call it
     if (pendingTestFunction) {
@@ -201,13 +201,13 @@ function handleEmailSignup(event) {
         }, 500);
     }
     
-    // If there are pending results, show them
+    // If there are pending results, save and send them
     if (testResultsPendingEmail.length > 0) {
-        setTimeout(() => {
-            testResultsPendingEmail.forEach(result => {
-                saveResult(result);
+        setTimeout(async () => {
+            for (const result of testResultsPendingEmail) {
+                await saveResult(result);
                 showResult(result);
-            });
+            }
             testResultsPendingEmail = [];
         }, 500);
     }
