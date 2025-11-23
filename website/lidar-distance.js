@@ -7,7 +7,7 @@ class LiDARDistanceTracker {
         this.currentDistance = null;
         this.initialDistance = null;
         this.distanceTolerance = 0.1; // 10% tolerance
-        this.targetDistance = 3.0; // meters (standard for Snellen chart)
+        this.targetDistance = 6.0; // meters (standard clinical distance for Snellen chart)
         this.distanceHistory = [];
         this.isTracking = false;
         this.onDistanceChange = null;
@@ -230,7 +230,7 @@ class LiDARDistanceTracker {
         // Fallback: Manual distance confirmation
         return {
             method: 'manual',
-            prompt: 'Please stand exactly 3 meters from your screen. Confirm when ready.'
+            prompt: 'Please stand exactly 6 meters from your screen. Confirm when ready.'
         };
     }
     

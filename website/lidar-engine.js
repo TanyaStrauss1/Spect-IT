@@ -7,7 +7,7 @@ class LiDAREngine {
         this.isActive = false;
         this.currentDistance = null;
         this.baselineDistance = null;
-        this.targetDistance = 3.0; // meters (default for distance tests)
+        this.targetDistance = 6.0; // meters (standard clinical distance for Snellen chart)
         this.tolerance = 0.1; // 10% tolerance
         this.stabilityThreshold = 0.05; // 5cm movement threshold
         this.distanceHistory = [];
@@ -61,7 +61,7 @@ class LiDAREngine {
         return this.isAvailable;
     }
     
-    async initialize(targetDistance = 3.0, tolerance = 0.1) {
+    async initialize(targetDistance = 6.0, tolerance = 0.15) {
         this.targetDistance = targetDistance;
         this.tolerance = tolerance;
         
