@@ -242,22 +242,117 @@
     <script src="shop.js"></script>
     <script src="email-signup-modal.js"></script>
     
-    <!-- Initialize app -->
+    <!-- Initialize app with error handling -->
     <script>
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            // Don't break the app on errors
+        });
+
         // Initialize app when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Spect-IT Platform Initialized');
             
-            // Initialize navigation
-            if (typeof initializeNavigation === 'function') {
-                initializeNavigation();
-            }
-            
-            // Initialize premium dashboard
-            if (typeof initializePremiumDashboard === 'function') {
-                initializePremiumDashboard();
+            try {
+                // Wait for all scripts to load
+                setTimeout(function() {
+                    // Initialize navigation
+                    if (typeof initializeNavigation === 'function') {
+                        initializeNavigation();
+                    }
+                    
+                    // Initialize premium dashboard
+                    if (typeof initializePremiumDashboard === 'function') {
+                        initializePremiumDashboard();
+                    }
+                    
+                    // Load test history if available
+                    if (typeof loadTestHistory === 'function') {
+                        loadTestHistory();
+                    }
+                    
+                    // Initialize shop if available
+                    if (typeof loadProducts === 'function') {
+                        loadProducts();
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Initialization error:', error);
             }
         });
+        
+        // Make functions globally available
+        window.startVisualAcuityTest = function() {
+            if (typeof startVisualAcuityTest === 'function') {
+                startVisualAcuityTest();
+            } else {
+                console.error('startVisualAcuityTest not available');
+            }
+        };
+        
+        window.startColorBlindnessTest = function() {
+            if (typeof startColorBlindnessTest === 'function') {
+                startColorBlindnessTest();
+            }
+        };
+        
+        window.startAstigmatismTest = function() {
+            if (typeof startAstigmatismTest === 'function') {
+                startAstigmatismTest();
+            }
+        };
+        
+        window.startContrastTest = function() {
+            if (typeof startContrastTest === 'function') {
+                startContrastTest();
+            }
+        };
+        
+        window.startVisualFieldTest = function() {
+            if (typeof startVisualFieldTest === 'function') {
+                startVisualFieldTest();
+            }
+        };
+        
+        window.startPrescriptionTest = function() {
+            if (typeof startPrescriptionTest === 'function') {
+                startPrescriptionTest();
+            }
+        };
+        
+        window.closeTest = function() {
+            if (typeof closeTest === 'function') {
+                closeTest();
+            } else {
+                const modal = document.getElementById('test-modal');
+                if (modal) modal.style.display = 'none';
+            }
+        };
+        
+        window.findNearestSpecialists = function() {
+            if (typeof findNearestSpecialists === 'function') {
+                findNearestSpecialists();
+            }
+        };
+        
+        window.showManualLocationInput = function() {
+            if (typeof showManualLocationInput === 'function') {
+                showManualLocationInput();
+            }
+        };
+        
+        window.updateDistanceFilter = function(value) {
+            const display = document.getElementById('distance-value');
+            if (display) display.textContent = value + ' km';
+        };
+        
+        window.applyDistanceFilter = function() {
+            const slider = document.getElementById('distance-slider');
+            if (slider && typeof findNearestSpecialists === 'function') {
+                findNearestSpecialists();
+            }
+        };
     </script>
 </body>
 </html>
