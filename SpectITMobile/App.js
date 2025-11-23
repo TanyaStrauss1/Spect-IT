@@ -13,6 +13,12 @@ export default function App() {
 
   const websiteUrl = 'https://www.spect-it.com';
 
+  const handleLoadStart = () => {
+    // Reset error state when starting to load (in case of retry)
+    setError(false);
+    setLoading(true);
+  };
+
   const handleLoadEnd = () => {
     setLoading(false);
     setError(false); // Reset error state on successful load
@@ -28,9 +34,13 @@ export default function App() {
   };
 
   const handleRetry = () => {
+    // Reset all states and force WebView remount
+    // Reset error FIRST to immediately hide error overlay
     setError(false);
     setLoading(true);
-    setWebViewKey(prev => prev + 1); // Force WebView to remount
+    // Force WebView to remount by changing key
+    // This will trigger onLoadStart which also resets error state
+    setWebViewKey(prev => prev + 1);
   };
 
   return (
@@ -40,6 +50,7 @@ export default function App() {
         key={webViewKey}
         source={{ uri: websiteUrl }}
         style={styles.webview}
+        onLoadStart={handleLoadStart}
         onLoadEnd={handleLoadEnd}
         onError={handleError}
         javaScriptEnabled={true}
