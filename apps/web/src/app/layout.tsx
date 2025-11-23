@@ -9,8 +9,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { QueryProvider } from '@/lib/providers/QueryProvider'
 import { ToastProvider } from '@/components/ui/Toast'
-import { Analytics } from '@/lib/analytics/analytics'
-import { SpeedInsights } from '@/lib/analytics/analytics'
+import { Analytics, SpeedInsights } from '@/lib/analytics/analytics'
 import './globals.css'
 
 const inter = Inter({ 

@@ -5,7 +5,7 @@
 
 'use client'
 
-import { Analytics } from '@vercel/analytics/react'
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
 // Custom analytics events
@@ -53,5 +53,6 @@ export const trackTestCompletion = (testType: string, score: number, duration: n
   })
 }
 
-export { Analytics, SpeedInsights }
+export const Analytics = VercelAnalytics
+export { SpeedInsights }
 
