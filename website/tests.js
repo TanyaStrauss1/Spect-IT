@@ -1015,6 +1015,20 @@ function startAstigmatismTestInternal() {
         window.aiVisionEngine.startEyeTracking();
     }
     
+    // Generate test images
+    const fanChartTests = generateFanChartTests();
+    const clockDialTests = generateClockDialTests();
+    const parallelLinesTests = generateParallelLinesTests();
+    const crossPatternTests = generateCrossPatternTests();
+    const starBurstTests = generateStarBurstTests();
+    
+    const totalTestCount = fanChartTests.length + clockDialTests.length + 
+                          parallelLinesTests.length + crossPatternTests.length + 
+                          starBurstTests.length;
+    
+    console.log('[Astigmatism Test] Total tests: ', totalTestCount);
+    console.log('[Astigmatism Test] Version 2.0 - Essential tests only');
+    
     currentTest = {
         type: 'astigmatism',
         name: 'Enhanced Astigmatism Test',
@@ -1025,27 +1039,27 @@ function startAstigmatismTestInternal() {
             {
                 name: 'Fan Chart Test',
                 description: 'Radiating lines at multiple angles',
-                images: generateFanChartTests()
+                images: fanChartTests
             },
             {
                 name: 'Clock Dial Test',
                 description: 'Clock face pattern for axis detection',
-                images: generateClockDialTests()
+                images: clockDialTests
             },
             {
                 name: 'Parallel Lines Test',
                 description: 'Parallel lines at various orientations',
-                images: generateParallelLinesTests()
+                images: parallelLinesTests
             },
             {
                 name: 'Cross Pattern Test',
                 description: 'Cross patterns for detailed analysis',
-                images: generateCrossPatternTests()
+                images: crossPatternTests
             },
             {
                 name: 'Star Burst Test',
                 description: 'Star pattern for comprehensive detection',
-                images: generateStarBurstTests()
+                images: starBurstTests
             }
         ],
         eyeTrackingData: [],
@@ -1057,8 +1071,9 @@ function startAstigmatismTestInternal() {
 }
 
 // Generate essential fan chart tests (radiating lines) - Only 1 test needed
+// Version: 2.0 - Reduced from 12 to 1 test
 function generateFanChartTests() {
-    return [{
+    const tests = [{
         type: 'fan',
         lines: 24,
         angle: 0,
@@ -1066,11 +1081,14 @@ function generateFanChartTests() {
         lineWidth: 2,
         radius: 180
     }];
+    console.log('[Astigmatism Test] Fan Chart Tests: ', tests.length, 'test(s)');
+    return tests;
 }
 
 // Generate essential clock dial test - Only 1 test needed
+// Version: 2.0 - Reduced from 12 to 1 test
 function generateClockDialTests() {
-    return [{
+    const tests = [{
         type: 'clock',
         hour: 12,
         angle: -90, // 12 o'clock position
@@ -1078,11 +1096,14 @@ function generateClockDialTests() {
         dialSize: 300,
         markerStyle: 'normal'
     }];
+    console.log('[Astigmatism Test] Clock Dial Tests: ', tests.length, 'test(s)');
+    return tests;
 }
 
 // Generate essential parallel lines tests - Only 2 tests needed (0° and 90°)
+// Version: 2.0 - Reduced from 12 to 2 tests
 function generateParallelLinesTests() {
-    return [
+    const tests = [
         {
             type: 'parallel',
             angle: 0,
@@ -1098,28 +1119,36 @@ function generateParallelLinesTests() {
             lineWidth: 2
         }
     ];
+    console.log('[Astigmatism Test] Parallel Lines Tests: ', tests.length, 'test(s)');
+    return tests;
 }
 
 // Generate essential cross pattern test - Only 1 test needed
+// Version: 2.0 - Reduced from 8 to 1 test
 function generateCrossPatternTests() {
-    return [{
+    const tests = [{
         type: 'cross',
         angle: 0,
         lineWidth: 3,
         size: 300,
         style: 'standard'
     }];
+    console.log('[Astigmatism Test] Cross Pattern Tests: ', tests.length, 'test(s)');
+    return tests;
 }
 
 // Generate essential star burst test - Only 1 test needed
+// Version: 2.0 - Reduced from 10 to 1 test
 function generateStarBurstTests() {
-    return [{
+    const tests = [{
         type: 'starburst',
         points: 16,
         angle: 0,
         radius: 180,
         lineWidth: 2
     }];
+    console.log('[Astigmatism Test] Star Burst Tests: ', tests.length, 'test(s)');
+    return tests;
 }
 
 function renderAstigmatismTest() {
