@@ -614,6 +614,178 @@ class AIVisionEngine {
     }
 
     /**
+     * AI-powered distance estimation for location validation
+     * Validates if a location is within reasonable distance and provides confidence score
+     */
+    async estimateDistanceAI(location) {
+        try {
+            if (!location || !location.lat || !location.lng) {
+                return { confidence: 0, location: null };
+            }
+            
+            // Validate coordinates are within South Africa bounds
+            const saBounds = {
+                north: -22.0,
+                south: -35.0,
+                east: 33.0,
+                west: 16.0
+            };
+            
+            const isInSA = location.lat >= saBounds.south && location.lat <= saBounds.north &&
+                          location.lng >= saBounds.west && location.lng <= saBounds.east;
+            
+            if (!isInSA) {
+                return { confidence: 0, location: null, reason: 'Outside South Africa bounds' };
+            }
+            
+            // Use TensorFlow.js model if available for distance estimation
+            if (this.models.distanceEstimation) {
+                try {
+                    // Create a feature vector from location
+                    const features = [
+                        location.lat,
+                        location.lng,
+                        Math.abs(location.lat + 29.0), // Distance from center of SA
+                        Math.abs(location.lng - 24.0)
+                    ];
+                    
+                    const tensor = tf.tensor2d([features]);
+                    const prediction = await this.models.distanceEstimation.predict(tensor);
+                    const result = await prediction.data();
+                    tensor.dispose();
+                    prediction.dispose();
+                    
+                    return {
+                        confidence: Math.min(1.0, result[0]),
+                        location: location,
+                        distance: result[1] || 0
+                    };
+                } catch (modelError) {
+                    console.warn('[AI] Distance estimation model error, using fallback:', modelError);
+                }
+            }
+            
+            // Fallback: Algorithmic validation
+            // Check if location is in Western Cape (Cape Town area)
+            const isWesternCape = location.lat >= -35.0 && location.lat <= -33.0 && 
+                                 location.lng >= 17.0 && location.lng <= 20.0;
+            
+            // Check if location is in Cape Town metropolitan area
+            const capeTownCenter = { lat: -33.9249, lng: 18.4241 };
+            const distanceFromCT = this.calculateHaversineDistance(location, capeTownCenter);
+            const isNearCapeTown = distanceFromCT <= 100; // Within 100km of Cape Town center
+            
+            let confidence = 0.7; // Base confidence
+            if (isWesternCape) confidence = 0.9;
+            if (isNearCapeTown) confidence = 0.95;
+            
+            return {
+                confidence: confidence,
+                location: location,
+                distance: distanceFromCT,
+                isWesternCape: isWesternCape,
+                isNearCapeTown: isNearCapeTown
+            };
+        } catch (error) {
+            console.error('[AI Vision Engine] Distance estimation error:', error);
+            return { confidence: 0.5, location: location };
+        }
+    }
+    
+    /**
+     * Calculate Haversine distance between two coordinates (in km)
+     */
+    calculateHaversineDistance(loc1, loc2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
+        const dLon = (loc2.lng - loc1.lng) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(loc1.lat * Math.PI / 180) * Math.cos(loc2.lat * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+    
+    /**
+     * AI-powered specialist ranking based on multiple factors
+     */
+    async rankSpecialists(specialists, userLocation) {
+        if (!specialists || specialists.length === 0) return specialists;
+        
+        try {
+            // Use AI to rank specialists based on:
+            // 1. Distance (validated with AI)
+            // 2. Rating and reviews
+            // 3. License status
+            // 4. Opening hours
+            // 5. Price level
+            
+            const ranked = await Promise.all(specialists.map(async (specialist) => {
+                let score = 0;
+                
+                // Distance score (validated with AI if available)
+                if (specialist.location && userLocation) {
+                    const distance = this.calculateHaversineDistance(userLocation, specialist.location);
+                    specialist.distance = distance;
+                    
+                    // AI validation of location (use this instance)
+                    try {
+                        const aiValidation = await this.estimateDistanceAI(specialist.location);
+                        if (aiValidation && aiValidation.confidence > 0.7) {
+                            score += 10; // Bonus for AI-validated location
+                        }
+                    } catch (error) {
+                        // Non-critical, continue without AI validation
+                    }
+                    
+                    // Distance score (closer = better, max 50 points)
+                    const maxDistance = 50; // km
+                    const distanceScore = Math.max(0, 50 * (1 - (distance / maxDistance)));
+                    score += distanceScore;
+                }
+                
+                // Rating score (max 30 points)
+                const ratingScore = (specialist.rating || 0) * 6; // 5 stars * 6 = 30 points
+                score += ratingScore;
+                
+                // Review count score (max 10 points)
+                const reviewScore = Math.min(10, Math.log10((specialist.rating_count || 0) + 1) * 2);
+                score += reviewScore;
+                
+                // License bonus (max 5 points)
+                if (specialist.licensed && specialist.licensed !== 'unknown') {
+                    score += 5;
+                }
+                
+                // Open now bonus (max 3 points)
+                if (specialist.open_now) {
+                    score += 3;
+                }
+                
+                // Price level bonus (lower price = better, max 2 points)
+                if (specialist.price_level !== undefined) {
+                    score += Math.max(0, 2 - specialist.price_level);
+                }
+                
+                return {
+                    ...specialist,
+                    aiScore: score,
+                    aiRanked: true
+                };
+            }));
+            
+            // Sort by AI score (highest first)
+            ranked.sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
+            
+            return ranked;
+        } catch (error) {
+            console.error('[AI Vision Engine] Specialist ranking error:', error);
+            return specialists; // Return original order on error
+        }
+    }
+    
+    /**
      * Stop eye tracking
      */
     stopEyeTracking() {
