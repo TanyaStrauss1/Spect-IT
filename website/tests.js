@@ -167,7 +167,16 @@ async function renderVisualAcuityTestWithLiDAR() {
     const line = currentTest.lines[currentTest.currentLine];
     if (!line) {
         console.error('[Visual Acuity Test] Invalid line index:', currentTest.currentLine);
+        console.error('[Visual Acuity Test] Available lines:', currentTest.lines.length);
         return;
+    }
+    
+    // Debug logging for line 2
+    if (line.level === '6/48') {
+        console.log('[Line 2 Render] Rendering line 2 (6/48)');
+        console.log('[Line 2 Render] Letters array:', line.letters);
+        console.log('[Line 2 Render] Letters count:', line.letters.length);
+        console.log('[Line 2 Render] Visual angle:', line.visualAngle);
     }
     
     // Clear any previous feedback
