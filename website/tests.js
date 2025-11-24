@@ -147,8 +147,28 @@ async function startVisualAcuityTestInternal() {
 }
 
 async function renderVisualAcuityTestWithLiDAR() {
+    if (!currentTest) {
+        console.error('[Visual Acuity Test] No test data');
+        return;
+    }
+    
     const container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Visual Acuity Test] test-container not found');
+        return;
+    }
+    
+    if (currentTest.currentLine >= currentTest.lines.length) {
+        // All lines completed
+        finishVisualAcuityTest();
+        return;
+    }
+    
     const line = currentTest.lines[currentTest.currentLine];
+    if (!line) {
+        console.error('[Visual Acuity Test] Invalid line index:', currentTest.currentLine);
+        return;
+    }
     
     // Clear any previous feedback
     const feedbackEl = document.getElementById('snellen-feedback');
