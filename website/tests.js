@@ -337,10 +337,13 @@ async function renderVisualAcuityTestWithLiDAR() {
                                 border: 2px solid rgba(0,0,0,0.05);
                                 -webkit-font-smoothing: antialiased;
                                 -moz-osx-font-smoothing: grayscale;">
-                        ${line.letters.map((letter, idx) => 
+                        ${line.letters.filter(letter => letter && letter.trim()).map((letter, idx) => 
                             `<span style="display: inline-block; margin: 0 ${fontSize * 0.4}px; 
                                           filter: contrast(1.2) brightness(1.05);
-                                          text-rendering: optimizeLegibility;">${letter}</span>`
+                                          text-rendering: optimizeLegibility;
+                                          min-width: ${fontSize * 0.6}px;
+                                          text-align: center;
+                                          font-weight: 900;">${letter}</span>`
                         ).join('')}
                     </div>
                     <div style="margin-top: 1rem; font-size: 0.9rem; color: #666; font-weight: 500;">
