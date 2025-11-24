@@ -347,7 +347,7 @@ async function renderVisualAcuityTestWithLiDAR() {
                            onblur="this.style.borderColor='#667eea'; this.style.boxShadow='none';"
                            autocomplete="off"
                            autofocus>
-                    <div id="snellen-feedback" style="margin-top: 1rem; font-size: 0.95rem; font-weight: 600; text-align: center; min-height: 1.5rem; padding: 0.75rem; border-radius: 6px; display: none;"></div>
+                    <div id="snellen-feedback" style="margin-top: 1rem; font-size: 0.95rem; font-weight: 600; text-align: center; min-height: 1.5rem; padding: 0.75rem; border-radius: 6px; display: none; line-height: 1.6;"></div>
                     <div style="margin-top: 0.75rem; font-size: 0.9rem; color: #666; text-align: center; line-height: 1.5;">
                         Or click "Cannot Read" if you cannot see the letters clearly
                     </div>
@@ -741,12 +741,53 @@ function checkSnellenAnswer() {
         }
     }
     
-    // Show feedback (non-blocking)
+    // Show feedback (non-blocking) with detailed letter breakdown
     const feedbackEl = document.getElementById('snellen-feedback');
     if (feedbackEl) {
-        feedbackEl.textContent = feedbackMessage;
+        // Create detailed feedback showing which letters were correct
+        let detailedFeedback = feedbackMessage;
+        
+        if (correctCount > 0 && correctCount < numLetters) {
+            // Show which letters the user got correct
+            const userLetters = userAnswer.split('');
+            const correctLettersArray = correctLetterArray;
+            const correctLettersFound = [];
+            const incorrectLetters = [];
+            
+            // Track which letters were matched
+            const matchedIndices = new Set();
+            for (let i = 0; i < userLetters.length; i++) {
+                let found = false;
+                for (let j = 0; j < correctLettersArray.length; j++) {
+                    if (!matchedIndices.has(j) && userLetters[i] === correctLettersArray[j]) {
+                        correctLettersFound.push(userLetters[i]);
+                        matchedIndices.add(j);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found && userLetters[i]) {
+                    incorrectLetters.push(userLetters[i]);
+                }
+            }
+            
+            // Add helpful hint
+            if (correctLettersFound.length > 0) {
+                detailedFeedback += `<br><span style="font-size: 0.85em; color: #666;">Correct letters: ${correctLettersFound.join(', ').toUpperCase()}</span>`;
+            }
+            if (incorrectLetters.length > 0) {
+                detailedFeedback += `<br><span style="font-size: 0.85em; color: #f56565;">Not in this line: ${incorrectLetters.join(', ').toUpperCase()}</span>`;
+            }
+            detailedFeedback += `<br><span style="font-size: 0.85em; color: #667eea;">Expected letters: ${correctLettersArray.join(', ')}</span>`;
+        }
+        
+        feedbackEl.innerHTML = detailedFeedback;
         feedbackEl.style.display = 'block';
         feedbackEl.style.color = correctCount === numLetters ? '#48bb78' : linePassed ? '#48bb78' : '#f56565';
+        feedbackEl.style.background = correctCount === numLetters ? 'rgba(72, 187, 120, 0.1)' : linePassed ? 'rgba(72, 187, 120, 0.1)' : 'rgba(245, 101, 101, 0.1)';
+        feedbackEl.style.padding = '1rem';
+        feedbackEl.style.borderRadius = '8px';
+        feedbackEl.style.borderLeft = `4px solid ${correctCount === numLetters ? '#48bb78' : linePassed ? '#48bb78' : '#f56565'}`;
     }
     
     // If line is passed, mark it and move to next line
