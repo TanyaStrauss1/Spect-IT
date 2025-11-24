@@ -331,31 +331,43 @@ async function renderVisualAcuityTestWithLiDAR() {
                 `}
             </div>
             
-            <div class="test-display" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 300px; width: 100%;">
-                <div class="snellen-chart" style="text-align: center; margin-bottom: 2rem; width: 100%; max-width: 100%; overflow-x: auto;">
+            <div class="test-display" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; width: 100%; max-width: 100vw; padding: 1rem; box-sizing: border-box;">
+                <div class="snellen-chart" style="text-align: center; margin-bottom: 2rem; width: 100%; max-width: 100%; overflow: visible; display: flex; justify-content: center; align-items: center;">
                     <div class="snellen-line" 
                          style="font-size: ${fontSize}px; font-weight: 900; 
-                                letter-spacing: ${fontSize * 0.8}px; 
-                                line-height: ${fontSize * 1.3}px; 
+                                letter-spacing: ${Math.max(fontSize * 0.5, 12)}px; 
+                                line-height: ${fontSize * 1.4}px; 
                                 color: #000; 
-                                text-shadow: 3px 3px 6px rgba(0,0,0,0.3), 0 0 10px rgba(0,0,0,0.1);
+                                text-shadow: 4px 4px 8px rgba(0,0,0,0.4), 0 0 15px rgba(0,0,0,0.15);
                                 font-family: 'Arial Black', 'Arial', 'Helvetica', sans-serif;
-                                display: inline-block;
+                                display: inline-flex;
+                                align-items: center;
+                                justify-content: center;
+                                flex-wrap: nowrap;
                                 white-space: nowrap;
-                                padding: 2rem 3rem;
-                                background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(250, 250, 250, 1) 100%);
-                                border-radius: 12px;
-                                box-shadow: 0 6px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8);
-                                border: 2px solid rgba(0,0,0,0.05);
+                                padding: 2.5rem 2rem;
+                                background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 248, 248, 1) 100%);
+                                border-radius: 16px;
+                                box-shadow: 0 8px 24px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.9);
+                                border: 3px solid rgba(0,0,0,0.08);
                                 -webkit-font-smoothing: antialiased;
-                                -moz-osx-font-smoothing: grayscale;">
+                                -moz-osx-font-smoothing: grayscale;
+                                max-width: 95vw;
+                                box-sizing: border-box;">
                         ${line.letters.filter(letter => letter && letter.trim()).map((letter, idx) => 
-                            `<span style="display: inline-block; margin: 0 ${fontSize * 0.4}px; 
-                                          filter: contrast(1.2) brightness(1.05);
+                            `<span style="display: inline-flex; 
+                                          align-items: center; 
+                                          justify-content: center;
+                                          margin: 0 ${Math.max(fontSize * 0.3, 8)}px; 
+                                          filter: contrast(1.3) brightness(1.1);
                                           text-rendering: optimizeLegibility;
-                                          min-width: ${fontSize * 0.6}px;
+                                          min-width: ${fontSize * 0.7}px;
+                                          width: ${fontSize * 0.7}px;
+                                          height: ${fontSize * 1.4}px;
                                           text-align: center;
-                                          font-weight: 900;">${letter}</span>`
+                                          font-weight: 900;
+                                          line-height: 1;
+                                          vertical-align: middle;">${letter}</span>`
                         ).join('')}
                     </div>
                     <div style="margin-top: 1rem; font-size: 0.9rem; color: #666; font-weight: 500;">
