@@ -1,62 +1,50 @@
 #!/bin/bash
 
-# Interactive iOS Build - Run this in YOUR terminal (not automated)
-# This script will prompt you for Apple credentials
+# Interactive Build Script - Run this in your terminal
+# This will prompt you for Apple credentials
 
 cd /Users/tanyastrauss/Spect-IT/SpectITMobile
 
-clear
 echo "╔══════════════════════════════════════════════════════════════════════════╗"
-echo "║          🍎 iOS BUILD - INTERACTIVE MODE                                 ║"
+echo "║          🚀 BUILDING iOS APP FOR APP STORE                               ║"
 echo "╚══════════════════════════════════════════════════════════════════════════╝"
 echo ""
 
-# Check EAS login
-echo "📋 Checking EAS login..."
-if ! eas whoami &>/dev/null; then
-    echo "⚠️  Not logged in. Logging in now..."
+# Verify EAS login
+echo "✅ Checking EAS login..."
+USER=$(eas whoami 2>/dev/null || echo "")
+if [ -z "$USER" ]; then
+    echo "⚠️  Not logged in. Logging in..."
     eas login
-    if [ $? -ne 0 ]; then
-        echo "❌ Login failed"
-        exit 1
-    fi
+else
+    echo "✅ Logged in as: $USER"
 fi
-echo "✅ Logged in to EAS"
-echo ""
 
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔨 STARTING iOS BUILD"
+echo "STARTING iOS BUILD"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "📝 You will be prompted for:"
+echo "📱 Building iOS app for App Store..."
+echo "⏱️  This will take 15-30 minutes"
+echo ""
+echo "🔐 You will be prompted for Apple credentials:"
 echo "   1. 'Do you want to log in to your Apple account?' → Type: y"
-echo "   2. 'Apple ID:' → Type: tanstrauss@gmail.com"
-echo "   3. 'Password:' → Type: [Your Apple ID password]"
-echo "   4. 'Verification code:' → Type: [2FA code if enabled]"
+echo "   2. Apple ID: tanstrauss@gmail.com"
+echo "   3. Password: [Enter your password]"
+echo "   4. 2FA Code: [If enabled, enter code from device]"
 echo ""
-echo "⏱️  Build time: 10-20 minutes"
-echo ""
-read -p "Press Enter to start the build..."
+echo "🔗 Monitor: https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds"
 echo ""
 
-# Start the build
+# Run the build - this will prompt for credentials
 eas build --platform ios --profile production
 
-if [ $? -eq 0 ]; then
-    echo ""
-    echo "╔══════════════════════════════════════════════════════════════════════════╗"
-    echo "║          ✅ BUILD STARTED SUCCESSFULLY!                                 ║"
-    echo "╚══════════════════════════════════════════════════════════════════════════╝"
-    echo ""
-    echo "📊 Monitor your build:"
-    echo "   https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds"
-    echo ""
-    echo "📤 After build completes, submit with:"
-    echo "   eas submit --platform ios --latest"
-    echo ""
-else
-    echo ""
-    echo "❌ Build failed. Check errors above."
-    exit 1
-fi
-
+echo ""
+echo "✅ Build command executed!"
+echo ""
+echo "📋 Next Steps:"
+echo "   1. Monitor build: https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds"
+echo "   2. After completion: eas submit --platform ios --latest"
+echo "   3. Complete listing: https://appstoreconnect.apple.com/apps/6755681856/distribution/ios/version/inflight"
+echo ""
