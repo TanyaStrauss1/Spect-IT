@@ -18,6 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.spectit.app",
       "buildNumber": "2",
+      "appleTeamId": "P7BPRR2MY3",
       "infoPlist": {
         "NSCameraUsageDescription": "Spect-IT Premium uses your camera for advanced AI-powered eye tracking, 3D face mapping, and professional vision measurements. The camera analyzes your eyes with clinical-grade precision for accurate test results.",
         "NSPhotoLibraryUsageDescription": "Spect-IT Premium saves your premium test results and professional reports to your photo library for easy sharing with eye care professionals.",

@@ -18,6 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.spectit.app",
       "buildNumber": "1",
+      "appleTeamId": "P7BPRR2MY3",
       "infoPlist": {
         "NSCameraUsageDescription": "Spect-IT uses your camera to perform professional eye tests and vision measurements. The camera analyzes your eyes to assess visual acuity, measure prescriptions, and detect vision issues. All processing is done securely on your device.",
         "NSPhotoLibraryUsageDescription": "Spect-IT saves your test results and reports to your photo library so you can easily share them with your eye care professional or keep them for your records. Your privacy is protected - we never access photos you haven't explicitly saved from the app.",
