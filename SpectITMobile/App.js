@@ -100,6 +100,11 @@ export default function App() {
         `}
         // Handle navigation
         onNavigationStateChange={(navState) => {
+          // Guard against null/undefined URLs (can occur during initial load or error states)
+          if (!navState || !navState.url || typeof navState.url !== 'string') {
+            return;
+          }
+          
           // Keep navigation within the app
           if (!navState.url.includes('spect-it.com') && !navState.url.startsWith('mailto:') && !navState.url.startsWith('tel:')) {
             // External links - could open in browser if needed
