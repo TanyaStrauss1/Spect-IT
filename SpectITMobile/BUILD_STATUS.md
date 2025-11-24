@@ -1,90 +1,60 @@
-# 🚀 Mobile App Build Status
+# 🔨 Build Status
 
-## ✅ Website Changes Pushed
+## Current Status
 
-All latest changes to https://www.spect-it.com have been committed and pushed to GitHub.
-
-**Vercel will automatically deploy the updates.**
-
----
-
-## 📱 Mobile App Builds Started
-
-Both iOS and Android builds are now running in the Expo cloud.
-
-### Build Details
-
-- **Platform:** iOS & Android
-- **Profile:** Production
-- **Account:** tstrauss
-- **Project:** spectit-mobile
-
-### Monitor Builds
-
-**Expo Dashboard:**
-https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds
-
-**Build Time:** 10-20 minutes per build
+**Build Process:** Running (PID 97809)  
+**Status:** Waiting for Apple credentials  
+**Platform:** iOS  
+**Profile:** production
 
 ---
 
-## 📤 After Builds Complete
+## ⚠️ Action Required
 
-### Submit to App Stores
+The build process is running but **requires interactive input** for Apple credentials.
 
-**Submit iOS:**
+### You Need To:
+
+1. **Open Terminal**
+2. **Run this command:**
+   ```bash
+   cd /Users/tanyastrauss/Spect-IT/SpectITMobile
+   eas build --platform ios --profile production
+   ```
+
+3. **When prompted, enter:**
+   - "Do you want to log in to your Apple account?" → Type: `y`
+   - Apple ID: `tanstrauss@gmail.com`
+   - Password: [Enter your password]
+   - 2FA Code: [If enabled, enter code from device]
+
+---
+
+## 📊 Monitor Build
+
+Once credentials are provided and build starts:
+
+- **Expo Dashboard:** https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds
+- **Build Time:** 15-30 minutes
+- **Status:** Will show "in progress" then "finished"
+
+---
+
+## 📤 After Build Completes
+
+Submit to App Store Connect:
+
 ```bash
-cd /Users/tanyastrauss/Spect-IT/SpectITMobile
 eas submit --platform ios --latest
 ```
 
-**Submit Android:**
-```bash
-cd /Users/tanyastrauss/Spect-IT/SpectITMobile
-eas submit --platform android --latest
-```
+---
 
-**Or submit both:**
-```bash
-./SUBMIT_AFTER_BUILDS.sh
-```
+## 🔗 Important Links
+
+- **Monitor Builds:** https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds
+- **App Store Connect:** https://appstoreconnect.apple.com/apps/6755681856/distribution/ios/version/inflight
 
 ---
 
-## 🍎 iOS App Store Connect
-
-1. Go to: https://appstoreconnect.apple.com
-2. Sign in: tanstrauss@gmail.com
-3. Complete listing:
-   - Screenshots
-   - Description
-   - Privacy policy: https://www.spect-it.com/privacy-policy
-4. Submit for review
-
----
-
-## 🤖 Google Play Store
-
-1. Go to: https://play.google.com/console/u/0/developers/6438572372972515481
-2. Create app or navigate to Spect-IT
-3. Complete listing
-4. Submit for review
-
----
-
-## 📋 What's Included in This Build
-
-✅ Supabase cloud storage integration
-✅ Enhanced vision tests with LiDAR simulation
-✅ Professional e-commerce shop
-✅ Location-based specialist finder
-✅ Virtual try-on feature
-✅ ZAR currency support
-✅ South African market focus
-✅ Email sign-in for test results
-✅ Test history tracking
-✅ Shopping cart functionality
-
----
-
-**Status:** Builds in progress → Monitor → Submit → Complete listings → Review
+**The build process needs your Apple credentials to proceed. Run the command in your terminal to provide them.**
