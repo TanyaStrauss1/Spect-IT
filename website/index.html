@@ -78,16 +78,16 @@
                 <p class="section-subtitle">Comprehensive eye health assessment tools</p>
                 
                 <div class="tests-grid">
-                    <!-- Visual Acuity Test -->
-                    <div class="test-card" data-test="visual-acuity">
-                        <div class="test-icon">📏</div>
-                        <h3>Visual Acuity Test</h3>
-                        <p>Measure distance and near vision using Snellen chart</p>
+                    <!-- Prescription Test -->
+                    <div class="test-card" data-test="prescription">
+                        <div class="test-icon">🔍</div>
+                        <h3>Prescription Measurement</h3>
+                        <p>Estimate eyeglass prescription strength</p>
                         <div class="test-details">
-                            <span class="test-duration">⏱️ 3-5 min</span>
-                            <span class="test-accuracy">🎯 High Accuracy</span>
+                            <span class="test-duration">⏱️ 5-10 min</span>
+                            <span class="test-accuracy">🎯 Medium Accuracy</span>
                         </div>
-                        <button class="btn btn-test" onclick="startVisualAcuityTest()">Start Test</button>
+                        <button class="btn btn-test" onclick="startPrescriptionTest()">Start Test</button>
                     </div>
 
                     <!-- Color Blindness Test -->
@@ -138,16 +138,16 @@
                         <button class="btn btn-test" onclick="startVisualFieldTest()">Start Test</button>
                     </div>
 
-                    <!-- Prescription Test -->
-                    <div class="test-card" data-test="prescription">
-                        <div class="test-icon">🔍</div>
-                        <h3>Prescription Measurement</h3>
-                        <p>Estimate eyeglass prescription strength</p>
+                    <!-- Visual Acuity Test (Moved to last position) -->
+                    <div class="test-card" data-test="visual-acuity">
+                        <div class="test-icon">📏</div>
+                        <h3>Visual Acuity Test</h3>
+                        <p>Measure distance and near vision using Snellen chart</p>
                         <div class="test-details">
-                            <span class="test-duration">⏱️ 5-10 min</span>
-                            <span class="test-accuracy">🎯 Medium Accuracy</span>
+                            <span class="test-duration">⏱️ 3-5 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
                         </div>
-                        <button class="btn btn-test" onclick="startPrescriptionTest()">Start Test</button>
+                        <button class="btn btn-test" onclick="startVisualAcuityTest()">Start Test</button>
                     </div>
                 </div>
             </div>
@@ -248,7 +248,7 @@
     <script src="premium-features.js"></script>
     <script src="spectit-location.js"></script>
     <script src="premium-dashboard.js"></script>
-    <script src="tests.js?v=6.5"></script>
+    <script src="tests.js?v=7.0"></script>
     <script src="app.js"></script>
     <script src="specialists.js"></script>
     <script src="shop.js"></script>
