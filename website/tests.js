@@ -118,6 +118,7 @@ async function startVisualAcuityTestInternal() {
         // Helper function to generate correct answers (order doesn't matter for Snellen)
         // WHO Standard: Accept any order of the correct letters
         const generateCorrectAnswers = (letters) => {
+            if (!letters || letters.length === 0) return [];
             const letterStr = letters.join('').toUpperCase();
             const perms = [letterStr, letterStr.toLowerCase()];
             // Generate key permutations for validation (deterministic, not random)
@@ -135,16 +136,29 @@ async function startVisualAcuityTestInternal() {
             return [...new Set(perms)];
         };
         
+        // Create lines with pre-computed correctAnswers to avoid getter issues
+        const createLine = (level, visualAngle, logMAR, letters, whoCategory) => {
+            const line = {
+                level: level,
+                visualAngle: visualAngle,
+                logMAR: logMAR,
+                letters: letters,
+                whoCategory: whoCategory,
+                correctAnswers: generateCorrectAnswers(letters) // Pre-compute to avoid getter issues
+            };
+            return line;
+        };
+        
         lines: [
-            { level: '6/60', visualAngle: 50, logMAR: 1.0, letters: ['E', 'F', 'P', 'T', 'O'], whoCategory: 'moderate', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/48', visualAngle: 40, logMAR: 0.9, letters: ['C', 'D', 'E', 'F', 'P'], whoCategory: 'moderate', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/36', visualAngle: 30, logMAR: 0.78, letters: ['H', 'K', 'N', 'O', 'R'], whoCategory: 'moderate', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/24', visualAngle: 20, logMAR: 0.6, letters: ['S', 'T', 'V', 'Z', 'C'], whoCategory: 'moderate', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/18', visualAngle: 15, logMAR: 0.48, letters: ['D', 'E', 'F', 'H', 'P'], whoCategory: 'moderate', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/12', visualAngle: 10, logMAR: 0.3, letters: ['K', 'N', 'O', 'R', 'S'], whoCategory: 'normal', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/9', visualAngle: 7.5, logMAR: 0.18, letters: ['T', 'V', 'Z', 'C', 'D'], whoCategory: 'normal', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/6', visualAngle: 5, logMAR: 0.0, letters: ['E', 'F', 'H', 'P', 'T'], whoCategory: 'normal', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
-            { level: '6/5', visualAngle: 4, logMAR: -0.1, letters: ['O', 'R', 'S', 'V', 'Z'], whoCategory: 'normal', get correctAnswers() { return generateCorrectAnswers(this.letters); } },
+            createLine('6/60', 50, 1.0, ['E', 'F', 'P', 'T', 'O'], 'moderate'),
+            createLine('6/48', 40, 0.9, ['C', 'D', 'E', 'F', 'P'], 'moderate'),
+            createLine('6/36', 30, 0.78, ['H', 'K', 'N', 'O', 'R'], 'moderate'),
+            createLine('6/24', 20, 0.6, ['S', 'T', 'V', 'Z', 'C'], 'moderate'),
+            createLine('6/18', 15, 0.48, ['D', 'E', 'F', 'H', 'P'], 'moderate'),
+            createLine('6/12', 10, 0.3, ['K', 'N', 'O', 'R', 'S'], 'normal'),
+            createLine('6/9', 7.5, 0.18, ['T', 'V', 'Z', 'C', 'D'], 'normal'),
+            createLine('6/6', 5, 0.0, ['E', 'F', 'H', 'P', 'T'], 'normal'),
+            createLine('6/5', 4, -0.1, ['O', 'R', 'S', 'V', 'Z'], 'normal'),
         ],
         userReadings: [] // Store what user actually reads
     };
@@ -618,11 +632,14 @@ function checkSnellenAnswer() {
     const correctLetters = line.letters.join('').toUpperCase();
     const numLetters = correctLetters.length;
     
-    // Ensure correctAnswers is available (generate if needed)
+    // Ensure correctAnswers is available (should be pre-computed, but add fallback)
     if (!line.correctAnswers || line.correctAnswers.length === 0) {
-        // Fallback: generate answers if getter didn't work
+        // Fallback: generate answers if not pre-computed
+        console.warn(`[Snellen Test] correctAnswers not found for line ${currentTest.currentLine}, generating fallback`);
         const letterStr = correctLetters;
         line.correctAnswers = [letterStr, letterStr.toLowerCase()];
+        // Add reverse and rotated versions
+        line.correctAnswers.push(letterStr.split('').reverse().join(''));
     }
     
     // Initialize line tracking if not exists
@@ -638,22 +655,43 @@ function checkSnellenAnswer() {
     
     // WHO Standard: Calculate how many letters the user got correct (order-independent)
     // Compare letter sets case-insensitively and account for duplicates
-    const userLetterArray = userAnswer.toUpperCase().split('').filter(l => l.trim() !== '');
-    const correctLetterArray = correctLetters.toUpperCase().split('');
+    const userLetterArray = userAnswer.toUpperCase().split('').filter(l => l.trim() !== '' && l.length > 0);
+    const correctLetterArray = correctLetters.toUpperCase().split('').filter(l => l.length > 0);
     let correctCount = 0;
+    
+    // Debug logging for line 3 (6/24) if needed
+    if (currentTest.currentLine === 3) {
+        console.log('[Snellen Test Line 3] User answer:', userAnswer);
+        console.log('[Snellen Test Line 3] Correct letters:', correctLetters);
+        console.log('[Snellen Test Line 3] User array:', userLetterArray);
+        console.log('[Snellen Test Line 3] Correct array:', correctLetterArray);
+    }
     
     // Create frequency maps for accurate counting (handles duplicate letters correctly)
     const userLetterFreq = {};
     const correctLetterFreq = {};
     
-    userLetterArray.forEach(l => userLetterFreq[l] = (userLetterFreq[l] || 0) + 1);
-    correctLetterArray.forEach(l => correctLetterFreq[l] = (correctLetterFreq[l] || 0) + 1);
+    userLetterArray.forEach(l => {
+        if (l && l.length > 0) {
+            userLetterFreq[l] = (userLetterFreq[l] || 0) + 1;
+        }
+    });
+    correctLetterArray.forEach(l => {
+        if (l && l.length > 0) {
+            correctLetterFreq[l] = (correctLetterFreq[l] || 0) + 1;
+        }
+    });
     
     // Count matches (accounting for duplicates - WHO standard)
     for (const letter in correctLetterFreq) {
         if (userLetterFreq[letter]) {
             correctCount += Math.min(userLetterFreq[letter], correctLetterFreq[letter]);
         }
+    }
+    
+    // Debug for line 3
+    if (currentTest.currentLine === 3) {
+        console.log('[Snellen Test Line 3] Correct count:', correctCount, 'out of', numLetters);
     }
     
     // Store this attempt
