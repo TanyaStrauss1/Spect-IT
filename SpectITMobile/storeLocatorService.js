@@ -4,9 +4,13 @@
  */
 
 import * as Location from 'expo-location';
+import logger from './src/utils/logger';
 
 // Google Maps API Configuration
-const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'YOUR_API_KEY_HERE';
+const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+if (!GOOGLE_MAPS_API_KEY) {
+  throw new Error('EXPO_PUBLIC_GOOGLE_MAPS_API_KEY is required. Please add it to your .env file.');
+}
 const PLACES_API_BASE = 'https://maps.googleapis.com/maps/api/place';
 const RADIUS = 10000; // 10km default radius
 
@@ -21,7 +25,7 @@ export const requestLocationPermission = async () => {
     }
     return true;
   } catch (error) {
-    console.error('Error requesting location permission:', error);
+    logger.error('Error requesting location permission:', error);
     throw error;
   }
 };
@@ -40,7 +44,7 @@ export const getCurrentLocation = async () => {
       longitude: location.coords.longitude,
     };
   } catch (error) {
-    console.error('Error getting current location:', error);
+    logger.error('Error getting current location:', error);
     throw error;
   }
 };
@@ -76,7 +80,7 @@ export const findNearestRetailers = async (latitude, longitude, radius = RADIUS)
         })));
       }
     } catch (error) {
-      console.error(`Error searching for ${query}:`, error);
+      logger.error(`Error searching for ${query}:`, error);
     }
   }
 
@@ -114,7 +118,7 @@ export const findNearestOptometrists = async (latitude, longitude, radius = RADI
         })));
       }
     } catch (error) {
-      console.error(`Error searching for ${query}:`, error);
+      logger.error(`Error searching for ${query}:`, error);
     }
   }
 
@@ -138,7 +142,7 @@ export const getPlaceDetails = async (placeId) => {
     }
     return null;
   } catch (error) {
-    console.error('Error getting place details:', error);
+    logger.error('Error getting place details:', error);
     return null;
   }
 };
@@ -165,7 +169,7 @@ export const getDirections = async (origin, destination) => {
     }
     return null;
   } catch (error) {
-    console.error('Error getting directions:', error);
+    logger.error('Error getting directions:', error);
     return null;
   }
 };
@@ -310,7 +314,7 @@ export const searchStoresByProduct = async (productType, latitude, longitude, ra
     const filtered = filterRetailersByProduct(retailers, productType);
     return filtered.map(formatStoreInfo);
   } catch (error) {
-    console.error('Error searching stores by product:', error);
+    logger.error('Error searching stores by product:', error);
     return [];
   }
 };
@@ -331,7 +335,7 @@ export const findNearbyEyeCare = async (latitude, longitude, radius = RADIUS) =>
       all: [...retailers, ...optometrists].map(formatStoreInfo).sort((a, b) => a.distance - b.distance),
     };
   } catch (error) {
-    console.error('Error finding nearby eye care:', error);
+    logger.error('Error finding nearby eye care:', error);
     return {
       retailers: [],
       optometrists: [],

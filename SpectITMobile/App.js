@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, ActivityIndicator, SafeAreaView, StatusBar, Platform, Text, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as SplashScreen from 'expo-splash-screen';
+import logger from './src/utils/logger';
 
 // Keep splash screen visible while loading
 SplashScreen.preventAutoHideAsync();
@@ -27,7 +28,7 @@ export default function App() {
 
   const handleError = (syntheticEvent) => {
     const { nativeEvent } = syntheticEvent;
-    console.warn('WebView error: ', nativeEvent);
+    logger.warn('WebView error: ', nativeEvent);
     // Set error state to show error overlay with retry button
     setError(true);
     setLoading(false);
@@ -35,7 +36,7 @@ export default function App() {
   };
 
   const handleRetry = () => {
-    console.log('Retry button pressed - resetting error and reloading...');
+    logger.log('Retry button pressed - resetting error and reloading...');
     // CRITICAL: Reset error state FIRST to immediately hide error overlay
     setError(false);
     // Set loading to show loading indicator
@@ -88,12 +89,12 @@ export default function App() {
             // Enable camera access prompts
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
               // Camera is available
-              console.log('Camera API available');
+              // Camera API available
             }
             
             // Enable geolocation
             if (navigator.geolocation) {
-              console.log('Geolocation API available');
+              // Geolocation API available
             }
           })();
           true; // Required for injected JavaScript
@@ -108,17 +109,17 @@ export default function App() {
           // Keep navigation within the app
           if (!navState.url.includes('spect-it.com') && !navState.url.startsWith('mailto:') && !navState.url.startsWith('tel:')) {
             // External links - could open in browser if needed
-            console.log('External link:', navState.url);
+            logger.log('External link:', navState.url);
           }
         }}
         // Handle messages from web
         onMessage={(event) => {
           try {
             const data = JSON.parse(event.nativeEvent.data);
-            console.log('Message from web:', data);
+            logger.log('Message from web:', data);
             // Handle messages from website if needed
           } catch (e) {
-            console.log('Message from web (non-JSON):', event.nativeEvent.data);
+            logger.log('Message from web (non-JSON):', event.nativeEvent.data);
           }
         }}
       />
