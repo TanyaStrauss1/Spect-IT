@@ -710,21 +710,23 @@ function checkSnellenAnswer() {
     } else {
         // Line not passed - check if we should allow another attempt
         if (lineData.attempts.length >= 3) {
-            // Maximum attempts reached for this line - move to next or finish
-            if (currentTest.currentLine < currentTest.lines.length - 1) {
-                // Move to next line
-                currentTest.currentLine++;
-                setTimeout(() => {
-                    renderVisualAcuityTestWithLiDAR();
-                    const nextInput = document.getElementById('snellen-answer');
-                    if (nextInput) nextInput.focus();
-                }, 1500);
-            } else {
-                // Last line failed - finish test
+            // Maximum attempts reached for this line - always move to next line
+            currentTest.currentLine++;
+            
+            // If we've completed all lines, finish test
+            if (currentTest.currentLine >= currentTest.lines.length) {
                 setTimeout(() => {
                     finishVisualAcuityTest();
                 }, 1500);
+                return;
             }
+            
+            // Move to next line (test continues even after wrong answers)
+            setTimeout(() => {
+                renderVisualAcuityTestWithLiDAR();
+                const nextInput = document.getElementById('snellen-answer');
+                if (nextInput) nextInput.focus();
+            }, 1500);
         } else {
             // Allow another attempt on same line
             setTimeout(() => {
@@ -741,7 +743,7 @@ function answerVisualAcuity(correct) {
         return;
     }
     
-    // "Cannot Read" button clicked
+    // "Cannot Read" button clicked - continue to next line instead of ending test
     if (!correct) {
         const line = currentTest.lines[currentTest.currentLine];
         currentTest.userReadings.push({
@@ -749,9 +751,44 @@ function answerVisualAcuity(correct) {
             level: line.level,
             expected: line.letters.join('').toUpperCase(),
             userAnswer: 'CANNOT READ',
-            correct: false
+            correct: false,
+            correctCount: 0,
+            totalLetters: line.letters.length
         });
-        finishVisualAcuityTest();
+        
+        // Mark this line as attempted (failed)
+        if (!currentTest.lineAttempts[currentTest.currentLine]) {
+            currentTest.lineAttempts[currentTest.currentLine] = {
+                attempts: [],
+                correctCount: 0,
+                passed: false
+            };
+        }
+        currentTest.lineAttempts[currentTest.currentLine].attempts.push({
+            userAnswer: 'CANNOT READ',
+            correctCount: 0,
+            totalLetters: line.letters.length
+        });
+        
+        currentTest.total++;
+        
+        // Move to next line (test continues)
+        currentTest.currentLine++;
+        
+        // If we've completed all lines, finish test
+        if (currentTest.currentLine >= currentTest.lines.length) {
+            setTimeout(() => {
+                finishVisualAcuityTest();
+            }, 1000);
+            return;
+        }
+        
+        // Continue to next line
+        setTimeout(() => {
+            renderVisualAcuityTestWithLiDAR();
+            const nextInput = document.getElementById('snellen-answer');
+            if (nextInput) nextInput.focus();
+        }, 1000);
         return;
     }
     
