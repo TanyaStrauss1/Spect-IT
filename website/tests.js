@@ -204,9 +204,9 @@ async function renderVisualAcuityTestWithLiDAR() {
     
     // Medical-grade scaling: Letter height = visual angle * distance
     // Standard Snellen: 5 arc minutes for 6/6 (20/20) at 6 meters
-    // Font size scaling factor: 0.9 accounts for letter height vs font-size relationship
-    // Clamp to medical standard range: 20px minimum, 600px maximum for large displays
-    const fontSize = Math.max(24, Math.min(600, letterSizePixels * 0.9));
+    // Enhanced scaling for maximum visibility: 0.95 factor for better readability
+    // Clamp to medical standard range: 28px minimum (increased for visibility), 700px maximum for large displays
+    const fontSize = Math.max(28, Math.min(700, letterSizePixels * 0.95));
     
     // Get distance status from LiDAR Engine
     let distanceStatus = 'unknown';
@@ -313,19 +313,26 @@ async function renderVisualAcuityTestWithLiDAR() {
             <div class="test-display" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 300px; width: 100%;">
                 <div class="snellen-chart" style="text-align: center; margin-bottom: 2rem; width: 100%; max-width: 100%; overflow-x: auto;">
                     <div class="snellen-line" 
-                         style="font-size: ${fontSize}px; font-weight: bold; 
-                                letter-spacing: ${fontSize}px; 
-                                line-height: ${fontSize * 1.2}px; 
+                         style="font-size: ${fontSize}px; font-weight: 900; 
+                                letter-spacing: ${fontSize * 0.8}px; 
+                                line-height: ${fontSize * 1.3}px; 
                                 color: #000; 
-                                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-                                font-family: 'Arial', 'Helvetica', sans-serif;
+                                text-shadow: 3px 3px 6px rgba(0,0,0,0.3), 0 0 10px rgba(0,0,0,0.1);
+                                font-family: 'Arial Black', 'Arial', 'Helvetica', sans-serif;
                                 display: inline-block;
                                 white-space: nowrap;
-                                padding: 1.5rem 2rem;
-                                background: rgba(255, 255, 255, 0.98);
-                                border-radius: 8px;
-                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                        ${line.letters.join('&nbsp;'.repeat(Math.max(3, Math.floor(fontSize / 20))))}
+                                padding: 2rem 3rem;
+                                background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(250, 250, 250, 1) 100%);
+                                border-radius: 12px;
+                                box-shadow: 0 6px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8);
+                                border: 2px solid rgba(0,0,0,0.05);
+                                -webkit-font-smoothing: antialiased;
+                                -moz-osx-font-smoothing: grayscale;">
+                        ${line.letters.map((letter, idx) => 
+                            `<span style="display: inline-block; margin: 0 ${fontSize * 0.4}px; 
+                                          filter: contrast(1.2) brightness(1.05);
+                                          text-rendering: optimizeLegibility;">${letter}</span>`
+                        ).join('')}
                     </div>
                     <div style="margin-top: 1rem; font-size: 0.9rem; color: #666; font-weight: 500;">
                         Line ${currentTest.currentLine + 1}: ${line.level} (${visualAngleMinutes} arc min)
