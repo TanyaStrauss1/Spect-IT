@@ -109,9 +109,8 @@ xcodebuild archive \
     -configuration Release \
     -archivePath "$ARCHIVE_PATH" \
     -destination "generic/platform=iOS" \
-    CODE_SIGN_IDENTITY="Apple Distribution" \
     DEVELOPMENT_TEAM="$TEAM_ID" \
-    PROVISIONING_PROFILE_SPECIFIER="" \
+    CODE_SIGN_STYLE="Automatic" \
     -allowProvisioningUpdates 2>&1 | tee build/archive.log | grep -E "(error|warning|succeeded|Archive)" || true
 
 if [ ! -d "$ARCHIVE_PATH" ]; then
