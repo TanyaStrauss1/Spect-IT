@@ -374,9 +374,9 @@ async function renderVisualAcuityTestWithLiDAR() {
                                           margin: 0 ${Math.max(Math.min(fontSize * 0.25, 12), 4)}px; 
                                           filter: contrast(1.3) brightness(1.1);
                                           text-rendering: optimizeLegibility;
-                                          min-width: ${Math.min(fontSize * 0.6, 60)}px;
-                                          width: auto;
-                                          height: auto;
+                                          min-width: ${fontSize * 0.65}px;
+                                          width: ${fontSize * 0.65}px;
+                                          height: ${fontSize * 1.3}px;
                                           text-align: center;
                                           font-weight: 900;
                                           line-height: 1;
