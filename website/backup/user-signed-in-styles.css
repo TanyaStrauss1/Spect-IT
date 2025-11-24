@@ -1,0 +1,56 @@
+/* User Signed-In Indicator Styles */
+
+.user-email-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    margin-left: auto;
+    margin-right: 1rem;
+    animation: fadeInSlide 0.3s ease;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.user-email-icon {
+    color: #48bb78;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.user-email-text {
+    color: white;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-email-indicator {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+        margin-right: 0.5rem;
+    }
+    
+    .user-email-text {
+        display: none; /* Hide text on mobile, show only icon */
+    }
+    
+    .user-email-indicator::after {
+        content: 'Signed in';
+        color: white;
+        font-size: 0.75rem;
+    }
+}
+
