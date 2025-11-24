@@ -1,85 +1,72 @@
 #!/bin/bash
 
+# Run iOS Build - This script will guide you through the build process
+# Run this in your terminal: ./RUN_BUILD_NOW.sh
+
+set -e
+
 cd /Users/tanyastrauss/Spect-IT/SpectITMobile
 
 echo "╔══════════════════════════════════════════════════════════════════════════╗"
-echo "║          🚀 BUILDING SPECT-IT APP                                        ║"
+echo "║          🚀 BUILDING iOS APP FOR APP STORE                               ║"
 echo "╚══════════════════════════════════════════════════════════════════════════╝"
 echo ""
 
-# Check if logged in
+# Check EAS CLI
+if ! command -v eas &> /dev/null; then
+    echo "❌ EAS CLI not found. Installing..."
+    npm install -g eas-cli
+fi
+
+# Check login
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📋 Checking EAS login status..."
+echo "VERIFYING EAS LOGIN"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if eas whoami > /dev/null 2>&1; then
-    EAS_USER=$(eas whoami 2>/dev/null)
-    echo "✅ Logged in: $EAS_USER"
-    echo ""
-else
-    echo "⚠️  Not logged in to EAS"
-    echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔐 LOGIN REQUIRED - Starting login process..."
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-    echo "Please enter your email when prompted:"
-    echo "  Email: tanstrauss@gmail.com"
-    echo ""
-    echo "A browser window will open - approve the login there."
-    echo ""
+USER=$(eas whoami 2>/dev/null || echo "")
+if [ -z "$USER" ]; then
+    echo "⚠️  Not logged in. Logging in..."
     eas login
-    
-    # Check if login was successful
-    if eas whoami > /dev/null 2>&1; then
-        echo ""
-        echo "✅ Login successful!"
-        echo ""
-    else
-        echo ""
-        echo "❌ Login failed. Please try again."
-        exit 1
-    fi
-fi
-
-# Build Android
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔨 BUILDING ANDROID APP"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Building Android App Bundle (.aab) for Google Play Store..."
-echo "This will take 10-20 minutes"
-echo ""
-echo "Monitor build at:"
-echo "https://expo.dev/accounts/tanstrauss/projects/spectit-mobile/builds"
-echo ""
-echo "Starting build..."
-echo ""
-
-eas build --platform android --profile production
-
-BUILD_EXIT_CODE=$?
-
-echo ""
-if [ $BUILD_EXIT_CODE -eq 0 ]; then
-    echo "╔══════════════════════════════════════════════════════════════════════════╗"
-    echo "║          ✅ ANDROID BUILD COMPLETE!                                     ║"
-    echo "╚══════════════════════════════════════════════════════════════════════════╝"
-    echo ""
-    echo "📱 Next Steps:"
-    echo "  1. Download .aab file from Expo dashboard"
-    echo "  2. Submit to Google Play Store"
-    echo "  3. No Apple approval needed for Android!"
-    echo ""
 else
-    echo "╔══════════════════════════════════════════════════════════════════════════╗"
-    echo "║          ⚠️  BUILD ENCOUNTERED ISSUES                                    ║"
-    echo "╚══════════════════════════════════════════════════════════════════════════╝"
-    echo ""
-    echo "Check the error messages above for details."
-    echo "Monitor build status at:"
-    echo "https://expo.dev/accounts/tanstrauss/projects/spectit-mobile/builds"
-    echo ""
+    echo "✅ Logged in as: $USER"
 fi
 
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STARTING iOS BUILD"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📱 Building iOS app for App Store..."
+echo "⏱️  This will take 15-30 minutes"
+echo ""
+echo "⚠️  You will be prompted for:"
+echo "   1. Apple account login (type 'y' for yes)"
+echo "   2. Apple ID: tanstrauss@gmail.com"
+echo "   3. Apple ID password"
+echo "   4. 2FA code (if enabled)"
+echo ""
+echo "🔗 Monitor build: https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds"
+echo ""
+read -p "Press Enter to start build..." 
+
+echo ""
+echo "🔨 Starting build..."
+echo ""
+
+# Run the build - this will prompt for Apple credentials
+eas build --platform ios --profile production
+
+echo ""
+echo "✅ Build process started!"
+echo ""
+echo "📋 Next Steps:"
+echo "   1. Monitor build progress at:"
+echo "      https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds"
+echo ""
+echo "   2. After build completes, submit with:"
+echo "      eas submit --platform ios --latest"
+echo ""
+echo "   3. Complete app listing at:"
+echo "      https://appstoreconnect.apple.com/apps/6755681856/distribution/ios/version/inflight"
+echo ""

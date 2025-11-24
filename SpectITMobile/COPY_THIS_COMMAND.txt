@@ -1,0 +1,2 @@
+cd /Users/tanyastrauss/Spect-IT/SpectITMobile && eas build --platform ios --profile production
+
