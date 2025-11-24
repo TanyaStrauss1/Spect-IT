@@ -200,7 +200,7 @@ async function renderVisualAcuityTestWithLiDAR() {
         ? window.lidarEngine.calculateLetterSize(visualAngleMinutes, actualDistanceMeters)
         : actualDistanceMeters * Math.tan((visualAngleMinutes / 60) * (Math.PI / 180));
     
-    // Convert to pixels - Medical-grade accurate calculation
+    // Convert to pixels - Medical-grade accurate calculation with screen fitting
     let letterSizePixels;
     if (window.lidarEngine && currentTest.lidarAvailable) {
         letterSizePixels = window.lidarEngine.convertToPixels(letterHeightMeters, currentTest.actualDPI, currentTest.screenWidthMeters);
@@ -218,7 +218,17 @@ async function renderVisualAcuityTestWithLiDAR() {
     // Enhanced scaling for maximum visibility and accuracy: 1.0 factor for exact medical standard
     // Clamp to medical standard range: 32px minimum (increased for better visibility), 800px maximum for large displays
     // Ensure letters are large enough to be clearly visible
-    const fontSize = Math.max(32, Math.min(800, letterSizePixels * 1.0));
+    let fontSize = Math.max(32, Math.min(800, letterSizePixels * 1.0));
+    
+    // Screen fitting: Ensure all letters fit on screen
+    // Calculate maximum font size based on viewport width and number of letters
+    const numLetters = line.letters.filter(l => l && l.trim()).length;
+    const availableWidth = currentTest.viewportWidth - 80; // Account for padding
+    const maxFontSizeForScreen = Math.floor(availableWidth / (numLetters * 1.8)); // 1.8 accounts for letter width + spacing
+    fontSize = Math.min(fontSize, maxFontSizeForScreen);
+    
+    // Ensure minimum readable size
+    fontSize = Math.max(24, fontSize);
     
     // Debug logging for line 2
     if (line.level === '6/48') {
@@ -332,12 +342,12 @@ async function renderVisualAcuityTestWithLiDAR() {
             </div>
             
             <div class="test-display" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 400px; width: 100%; max-width: 100vw; padding: 1rem; box-sizing: border-box; overflow: hidden;">
-                <div class="snellen-chart" style="text-align: center; margin-bottom: 2rem; width: 100%; max-width: 100%; overflow: visible; display: flex; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <div class="snellen-chart" style="text-align: center; margin-bottom: 2rem; width: 100%; max-width: 100%; overflow: visible; display: flex; justify-content: center; align-items: center; flex-wrap: nowrap;">
                     <div class="snellen-line" 
-                         style="font-size: ${Math.min(fontSize, Math.floor((currentTest.viewportWidth * 0.8) / (line.letters.length * 1.5)))}px; 
+                         style="font-size: ${fontSize}px; 
                                 font-weight: 900; 
                                 letter-spacing: ${Math.max(Math.min(fontSize * 0.4, 20), 8)}px; 
-                                line-height: ${Math.min(fontSize * 1.4, currentTest.viewportHeight * 0.3)}px; 
+                                line-height: ${fontSize * 1.4}px; 
                                 color: #000; 
                                 text-shadow: 4px 4px 8px rgba(0,0,0,0.4), 0 0 15px rgba(0,0,0,0.15);
                                 font-family: 'Arial Black', 'Arial', 'Helvetica', sans-serif;
