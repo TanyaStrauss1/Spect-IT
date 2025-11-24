@@ -856,14 +856,15 @@ async function finishVisualAcuityTest() {
             const line = currentTest.lines[reading.line];
             const numLetters = line.letters.length;
             
-            // Calculate required correct based on line size
+            // WHO Standard: Calculate required correct based on line size
+            // WHO recommends: 4 out of 5 (80%) for 5-optotype lines
             let requiredCorrect;
-            if (numLetters <= 2) {
-                requiredCorrect = numLetters;
-            } else if (numLetters <= 5) {
-                requiredCorrect = numLetters === 5 ? 4 : 3;
+            if (numLetters === 5) {
+                requiredCorrect = 4; // WHO standard: 4 out of 5 (80%)
+            } else if (numLetters < 5) {
+                requiredCorrect = Math.ceil(numLetters * 0.8); // 80% for lines with fewer letters
             } else {
-                requiredCorrect = Math.ceil(numLetters * 0.7);
+                requiredCorrect = Math.ceil(numLetters * 0.8); // 80% for any other configurations
             }
             
             if (reading.correctCount >= requiredCorrect) {
