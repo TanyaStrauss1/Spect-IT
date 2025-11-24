@@ -2499,8 +2499,33 @@ function displaySpecialists(specialists) {
         return;
     }
     
+    // Calculate distances if not already calculated
+    specialists.forEach(specialist => {
+        if (!specialist.distance && specialist.location && userLocation) {
+            specialist.distance = calculateDistance(userLocation, specialist.location);
+        }
+    });
+    
+    // Sort by distance (nearest first) - prioritize web-scraped specialists
+    const sorted = [...specialists].sort((a, b) => {
+        // First sort by distance
+        const distA = a.distance || Infinity;
+        const distB = b.distance || Infinity;
+        if (Math.abs(distA - distB) > 0.1) {
+            return distA - distB;
+        }
+        // If similar distance, prioritize web-scraped (has source info)
+        if (a.source && !b.source) return -1;
+        if (!a.source && b.source) return 1;
+        // Then by rating
+        return (b.rating || 0) - (a.rating || 0);
+    });
+    
     // Filter by distance
-    const filtered = specialists.filter(s => s.distance <= maxDistance);
+    const filtered = sorted.filter(s => {
+        const dist = s.distance || Infinity;
+        return dist <= maxDistance;
+    });
     
     if (filtered.length === 0) {
         container.innerHTML = `
@@ -2511,7 +2536,7 @@ function displaySpecialists(specialists) {
         return;
     }
     
-    // Group by province
+    // Group by province, but keep nearest first within each province
     const byProvince = {};
     filtered.forEach(specialist => {
         const province = specialist.province || 'Unknown';
@@ -2521,10 +2546,15 @@ function displaySpecialists(specialists) {
         byProvince[province].push(specialist);
     });
     
+    // Sort specialists within each province by distance
+    Object.keys(byProvince).forEach(province => {
+        byProvince[province].sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    });
+    
     // Sort provinces by closest distance
     const provinces = Object.keys(byProvince).sort((a, b) => {
-        const minA = Math.min(...byProvince[a].map(s => s.distance));
-        const minB = Math.min(...byProvince[b].map(s => s.distance));
+        const minA = Math.min(...byProvince[a].map(s => s.distance || Infinity));
+        const minB = Math.min(...byProvince[b].map(s => s.distance || Infinity));
         return minA - minB;
     });
     
