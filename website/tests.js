@@ -115,25 +115,22 @@ async function startVisualAcuityTestInternal() {
         // Severe: <6/60 to 3/60 (0.1-0.05 decimal, 0.78-1.3 logMAR) - Category 3
         // Profound/Blind: <3/60 (<0.05 decimal, >1.3 logMAR) - Category 4-5
         
-        // Helper function to generate all permutations for correct answers (order doesn't matter for Snellen)
+        // Helper function to generate correct answers (order doesn't matter for Snellen)
+        // WHO Standard: Accept any order of the correct letters
         const generateCorrectAnswers = (letters) => {
             const letterStr = letters.join('').toUpperCase();
-            const perms = [];
-            // Generate common permutations (not all, as that would be too many)
+            const perms = [letterStr, letterStr.toLowerCase()];
+            // Generate key permutations for validation (deterministic, not random)
             const unique = [...new Set(letters.map(l => l.toUpperCase()))];
-            // For 5 letters, generate key permutations
             if (unique.length === 5) {
-                perms.push(letterStr);
+                // Add reverse and a few common permutations
                 perms.push(letterStr.split('').reverse().join(''));
-                // Add a few common variations
-                for (let i = 0; i < 3; i++) {
-                    const shuffled = [...unique].sort(() => Math.random() - 0.5);
-                    perms.push(shuffled.join(''));
+                // Add rotated versions
+                for (let i = 1; i < unique.length; i++) {
+                    const rotated = [...unique.slice(i), ...unique.slice(0, i)].join('');
+                    perms.push(rotated);
+                    perms.push(rotated.toLowerCase());
                 }
-            } else {
-                // For other lengths, use simpler approach
-                perms.push(letterStr);
-                perms.push(letterStr.toLowerCase());
             }
             return [...new Set(perms)];
         };
@@ -621,6 +618,13 @@ function checkSnellenAnswer() {
     const correctLetters = line.letters.join('').toUpperCase();
     const numLetters = correctLetters.length;
     
+    // Ensure correctAnswers is available (generate if needed)
+    if (!line.correctAnswers || line.correctAnswers.length === 0) {
+        // Fallback: generate answers if getter didn't work
+        const letterStr = correctLetters;
+        line.correctAnswers = [letterStr, letterStr.toLowerCase()];
+    }
+    
     // Initialize line tracking if not exists
     if (!currentTest.lineAttempts[currentTest.currentLine]) {
         currentTest.lineAttempts[currentTest.currentLine] = {
@@ -632,21 +636,23 @@ function checkSnellenAnswer() {
     
     const lineData = currentTest.lineAttempts[currentTest.currentLine];
     
-    // Calculate how many letters the user got correct
-    const userLetterArray = userAnswer.split('');
-    const correctLetterArray = correctLetters.split('');
+    // WHO Standard: Calculate how many letters the user got correct (order-independent)
+    // Compare letter sets case-insensitively and account for duplicates
+    const userLetterArray = userAnswer.toUpperCase().split('').filter(l => l.trim() !== '');
+    const correctLetterArray = correctLetters.toUpperCase().split('');
     let correctCount = 0;
     
-    // Count correct letters (order doesn't matter)
-    const userLettersSet = new Set(userLetterArray);
-    const correctLettersSet = new Set(correctLetterArray);
+    // Create frequency maps for accurate counting (handles duplicate letters correctly)
+    const userLetterFreq = {};
+    const correctLetterFreq = {};
     
-    // Count matches
-    for (const letter of userLettersSet) {
-        if (correctLettersSet.has(letter)) {
-            const userCount = userLetterArray.filter(l => l === letter).length;
-            const correctCountForLetter = correctLetterArray.filter(l => l === letter).length;
-            correctCount += Math.min(userCount, correctCountForLetter);
+    userLetterArray.forEach(l => userLetterFreq[l] = (userLetterFreq[l] || 0) + 1);
+    correctLetterArray.forEach(l => correctLetterFreq[l] = (correctLetterFreq[l] || 0) + 1);
+    
+    // Count matches (accounting for duplicates - WHO standard)
+    for (const letter in correctLetterFreq) {
+        if (userLetterFreq[letter]) {
+            correctCount += Math.min(userLetterFreq[letter], correctLetterFreq[letter]);
         }
     }
     
