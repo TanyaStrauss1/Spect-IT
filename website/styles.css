@@ -262,7 +262,16 @@ nav {
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
-    margin: 2rem;
+    margin: 2rem auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        padding: 1.5rem;
+        margin: 1rem auto;
+    }
 }
 
 .modal-close {
@@ -290,6 +299,12 @@ nav {
 /* Test Interface */
 .test-interface {
     text-align: center;
+    width: 100%;
+    max-width: 100%;
+}
+
+.test-interface * {
+    box-sizing: border-box;
 }
 
 .test-title {
@@ -315,6 +330,15 @@ nav {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    .test-display {
+        padding: 1rem;
+        min-height: 300px;
+    }
 }
 
 .test-controls {

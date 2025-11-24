@@ -2482,7 +2482,12 @@ function calculateDistance(point1, point2) {
 function displaySpecialists(specialists) {
     const container = document.getElementById('specialists-container');
     
-    if (specialists.length === 0) {
+    if (!container) {
+        console.error('specialists-container element not found');
+        return;
+    }
+    
+    if (!specialists || specialists.length === 0) {
         container.innerHTML = `
             <div class="no-results">
                 <p>No specialists found within ${maxDistance} km. Try increasing the distance filter.</p>

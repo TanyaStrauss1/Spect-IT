@@ -285,42 +285,51 @@ async function renderVisualAcuityTestWithLiDAR() {
                     </div>
                 </div>
                 
-                <div class="test-input-section" style="width: 100%; max-width: 400px;">
-                    <label for="snellen-answer" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">
+                <div class="test-input-section" style="width: 100%; max-width: 500px; margin: 0 auto;">
+                    <label for="snellen-answer" style="display: block; margin-bottom: 0.75rem; font-weight: 600; color: #333; font-size: 1rem;">
                         Read the letters above (enter them in any order):
                     </label>
                     <input type="text" id="snellen-answer" 
                            placeholder="Enter letters you see (e.g., E, FP, TOZ)"
-                           style="width: 100%; padding: 1rem; border: 2px solid #667eea; border-radius: 8px; 
+                           style="width: 100%; padding: 1rem 1.5rem; border: 2px solid #667eea; border-radius: 8px; 
                                   font-size: 1.2rem; text-align: center; text-transform: uppercase;
-                                  letter-spacing: 0.2em;"
+                                  letter-spacing: 0.2em; box-sizing: border-box;
+                                  transition: all 0.3s ease;"
                            onkeypress="if(event.key==='Enter') checkSnellenAnswer()"
+                           onfocus="this.style.borderColor='#764ba2'; this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)';"
+                           onblur="this.style.borderColor='#667eea'; this.style.boxShadow='none';"
                            autocomplete="off"
                            autofocus>
-                    <div id="snellen-feedback" style="margin-top: 0.75rem; font-size: 0.9rem; font-weight: 600; text-align: center; min-height: 1.5rem; display: none;"></div>
-                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666; text-align: center;">
+                    <div id="snellen-feedback" style="margin-top: 1rem; font-size: 0.95rem; font-weight: 600; text-align: center; min-height: 1.5rem; padding: 0.75rem; border-radius: 6px; display: none;"></div>
+                    <div style="margin-top: 0.75rem; font-size: 0.9rem; color: #666; text-align: center; line-height: 1.5;">
                         Or click "Cannot Read" if you cannot see the letters clearly
                     </div>
                 </div>
             </div>
             
-            <div class="test-controls">
+            <div class="test-controls" style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                 <button class="btn-correct" onclick="checkSnellenAnswer()" 
                         ${(distanceStatus !== 'correct' || currentTest.movementDetected) && currentTest.lidarAvailable ? 'disabled' : ''}
-                        style="padding: 0.75rem 2rem; font-size: 1rem;">
-                    Submit Answer
+                        style="padding: 0.875rem 2.5rem; font-size: 1rem; font-weight: 600; border-radius: 8px; 
+                               border: none; cursor: pointer; transition: all 0.3s ease;
+                               ${(distanceStatus !== 'correct' || currentTest.movementDetected) && currentTest.lidarAvailable ? 'opacity: 0.5; cursor: not-allowed;' : 'box-shadow: 0 4px 6px rgba(0,0,0,0.1);'}">
+                    ✓ Submit Answer
                 </button>
                 <button class="btn-incorrect" onclick="answerVisualAcuity(false)" 
                         ${(distanceStatus !== 'correct' || currentTest.movementDetected) && currentTest.lidarAvailable ? 'disabled' : ''}
-                        style="padding: 0.75rem 2rem; font-size: 1rem; margin-left: 1rem;">
-                    Cannot Read
+                        style="padding: 0.875rem 2.5rem; font-size: 1rem; font-weight: 600; border-radius: 8px; 
+                               border: none; cursor: pointer; transition: all 0.3s ease;
+                               ${(distanceStatus !== 'correct' || currentTest.movementDetected) && currentTest.lidarAvailable ? 'opacity: 0.5; cursor: not-allowed;' : 'box-shadow: 0 4px 6px rgba(0,0,0,0.1);'}">
+                    ✗ Cannot Read
                 </button>
             </div>
             
-            <div style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
-                Testing: ${currentTest.eye === 'both' ? 'Both Eyes' : currentTest.eye === 'left' ? 'Left Eye' : 'Right Eye'} | 
-                Line ${currentTest.currentLine + 1} of ${currentTest.lines.length} | 
-                Target: ${line.level} (${visualAngleMinutes} arc min)
+            <div style="margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; color: #666; font-size: 0.9rem; text-align: center;">
+                <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+                    <span><strong>Eye:</strong> ${currentTest.eye === 'both' ? 'Both Eyes' : currentTest.eye === 'left' ? 'Left Eye' : 'Right Eye'}</span>
+                    <span><strong>Progress:</strong> Line ${currentTest.currentLine + 1} of ${currentTest.lines.length}</span>
+                    <span><strong>Target:</strong> ${line.level} (${visualAngleMinutes} arc min)</span>
+                </div>
             </div>
             `}
         </div>
