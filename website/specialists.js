@@ -352,14 +352,15 @@ async function findNearestSpecialists() {
         }
         
         if (locationText) {
+            const distanceKm = maxDistance || parseInt(document.getElementById('distance-slider')?.value || document.getElementById('distance-filter')?.value || 50);
             locationText.textContent = 
-                `Location found! Searching within ${document.getElementById('distance-filter')?.value || 10} km...`;
+                `Location found! Searching within ${distanceKm} km...`;
         }
         
         console.log('Searching for specialists at:', userLocation);
         
         // Search for specialists
-        const distance = parseInt(document.getElementById('distance-filter')?.value || 10) * 1000; // Convert to meters
+        const distance = (maxDistance || parseInt(document.getElementById('distance-slider')?.value || document.getElementById('distance-filter')?.value || 50)) * 1000; // Convert to meters
         console.log('Search radius:', distance, 'meters');
         
         if (locationText) {
