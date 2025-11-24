@@ -672,8 +672,21 @@ function checkSnellenAnswer() {
     }
     
     const line = currentTest.lines[currentTest.currentLine];
+    if (!line) {
+        console.error('[Visual Acuity] Invalid line at index:', currentTest.currentLine);
+        alert('Error: Invalid test line. Please refresh and try again.');
+        return;
+    }
+    
     const correctLetters = line.letters.join('').toUpperCase();
     const numLetters = correctLetters.length;
+    
+    // Debug logging for line 2 (6/48)
+    if (line.level === '6/48') {
+        console.log('[Line 2 Debug] Expected letters:', correctLetters);
+        console.log('[Line 2 Debug] User answer:', userAnswer);
+        console.log('[Line 2 Debug] Line letters array:', line.letters);
+    }
     
     // Initialize line tracking if not exists
     if (!currentTest.lineAttempts[currentTest.currentLine]) {
