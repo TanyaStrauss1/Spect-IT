@@ -411,7 +411,8 @@ async function findNearestSpecialists() {
         // Update status
         if (locationText) {
             const aiBadge = rankedSpecialists !== specialists ? ' 🤖 AI-Ranked' : '';
-            locationText.textContent = `Found ${rankedSpecialists.length} specialist(s) within ${document.getElementById('distance-filter')?.value || 50} km${aiBadge}`;
+            const distanceKm = maxDistance || parseInt(document.getElementById('distance-slider')?.value || 50);
+            locationText.textContent = `Found ${rankedSpecialists.length} specialist(s) within ${distanceKm} km${aiBadge}`;
             locationText.style.color = '#10b981';
         }
         
@@ -689,7 +690,7 @@ async function searchByAddress() {
         }
         
         // AI-Enhanced: Search for specialists with the obtained location
-        const distance = parseInt(document.getElementById('distance-filter')?.value || 50) * 1000;
+        const distance = (maxDistance || parseInt(document.getElementById('distance-slider')?.value || 50)) * 1000;
         
         if (locationText) {
             locationText.textContent = `📍 Location found! Searching specialists with AI...`;
@@ -720,7 +721,8 @@ async function searchByAddress() {
             const address = userLocation.address || searchAddress;
             const aiBadge = rankedSpecialists !== specialists ? ' 🤖 AI-Ranked' : '';
             statusEl.querySelector('#location-text').textContent = 
-                `Found ${rankedSpecialists.length} specialist(s) near ${address} (within ${document.getElementById('distance-filter')?.value || 50} km)${aiBadge}`;
+                const distanceKm = maxDistance || parseInt(document.getElementById('distance-slider')?.value || 50);
+                locationText.textContent = `Found ${rankedSpecialists.length} specialist(s) near ${address} (within ${distanceKm} km)${aiBadge}`;
             statusEl.querySelector('#location-text').style.color = '#10b981';
         }
         
