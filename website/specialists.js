@@ -2693,7 +2693,6 @@ function displaySpecialists(specialists) {
                         <h3 style="margin: 0 0 0.5rem 0; font-size: 1.3rem; color: white;">📍 Search Results</h3>
                         <p style="margin: 0; font-size: 1rem; opacity: 0.95;">
                             <strong>${filtered.length}</strong> specialist(s) found in <strong>${provinces.length}</strong> province(s)
-                            ${webScrapedCount > 0 ? `| <strong>${webScrapedCount}</strong> from web sources` : ''}
                         </p>
                     </div>
                     ${nearest ? `
