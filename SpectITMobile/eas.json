@@ -20,8 +20,10 @@
       }
     },
     "production": {
+      "distribution": "store",
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "distribution": "store"
       },
       "android": {
         "buildType": "app-bundle"
