@@ -177,30 +177,50 @@
         <!-- Find Specialists Section -->
         <section id="find-specialists" class="specialists-section">
             <div class="container">
-                <h2>Find Eye Care Specialists</h2>
-                <p class="section-subtitle">Search all optometrists, ophthalmologists, and opticians across South Africa - organized by province and proximity</p>
+                <h2 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem;">👁️ Find Eye Care Specialists</h2>
+                <p class="section-subtitle" style="color: #666; font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem;">
+                    Search all <strong>optometrists</strong>, <strong>ophthalmologists</strong>, and <strong>opticians</strong> across South Africa<br>
+                    <span style="color: #667eea; font-weight: 500;">Organized by province and proximity • Real-time distance calculation • Web-scraped data</span>
+                </p>
                 <div id="specialists-summary"></div>
                 
                 <div class="location-controls">
-                    <div class="location-status" id="location-status">
-                        <span id="location-text">📍 Click to find specialists near you</span>
-                        <div>
-                            <button class="btn btn-primary" id="find-specialists-btn" onclick="findNearestSpecialists()">🔍 Find Nearest Specialists</button>
-                            <button class="btn btn-secondary" onclick="showManualLocationInput()" style="margin-left: 0.5rem;">📍 Enter Location</button>
+                    <div class="location-status" id="location-status" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); flex-wrap: wrap; gap: 1rem;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <span id="location-text" style="font-size: 1.1rem; font-weight: 500; display: block; margin-bottom: 0.5rem;">📍 Click to find specialists near you</span>
+                            <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">Uses your current location or enter an address manually</p>
+                        </div>
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                            <button class="btn btn-primary" id="find-specialists-btn" onclick="findNearestSpecialists()" 
+                                    style="background: white; color: #667eea; font-weight: 600; padding: 0.875rem 1.75rem; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.25)';"
+                                    onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)';">
+                                🔍 Find Nearest Specialists
+                            </button>
+                            <button class="btn btn-secondary" onclick="showManualLocationInput()" 
+                                    style="background: rgba(255,255,255,0.2); color: white; font-weight: 600; padding: 0.875rem 1.75rem; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; backdrop-filter: blur(10px);"
+                                    onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='translateY(-2px)';"
+                                    onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.transform='';">
+                                📍 Enter Location
+                            </button>
                         </div>
                     </div>
                     
-                    <div class="distance-filter" style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                        <label for="distance-slider" style="font-weight: 600; color: #333;">
-                            📏 Maximum Distance:
+                    <div class="distance-filter" style="margin-top: 1rem; padding: 1.25rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                        <label for="distance-slider" style="font-weight: 600; color: #333; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>📏</span>
+                            <span>Maximum Distance:</span>
                         </label>
                         <input type="range" id="distance-slider" min="10" max="500" value="50" step="10" 
                                oninput="updateDistanceFilter(this.value)" 
-                               style="flex: 1; min-width: 200px;">
-                        <span id="distance-value" style="font-weight: 600; color: #667eea; min-width: 80px;">
+                               style="flex: 1; min-width: 200px; height: 8px; border-radius: 4px; background: #ddd; outline: none; cursor: pointer;"
+                               title="Adjust search radius">
+                        <span id="distance-value" style="font-weight: 700; color: #667eea; min-width: 80px; font-size: 1.1rem; text-align: center; background: white; padding: 0.5rem 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);">
                             50 km
                         </span>
-                        <button class="btn btn-secondary" onclick="applyDistanceFilter()" style="font-size: 0.9rem;">
+                        <button class="btn btn-secondary" onclick="applyDistanceFilter()" style="font-size: 0.95rem; padding: 0.75rem 1.5rem; font-weight: 600; border-radius: 8px; transition: all 0.3s;" 
+                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';"
+                                onmouseout="this.style.transform=''; this.style.boxShadow='';">
                             Apply Filter
                         </button>
                     </div>
