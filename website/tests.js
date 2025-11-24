@@ -31,16 +31,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Enhanced Visual Acuity Test with LiDAR Distance Measurement
 async function startVisualAcuityTest() {
-    // Check if user has email before starting test
-    if (window.requireEmailBeforeTest) {
-        window.requireEmailBeforeTest(() => {
-            startVisualAcuityTestInternal();
-        });
-        return;
+    try {
+        // Check if user has email before starting test (optional)
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => {
+                startVisualAcuityTestInternal();
+            });
+            return;
+        }
+        
+        // If email check not available, proceed directly
+        startVisualAcuityTestInternal();
+    } catch (error) {
+        console.error('[Visual Acuity Test] Error starting test:', error);
+        alert('Error starting test. Please refresh the page and try again.');
     }
-    
-    // If email check not available, proceed directly
-    startVisualAcuityTestInternal();
 }
 
 async function startVisualAcuityTestInternal() {
@@ -168,7 +173,30 @@ async function startVisualAcuityTestInternal() {
 }
 
 async function renderVisualAcuityTestWithLiDAR() {
-    const container = document.getElementById('test-container');
+    // Ensure container exists
+    let container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Visual Acuity Test] test-container not found, creating it');
+        const modal = document.getElementById('test-modal');
+        if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                container = document.createElement('div');
+                container.id = 'test-container';
+                modalContent.appendChild(container);
+            }
+        }
+        if (!container) {
+            alert('Error: Test container not found. Please refresh the page.');
+            return;
+        }
+    }
+    
+    if (!currentTest || !currentTest.lines || currentTest.currentLine >= currentTest.lines.length) {
+        console.error('[Visual Acuity Test] Invalid test state');
+        return;
+    }
+    
     const line = currentTest.lines[currentTest.currentLine];
     
     // Clear any previous feedback
@@ -1063,15 +1091,20 @@ function getSizeClass(size) {
 
 // Enhanced Color Blindness Test with Perfect Accuracy (Ishihara-style)
 function startColorBlindnessTest() {
-    // Check if user has email before starting test
-    if (window.requireEmailBeforeTest) {
-        window.requireEmailBeforeTest(() => {
-            startColorBlindnessTestInternal();
-        });
-        return;
+    try {
+        // Check if user has email before starting test (optional)
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => {
+                startColorBlindnessTestInternal();
+            });
+            return;
+        }
+        
+        startColorBlindnessTestInternal();
+    } catch (error) {
+        console.error('[Color Blindness Test] Error starting test:', error);
+        alert('Error starting test. Please refresh the page and try again.');
     }
-    
-    startColorBlindnessTestInternal();
 }
 
 function startColorBlindnessTestInternal() {
@@ -1113,7 +1146,30 @@ function startColorBlindnessTestInternal() {
 }
 
 function renderColorBlindnessTest() {
-    const container = document.getElementById('test-container');
+    // Ensure container exists
+    let container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Color Blindness Test] test-container not found, creating it');
+        const modal = document.getElementById('test-modal');
+        if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                container = document.createElement('div');
+                container.id = 'test-container';
+                modalContent.appendChild(container);
+            }
+        }
+        if (!container) {
+            alert('Error: Test container not found. Please refresh the page.');
+            return;
+        }
+    }
+    
+    if (!currentTest || !currentTest.plates || currentTest.currentPlate >= currentTest.plates.length) {
+        console.error('[Color Blindness Test] Invalid test state');
+        return;
+    }
+    
     const plate = currentTest.plates[currentTest.currentPlate];
     
     // Generate Ishihara-style pattern with multiple colors for accuracy
@@ -1297,15 +1353,20 @@ function finishColorBlindnessTest() {
 
 // Enhanced Astigmatism Test with Multiple Test Types
 function startAstigmatismTest() {
-    // Check if user has email before starting test
-    if (window.requireEmailBeforeTest) {
-        window.requireEmailBeforeTest(() => {
-            startAstigmatismTestInternal();
-        });
-        return;
+    try {
+        // Check if user has email before starting test (optional)
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => {
+                startAstigmatismTestInternal();
+            });
+            return;
+        }
+        
+        startAstigmatismTestInternal();
+    } catch (error) {
+        console.error('[Astigmatism Test] Error starting test:', error);
+        alert('Error starting test. Please refresh the page and try again.');
     }
-    
-    startAstigmatismTestInternal();
 }
 
 function startAstigmatismTestInternal() {
@@ -1451,7 +1512,30 @@ function generateStarBurstTests() {
 }
 
 function renderAstigmatismTest() {
-    const container = document.getElementById('test-container');
+    // Ensure container exists
+    let container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Astigmatism Test] test-container not found, creating it');
+        const modal = document.getElementById('test-modal');
+        if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                container = document.createElement('div');
+                container.id = 'test-container';
+                modalContent.appendChild(container);
+            }
+        }
+        if (!container) {
+            alert('Error: Test container not found. Please refresh the page.');
+            return;
+        }
+    }
+    
+    if (!currentTest || !currentTest.testTypes || currentTest.currentTestType >= currentTest.testTypes.length) {
+        console.error('[Astigmatism Test] Invalid test state');
+        return;
+    }
+    
     const testType = currentTest.testTypes[currentTest.currentTestType];
     const image = testType.images[currentTest.currentImage];
     const totalTests = currentTest.testTypes.reduce((sum, tt) => sum + tt.images.length, 0);
@@ -1830,15 +1914,20 @@ async function finishAstigmatismTest() {
 
 // Contrast Sensitivity Test
 function startContrastTest() {
-    // Check if user has email before starting test
-    if (window.requireEmailBeforeTest) {
-        window.requireEmailBeforeTest(() => {
-            startContrastTestInternal();
-        });
-        return;
+    try {
+        // Check if user has email before starting test (optional)
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => {
+                startContrastTestInternal();
+            });
+            return;
+        }
+        
+        startContrastTestInternal();
+    } catch (error) {
+        console.error('[Contrast Test] Error starting test:', error);
+        alert('Error starting test. Please refresh the page and try again.');
     }
-    
-    startContrastTestInternal();
 }
 
 function startContrastTestInternal() {
@@ -1855,7 +1944,30 @@ function startContrastTestInternal() {
 }
 
 function renderContrastTest() {
-    const container = document.getElementById('test-container');
+    // Ensure container exists
+    let container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Contrast Test] test-container not found, creating it');
+        const modal = document.getElementById('test-modal');
+        if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                container = document.createElement('div');
+                container.id = 'test-container';
+                modalContent.appendChild(container);
+            }
+        }
+        if (!container) {
+            alert('Error: Test container not found. Please refresh the page.');
+            return;
+        }
+    }
+    
+    if (!currentTest || !currentTest.levels || currentTest.currentLevel >= currentTest.levels.length) {
+        console.error('[Contrast Test] Invalid test state');
+        return;
+    }
+    
     const contrast = currentTest.levels[currentTest.currentLevel];
     
     container.innerHTML = `
@@ -1912,15 +2024,20 @@ function finishContrastTest() {
 
 // Visual Field Test
 function startVisualFieldTest() {
-    // Check if user has email before starting test
-    if (window.requireEmailBeforeTest) {
-        window.requireEmailBeforeTest(() => {
-            startVisualFieldTestInternal();
-        });
-        return;
+    try {
+        // Check if user has email before starting test (optional)
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => {
+                startVisualFieldTestInternal();
+            });
+            return;
+        }
+        
+        startVisualFieldTestInternal();
+    } catch (error) {
+        console.error('[Visual Field Test] Error starting test:', error);
+        alert('Error starting test. Please refresh the page and try again.');
     }
-    
-    startVisualFieldTestInternal();
 }
 
 function startVisualFieldTestInternal() {
@@ -1936,7 +2053,29 @@ function startVisualFieldTestInternal() {
 }
 
 function renderVisualFieldTest() {
-    const container = document.getElementById('test-container');
+    // Ensure container exists
+    let container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Visual Field Test] test-container not found, creating it');
+        const modal = document.getElementById('test-modal');
+        if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                container = document.createElement('div');
+                container.id = 'test-container';
+                modalContent.appendChild(container);
+            }
+        }
+        if (!container) {
+            alert('Error: Test container not found. Please refresh the page.');
+            return;
+        }
+    }
+    
+    if (!currentTest) {
+        console.error('[Visual Field Test] Invalid test state');
+        return;
+    }
     
     container.innerHTML = `
         <div class="test-interface">
@@ -2014,15 +2153,20 @@ let eyeMeasurements = {
 };
 
 function startPrescriptionTest() {
-    // Check if user has email before starting test
-    if (window.requireEmailBeforeTest) {
-        window.requireEmailBeforeTest(() => {
-            startPrescriptionTestInternal();
-        });
-        return;
+    try {
+        // Check if user has email before starting test (optional)
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => {
+                startPrescriptionTestInternal();
+            });
+            return;
+        }
+        
+        startPrescriptionTestInternal();
+    } catch (error) {
+        console.error('[Prescription Test] Error starting test:', error);
+        alert('Error starting test. Please refresh the page and try again.');
     }
-    
-    startPrescriptionTestInternal();
 }
 
 function startPrescriptionTestInternal() {
@@ -2038,7 +2182,29 @@ function startPrescriptionTestInternal() {
 }
 
 function renderPrescriptionTest() {
-    const container = document.getElementById('test-container');
+    // Ensure container exists
+    let container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Prescription Test] test-container not found, creating it');
+        const modal = document.getElementById('test-modal');
+        if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                container = document.createElement('div');
+                container.id = 'test-container';
+                modalContent.appendChild(container);
+            }
+        }
+        if (!container) {
+            alert('Error: Test container not found. Please refresh the page.');
+            return;
+        }
+    }
+    
+    if (!currentTest) {
+        console.error('[Prescription Test] Invalid test state');
+        return;
+    }
     
     container.innerHTML = `
         <div class="test-interface">
@@ -2641,12 +2807,43 @@ function finishPrescriptionTest() {
 
 // Utility Functions
 function showTestModal() {
-    document.getElementById('test-modal').classList.add('active');
+    // Ensure modal exists before trying to show it
+    let modal = document.getElementById('test-modal');
+    if (!modal) {
+        // Create modal if it doesn't exist
+        modal = document.createElement('div');
+        modal.id = 'test-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeTest()">&times;</button>
+                <div id="test-container"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Show the modal
+    modal.classList.add('active');
+    
+    // Ensure test-container exists
+    if (!document.getElementById('test-container')) {
+        const container = document.createElement('div');
+        container.id = 'test-container';
+        modal.querySelector('.modal-content').appendChild(container);
+    }
 }
 
 function closeTest() {
-    document.getElementById('test-modal').classList.remove('active');
-    currentTest = null;
+    try {
+        const modal = document.getElementById('test-modal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+        currentTest = null;
+    } catch (error) {
+        console.error('[Close Test] Error closing test:', error);
+    }
 }
 
 async function saveResult(result) {
