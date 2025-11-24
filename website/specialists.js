@@ -2776,7 +2776,7 @@ function generateStars(rating) {
 // Filter specialists
 function filterSpecialists() {
     const typeFilter = document.getElementById('specialist-type-filter').value;
-    const distanceFilter = parseInt(document.getElementById('distance-filter').value);
+    const distanceFilter = parseInt(document.getElementById('distance-slider')?.value || document.getElementById('distance-filter')?.value || maxDistance || 50);
     
     filteredSpecialists = specialistsList.filter(specialist => {
         const typeMatch = typeFilter === 'all' || specialist.type === typeFilter;
