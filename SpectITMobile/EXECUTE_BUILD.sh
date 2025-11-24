@@ -1,67 +1,50 @@
 #!/bin/bash
 
-# Execute Complete Build Process
-# This script will guide you through each step
+# Execute iOS Build - Run this script in your terminal
+# This will start the build process with full capabilities
 
-set -e
-
-cd "$(dirname "$0")"
+cd /Users/tanyastrauss/Spect-IT/SpectITMobile
 
 echo "╔══════════════════════════════════════════════════════════════════════════╗"
-echo "║          🚀 SPECT-IT iOS BUILD & SUBMIT                                   ║"
+echo "║          🚀 EXECUTING iOS BUILD FOR APP STORE                            ║"
 echo "╚══════════════════════════════════════════════════════════════════════════╝"
 echo ""
-echo "Email: strausstanya93@gmail.com"
-echo ""
 
-# Step 1: Login
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 1: EAS LOGIN (REQUIRES BROWSER)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "⚠️  This will open your browser for authentication"
-echo "    Please approve the login"
-echo ""
-read -p "Press Enter to start login..." 
+# Export Expo token if available
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+fi
 
-eas login
-
-echo ""
-echo "✅ Login complete!"
+# Verify EAS login
+echo "✅ Verifying EAS login..."
 eas whoami
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "STARTING iOS BUILD"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📱 Platform: iOS"
+echo "📦 Profile: production"
+echo "🎯 Distribution: App Store"
+echo "⏱️  Estimated time: 15-30 minutes"
+echo ""
+echo "⚠️  You will be prompted for Apple credentials:"
+echo "   • Apple ID: tanstrauss@gmail.com"
+echo "   • Password: [Enter your password]"
+echo "   • 2FA Code: [If enabled]"
+echo ""
+echo "🔗 Monitor: https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds"
 echo ""
 
-# Step 2: Build
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 2: BUILD iOS APP"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Building iOS app for App Store..."
-echo "This may take 10-20 minutes"
-echo ""
-read -p "Press Enter to start build..." 
-
+# Execute the build
 eas build --platform ios --profile production
 
 echo ""
-echo "✅ Build complete!"
+echo "✅ Build command executed!"
 echo ""
-
-# Step 3: Submit
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "STEP 3: SUBMIT TO APP STORE"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📋 Next Steps:"
+echo "   1. Monitor build at: https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds"
+echo "   2. After completion, submit with: eas submit --platform ios --latest"
+echo "   3. Complete listing at: https://appstoreconnect.apple.com/apps/6755681856/distribution/ios/version/inflight"
 echo ""
-read -p "Press Enter to submit to App Store..." 
-
-eas submit --platform ios --latest
-
-echo ""
-echo "╔══════════════════════════════════════════════════════════════════════════╗"
-echo "║          ✅ COMPLETE!                                                     ║"
-echo "╚══════════════════════════════════════════════════════════════════════════╝"
-echo ""
-echo "Next: Complete app listing in App Store Connect"
-echo "Link: https://appstoreconnect.apple.com"
-echo ""
-
