@@ -295,10 +295,12 @@ class LiDAREngine {
     convertToPixels(sizeMeters, screenDPI, screenWidthMeters) {
         // Convert physical size to pixels
         // sizeMeters: size in meters
-        // screenDPI: device DPI
-        // screenWidthMeters: physical screen width in meters
+        // screenDPI: device DPI (dots per inch)
+        // screenWidthMeters: physical screen width in meters (for validation, not used in calculation)
         
-        const pixelsPerMeter = (screenDPI / 0.0254) * screenWidthMeters;
+        // Convert DPI to pixels per meter: 1 inch = 0.0254 meters
+        // pixelsPerMeter = DPI / 0.0254
+        const pixelsPerMeter = screenDPI / 0.0254;
         return sizeMeters * pixelsPerMeter;
     }
     

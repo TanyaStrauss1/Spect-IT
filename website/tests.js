@@ -142,11 +142,18 @@ async function renderVisualAcuityTestWithLiDAR() {
         : actualDistanceMeters * Math.tan((visualAngleMinutes / 60) * (Math.PI / 180));
     
     // Convert to pixels
-    const letterSizePixels = window.lidarEngine
-        ? window.lidarEngine.convertToPixels(letterHeightMeters, currentTest.actualDPI, currentTest.screenWidthMeters)
-        : (letterHeightMeters / currentTest.screenWidthMeters) * currentTest.screenWidth;
+    let letterSizePixels;
+    if (window.lidarEngine && currentTest.lidarAvailable) {
+        letterSizePixels = window.lidarEngine.convertToPixels(letterHeightMeters, currentTest.actualDPI, currentTest.screenWidthMeters);
+    } else {
+        // Fallback: use screen width ratio for pixel conversion
+        // This assumes screen width in pixels / screen width in meters = pixels per meter
+        const pixelsPerMeter = currentTest.screenWidth / currentTest.screenWidthMeters;
+        letterSizePixels = letterHeightMeters * pixelsPerMeter;
+    }
     
-    const fontSize = Math.max(12, Math.min(300, letterSizePixels * 0.8));
+    // Apply scaling factor (0.8) to account for letter height vs font size, and clamp to reasonable range
+    const fontSize = Math.max(16, Math.min(400, letterSizePixels * 0.8));
     
     // Get distance status from LiDAR Engine
     let distanceStatus = 'unknown';
