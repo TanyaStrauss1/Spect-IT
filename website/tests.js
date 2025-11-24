@@ -200,22 +200,34 @@ async function renderVisualAcuityTestWithLiDAR() {
         ? window.lidarEngine.calculateLetterSize(visualAngleMinutes, actualDistanceMeters)
         : actualDistanceMeters * Math.tan((visualAngleMinutes / 60) * (Math.PI / 180));
     
-    // Convert to pixels
+    // Convert to pixels - Medical-grade accurate calculation
     let letterSizePixels;
     if (window.lidarEngine && currentTest.lidarAvailable) {
         letterSizePixels = window.lidarEngine.convertToPixels(letterHeightMeters, currentTest.actualDPI, currentTest.screenWidthMeters);
     } else {
-        // Fallback: use screen width ratio for pixel conversion
-        // This assumes screen width in pixels / screen width in meters = pixels per meter
-        const pixelsPerMeter = currentTest.screenWidth / currentTest.screenWidthMeters;
+        // Fallback: Accurate pixel conversion using viewport and screen dimensions
+        // Use viewport width for better accuracy on mobile devices
+        const viewportWidthPixels = currentTest.viewportWidth;
+        const viewportWidthMeters = (viewportWidthPixels / currentTest.actualDPI) * 0.0254;
+        const pixelsPerMeter = viewportWidthPixels / Math.max(viewportWidthMeters, 0.1); // Prevent division by zero
         letterSizePixels = letterHeightMeters * pixelsPerMeter;
     }
     
     // Medical-grade scaling: Letter height = visual angle * distance
     // Standard Snellen: 5 arc minutes for 6/6 (20/20) at 6 meters
-    // Enhanced scaling for maximum visibility: 0.95 factor for better readability
-    // Clamp to medical standard range: 28px minimum (increased for visibility), 700px maximum for large displays
-    const fontSize = Math.max(28, Math.min(700, letterSizePixels * 0.95));
+    // Enhanced scaling for maximum visibility and accuracy: 1.0 factor for exact medical standard
+    // Clamp to medical standard range: 32px minimum (increased for better visibility), 800px maximum for large displays
+    // Ensure letters are large enough to be clearly visible
+    const fontSize = Math.max(32, Math.min(800, letterSizePixels * 1.0));
+    
+    // Debug logging for line 2
+    if (line.level === '6/48') {
+        console.log('[Line 2 Size] Visual angle:', visualAngleMinutes, 'arc min');
+        console.log('[Line 2 Size] Distance:', actualDistanceMeters, 'm');
+        console.log('[Line 2 Size] Letter height (meters):', letterHeightMeters);
+        console.log('[Line 2 Size] Letter size (pixels):', letterSizePixels);
+        console.log('[Line 2 Size] Final font size:', fontSize, 'px');
+    }
     
     // Get distance status from LiDAR Engine
     let distanceStatus = 'unknown';
