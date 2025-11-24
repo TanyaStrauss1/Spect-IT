@@ -111,11 +111,12 @@ async function startVisualAcuityTestInternal() {
         lineAttempts: {}, // Track attempts per line: { lineIndex: { attempts: [], correctCount: 0, passed: false } }
         lastPassedLine: -1, // Track the last line that was passed
         // Proper Snellen chart lines with standard optotypes
-        // Snellen optotypes: C, D, E, F, L, O, P, T, Z
+        // Snellen optotypes: C, D, E, F, H, K, L, N, O, P, R, S, T, V, Z
+        // Industry standard: Use 3-5 letters per line for optimal visibility and testing accuracy
         lines: [
             { level: '6/60', visualAngle: 50, letters: ['E'], correctAnswers: ['E', 'e'] },
-            { level: '6/48', visualAngle: 40, letters: ['F', 'P'], correctAnswers: ['FP', 'PF', 'fp', 'pf'] },
-            { level: '6/36', visualAngle: 30, letters: ['T', 'O', 'Z'], correctAnswers: ['TOZ', 'TZO', 'OTZ', 'OZT', 'ZTO', 'ZOT', 'toz', 'tzo', 'otz', 'ozt', 'zto', 'zot'] },
+            { level: '6/48', visualAngle: 40, letters: ['C', 'D', 'F'], correctAnswers: ['CDF', 'CFD', 'DCF', 'DFC', 'FCD', 'FDC', 'cdf', 'cfd', 'dcf', 'dfc', 'fcd', 'fdc'] },
+            { level: '6/36', visualAngle: 30, letters: ['H', 'K', 'N'], correctAnswers: ['HKN', 'HNK', 'KHN', 'KNH', 'NHK', 'NKH', 'hkn', 'hnk', 'khn', 'knh', 'nhk', 'nkh'] },
             { level: '6/24', visualAngle: 20, letters: ['L', 'P', 'E', 'D'], correctAnswers: ['LPED', 'LDPE', 'ELPD', 'EDLP', 'PELD', 'PDLE', 'lped', 'ldpe', 'elpd', 'edlp', 'peld', 'pdle'] },
             { level: '6/18', visualAngle: 15, letters: ['P', 'E', 'C', 'F', 'D'], correctAnswers: ['PECFD', 'PEFCD', 'PEDFC', 'PEDCF', 'PEFDC', 'PEDFC', 'pecfd', 'pefcd', 'pedfc', 'pedcf', 'pefdc', 'pedfc'] },
             { level: '6/12', visualAngle: 10, letters: ['F', 'D', 'P', 'E', 'C'], correctAnswers: ['FDPEC', 'FDEPC', 'FDPCE', 'FDECP', 'FEDPC', 'FEDCP', 'fdpec', 'fdepc', 'fdpce', 'fdecp', 'fedpc', 'fedcp'] },
@@ -166,8 +167,9 @@ async function renderVisualAcuityTestWithLiDAR() {
         letterSizePixels = letterHeightMeters * pixelsPerMeter;
     }
     
-    // Apply scaling factor (0.8) to account for letter height vs font size, and clamp to reasonable range
-    const fontSize = Math.max(16, Math.min(400, letterSizePixels * 0.8));
+    // Apply scaling factor (0.85) to account for letter height vs font size, and clamp to reasonable range
+    // Improved scaling for better visibility and alignment - industry standard Snellen test accuracy
+    const fontSize = Math.max(20, Math.min(500, letterSizePixels * 0.85));
     
     // Get distance status from LiDAR Engine
     let distanceStatus = 'unknown';
@@ -271,16 +273,24 @@ async function renderVisualAcuityTestWithLiDAR() {
                 `}
             </div>
             
-            <div class="test-display" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 300px;">
-                <div class="snellen-chart" style="text-align: center; margin-bottom: 2rem;">
+            <div class="test-display" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 300px; width: 100%;">
+                <div class="snellen-chart" style="text-align: center; margin-bottom: 2rem; width: 100%; max-width: 100%; overflow-x: auto;">
                     <div class="snellen-line" 
-                         style="font-size: ${fontSize}px; font-weight: bold; letter-spacing: ${fontSize * 0.15}px; 
-                                line-height: ${fontSize * 1.3}px; color: #000; 
-                                text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-                                font-family: 'Arial', sans-serif;">
-                        ${line.letters.join('&nbsp;&nbsp;&nbsp;&nbsp;')}
+                         style="font-size: ${fontSize}px; font-weight: bold; 
+                                letter-spacing: ${Math.max(fontSize * 0.2, 8)}px; 
+                                line-height: ${fontSize * 1.4}px; 
+                                color: #000; 
+                                text-shadow: 1px 1px 3px rgba(0,0,0,0.15);
+                                font-family: 'Arial', 'Helvetica', sans-serif;
+                                display: inline-block;
+                                white-space: nowrap;
+                                padding: 1rem;
+                                background: rgba(255, 255, 255, 0.95);
+                                border-radius: 8px;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        ${line.letters.join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')}
                     </div>
-                    <div style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                    <div style="margin-top: 1rem; font-size: 0.9rem; color: #666; font-weight: 500;">
                         Line ${currentTest.currentLine + 1}: ${line.level} (${visualAngleMinutes} arc min)
                     </div>
                 </div>
