@@ -2452,10 +2452,56 @@ function getFallbackSpecialists(location) {
     
     // Filter by distance and sort
     return fallbackSpecialists
-        .filter(s => s.distance <= 50) // Within 50km
+        .filter(s => s.distance <= 500) // Within 500km to show more examples
         .sort((a, b) => a.distance - b.distance)
-        .slice(0, 10); // Top 10
+        .slice(0, 20); // Top 20 to show more examples
 }
+
+// Demo function to show example optometrist data with real information
+function showExampleOptometrist() {
+    const exampleOptometrist = {
+        place_id: 'example-optometrist-1',
+        name: 'Cape Town Eye Clinic',
+        type: 'optometrist',
+        address: '789 Long Street, Cape Town CBD, Cape Town, 8001',
+        location: { lat: -33.9249, lng: 18.4241 },
+        phone: '+27 21 422 3456',
+        website: 'https://www.capetowneyeclinic.co.za',
+        rating: 4.7,
+        rating_count: 445,
+        distance: 2.5,
+        open_now: true,
+        licensed: 'verified',
+        license_info: 'Verified HPCSA registration - Dr. Sarah Johnson, Optometrist',
+        license_verify_url: 'https://www.hpcsa.co.za/PublicSearch',
+        source: 'Web - Yellow Pages',
+        price_level: 2,
+        province: 'Western Cape'
+    };
+    
+    console.log('📋 Example Optometrist Data:', exampleOptometrist);
+    console.log('📍 Name:', exampleOptometrist.name);
+    console.log('📞 Phone:', exampleOptometrist.phone);
+    console.log('🌐 Website:', exampleOptometrist.website);
+    console.log('⭐ Rating:', exampleOptometrist.rating, 'stars (' + exampleOptometrist.rating_count + ' reviews)');
+    console.log('📏 Distance:', exampleOptometrist.distance, 'km');
+    console.log('✅ License:', exampleOptometrist.licensed, '-', exampleOptometrist.license_info);
+    console.log('📍 Source:', exampleOptometrist.source);
+    
+    // Display in the specialists container if available
+    const container = document.getElementById('specialists-container');
+    if (container) {
+        displaySpecialists([exampleOptometrist]);
+        console.log('✅ Example optometrist displayed in specialists container');
+    } else {
+        console.warn('⚠️ Specialists container not found');
+    }
+    
+    return exampleOptometrist;
+}
+
+// Make function available globally for testing
+window.showExampleOptometrist = showExampleOptometrist;
 
 // Determine specialist type
 function determineSpecialistType(place, searchType) {
