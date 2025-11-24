@@ -103,6 +103,8 @@ async function startVisualAcuityTestInternal() {
         distanceValid: false,
         baselineDistance: null,
         movementDetected: false,
+        lineAttempts: {}, // Track attempts per line: { lineIndex: { attempts: [], correctCount: 0, passed: false } }
+        lastPassedLine: -1, // Track the last line that was passed
         // Proper Snellen chart lines with standard optotypes
         // Snellen optotypes: C, D, E, F, L, O, P, T, Z
         lines: [
@@ -126,6 +128,13 @@ async function startVisualAcuityTestInternal() {
 async function renderVisualAcuityTestWithLiDAR() {
     const container = document.getElementById('test-container');
     const line = currentTest.lines[currentTest.currentLine];
+    
+    // Clear any previous feedback
+    const feedbackEl = document.getElementById('snellen-feedback');
+    if (feedbackEl) {
+        feedbackEl.style.display = 'none';
+        feedbackEl.textContent = '';
+    }
     
     // Get current distance from LiDAR or use target
     let actualDistanceMeters = currentTest.targetDistance;
@@ -283,6 +292,7 @@ async function renderVisualAcuityTestWithLiDAR() {
                            onkeypress="if(event.key==='Enter') checkSnellenAnswer()"
                            autocomplete="off"
                            autofocus>
+                    <div id="snellen-feedback" style="margin-top: 0.75rem; font-size: 0.9rem; font-weight: 600; text-align: center; min-height: 1.5rem; display: none;"></div>
                     <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666; text-align: center;">
                         Or click "Cannot Read" if you cannot see the letters clearly
                     </div>
@@ -550,7 +560,8 @@ function renderVisualAcuityTest() {
     renderVisualAcuityTestWithLiDAR();
 }
 
-// Check Snellen answer - proper Snellen test requires reading letters
+// Check Snellen answer - proper Snellen test follows industry standards
+// Industry standard: Must get at least 3/5 letters correct (or 4/5 for smaller lines) to pass a line
 function checkSnellenAnswer() {
     if (!currentTest) {
         console.error('No active test');
@@ -577,16 +588,46 @@ function checkSnellenAnswer() {
     
     const line = currentTest.lines[currentTest.currentLine];
     const correctLetters = line.letters.join('').toUpperCase();
+    const numLetters = correctLetters.length;
     
-    // Check if user's answer matches (order doesn't matter for Snellen)
-    const userLetters = userAnswer.split('').sort().join('');
-    const correctLettersSorted = correctLetters.split('').sort().join('');
+    // Initialize line tracking if not exists
+    if (!currentTest.lineAttempts[currentTest.currentLine]) {
+        currentTest.lineAttempts[currentTest.currentLine] = {
+            attempts: [],
+            correctCount: 0,
+            passed: false
+        };
+    }
     
-    const isCorrect = userLetters === correctLettersSorted || 
-                      line.correctAnswers.includes(userAnswer) ||
-                      (userAnswer.length === correctLetters.length && 
-                       userAnswer.split('').every(letter => correctLetters.includes(letter)) &&
-                       correctLetters.split('').every(letter => userAnswer.includes(letter)));
+    const lineData = currentTest.lineAttempts[currentTest.currentLine];
+    
+    // Calculate how many letters the user got correct
+    const userLetterArray = userAnswer.split('');
+    const correctLetterArray = correctLetters.split('');
+    let correctCount = 0;
+    
+    // Count correct letters (order doesn't matter)
+    const userLettersSet = new Set(userLetterArray);
+    const correctLettersSet = new Set(correctLetterArray);
+    
+    // Count matches
+    for (const letter of userLettersSet) {
+        if (correctLettersSet.has(letter)) {
+            const userCount = userLetterArray.filter(l => l === letter).length;
+            const correctCountForLetter = correctLetterArray.filter(l => l === letter).length;
+            correctCount += Math.min(userCount, correctCountForLetter);
+        }
+    }
+    
+    // Store this attempt
+    lineData.attempts.push({
+        userAnswer: userAnswer,
+        correctCount: correctCount,
+        totalLetters: numLetters
+    });
+    
+    // Update best correct count for this line
+    lineData.correctCount = Math.max(lineData.correctCount, correctCount);
     
     // Store user's reading
     currentTest.userReadings.push({
@@ -594,33 +635,103 @@ function checkSnellenAnswer() {
         level: line.level,
         expected: correctLetters,
         userAnswer: userAnswer,
-        correct: isCorrect
+        correct: correctCount === numLetters, // Fully correct
+        correctCount: correctCount,
+        totalLetters: numLetters
     });
     
     currentTest.total++;
-    
-    if (isCorrect) {
+    if (correctCount === numLetters) {
         currentTest.correct++;
+    }
+    
+    // Industry standard passing criteria:
+    // - 1-2 letters: Must get all correct
+    // - 3-5 letters: Must get at least 3 correct (or 4 out of 5)
+    // - 6+ letters: Must get at least 4-5 correct
+    let requiredCorrect;
+    if (numLetters <= 2) {
+        requiredCorrect = numLetters; // Must get all
+    } else if (numLetters <= 5) {
+        requiredCorrect = numLetters === 5 ? 4 : 3; // 4 out of 5, or 3 out of 3-4
+    } else {
+        requiredCorrect = Math.ceil(numLetters * 0.7); // At least 70% correct for 6+ letters
+    }
+    
+    // Check if line is passed
+    const linePassed = correctCount >= requiredCorrect;
+    
+    // Clear input
+    if (answerInput) answerInput.value = '';
+    
+    // Show feedback
+    let feedbackMessage = '';
+    if (correctCount === numLetters) {
+        feedbackMessage = `✓ Correct! All ${numLetters} letters correct.`;
+    } else if (linePassed) {
+        feedbackMessage = `✓ Good! You got ${correctCount} out of ${numLetters} letters correct (need ${requiredCorrect}).`;
+    } else {
+        const attemptsLeft = 3 - lineData.attempts.length;
+        if (attemptsLeft > 0) {
+            feedbackMessage = `You got ${correctCount} out of ${numLetters} letters correct. Need ${requiredCorrect} to pass. Try again (${attemptsLeft} attempt${attemptsLeft > 1 ? 's' : ''} left).`;
+        } else {
+            feedbackMessage = `You got ${correctCount} out of ${numLetters} letters correct. Need ${requiredCorrect} to pass. Moving to next line.`;
+        }
+    }
+    
+    // Show feedback (non-blocking)
+    const feedbackEl = document.getElementById('snellen-feedback');
+    if (feedbackEl) {
+        feedbackEl.textContent = feedbackMessage;
+        feedbackEl.style.display = 'block';
+        feedbackEl.style.color = correctCount === numLetters ? '#48bb78' : linePassed ? '#48bb78' : '#f56565';
+    }
+    
+    // If line is passed, mark it and move to next line
+    if (linePassed) {
+        lineData.passed = true;
+        currentTest.lastPassedLine = currentTest.currentLine;
         currentTest.currentLine++;
         
-        // Clear input
-        if (answerInput) answerInput.value = '';
-        
+        // If we've completed all lines, finish test
         if (currentTest.currentLine >= currentTest.lines.length) {
-            finishVisualAcuityTest();
+            setTimeout(() => {
+                finishVisualAcuityTest();
+            }, 1000);
             return;
         }
         
-        renderVisualAcuityTestWithLiDAR();
-        // Focus input for next line
+        // Move to next line
         setTimeout(() => {
+            renderVisualAcuityTestWithLiDAR();
             const nextInput = document.getElementById('snellen-answer');
             if (nextInput) nextInput.focus();
-        }, 100);
+        }, 1500);
     } else {
-        // Wrong answer - show feedback and finish test
-        alert(`Incorrect. The correct letters were: ${correctLetters}. Your visual acuity is approximately ${line.level}.`);
-        finishVisualAcuityTest();
+        // Line not passed - check if we should allow another attempt
+        if (lineData.attempts.length >= 3) {
+            // Maximum attempts reached for this line - move to next or finish
+            if (currentTest.currentLine < currentTest.lines.length - 1) {
+                // Move to next line
+                currentTest.currentLine++;
+                setTimeout(() => {
+                    renderVisualAcuityTestWithLiDAR();
+                    const nextInput = document.getElementById('snellen-answer');
+                    if (nextInput) nextInput.focus();
+                }, 1500);
+            } else {
+                // Last line failed - finish test
+                setTimeout(() => {
+                    finishVisualAcuityTest();
+                }, 1500);
+            }
+        } else {
+            // Allow another attempt on same line
+            setTimeout(() => {
+                const nextInput = document.getElementById('snellen-answer');
+                if (nextInput) nextInput.focus();
+            }, 500);
+        }
     }
 }
 
@@ -660,19 +771,45 @@ async function finishVisualAcuityTest() {
         window.aiVisionEngine.stopEyeTracking();
     }
     
-    // Proper Snellen test calculation
-    let score = currentTest.correct / currentTest.total;
+    // Industry standard Snellen test calculation
+    // Visual acuity is determined by the smallest line where the user met the passing criteria
+    let lastPassedLineIndex = currentTest.lastPassedLine;
     
-    // Find the last correctly read line (Snellen acuity)
-    let lastCorrectLine = currentTest.currentLine > 0 ? currentTest.currentLine - 1 : 0;
-    if (currentTest.userReadings.length > 0) {
-        const lastCorrect = currentTest.userReadings.filter(r => r.correct).pop();
-        if (lastCorrect) {
-            lastCorrectLine = lastCorrect.line;
+    // If no line was explicitly passed, check userReadings to find the last line that met criteria
+    if (lastPassedLineIndex < 0 && currentTest.userReadings.length > 0) {
+        // Find the last line where user got enough letters correct
+        for (let i = currentTest.userReadings.length - 1; i >= 0; i--) {
+            const reading = currentTest.userReadings[i];
+            const line = currentTest.lines[reading.line];
+            const numLetters = line.letters.length;
+            
+            // Calculate required correct based on line size
+            let requiredCorrect;
+            if (numLetters <= 2) {
+                requiredCorrect = numLetters;
+            } else if (numLetters <= 5) {
+                requiredCorrect = numLetters === 5 ? 4 : 3;
+            } else {
+                requiredCorrect = Math.ceil(numLetters * 0.7);
+            }
+            
+            if (reading.correctCount >= requiredCorrect) {
+                lastPassedLineIndex = reading.line;
+                break;
+            }
         }
     }
     
-    const level = currentTest.lines[Math.min(lastCorrectLine, currentTest.lines.length - 1)].level;
+    // Fallback: if still no line found, use first line as baseline
+    if (lastPassedLineIndex < 0) {
+        lastPassedLineIndex = 0;
+    }
+    
+    // Get the acuity level for the last passed line
+    const level = currentTest.lines[Math.min(lastPassedLineIndex, currentTest.lines.length - 1)].level;
+    
+    // Calculate score based on total performance
+    let score = currentTest.correct / Math.max(currentTest.total, 1);
     
     // Calculate decimal acuity for precision (e.g., 6/6 = 1.0, 6/12 = 0.5)
     const levelParts = level.split('/');
@@ -685,7 +822,8 @@ async function finishVisualAcuityTest() {
             const testResults = {
                 correctAnswers: currentTest.correct,
                 totalQuestions: currentTest.total,
-                lastCorrectLine: lastCorrectLine
+                lastPassedLine: lastPassedLineIndex,
+                lastCorrectLine: lastPassedLineIndex // For backward compatibility
             };
             
             // Get AI-powered score refinement
@@ -747,7 +885,8 @@ async function finishVisualAcuityTest() {
         interpretation: interpretation,
         correct: currentTest.correct,
         total: currentTest.total,
-        lastCorrectLine: lastCorrectLine,
+        lastPassedLine: lastPassedLineIndex,
+        lastCorrectLine: lastPassedLineIndex, // For backward compatibility
         userReadings: currentTest.userReadings,
         testDistance: currentTest.targetDistance,
         screenCalibration: {
