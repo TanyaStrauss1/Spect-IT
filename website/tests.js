@@ -713,17 +713,37 @@ function checkSnellenAnswer() {
     const correctLetterArray = correctLetters.split('');
     let correctCount = 0;
     
-    // Count correct letters (order doesn't matter)
-    const userLettersSet = new Set(userLetterArray);
-    const correctLettersSet = new Set(correctLetterArray);
+    // Count correct letters (order doesn't matter) - Enhanced frequency matching
+    // Create frequency maps for accurate counting (handles duplicate letters correctly)
+    const userLetterFreq = {};
+    const correctLetterFreq = {};
     
-    // Count matches
-    for (const letter of userLettersSet) {
-        if (correctLettersSet.has(letter)) {
-            const userCount = userLetterArray.filter(l => l === letter).length;
-            const correctCountForLetter = correctLetterArray.filter(l => l === letter).length;
-            correctCount += Math.min(userCount, correctCountForLetter);
+    userLetterArray.forEach(letter => {
+        if (letter && letter.trim()) { // Skip empty strings and whitespace
+            userLetterFreq[letter] = (userLetterFreq[letter] || 0) + 1;
         }
+    });
+    
+    correctLetterArray.forEach(letter => {
+        if (letter && letter.trim()) { // Skip empty strings and whitespace
+            correctLetterFreq[letter] = (correctLetterFreq[letter] || 0) + 1;
+        }
+    });
+    
+    // Count matches - each letter can only match up to its frequency in the correct answer
+    for (const letter in userLetterFreq) {
+        if (correctLetterFreq[letter]) {
+            correctCount += Math.min(userLetterFreq[letter], correctLetterFreq[letter]);
+        }
+    }
+    
+    // Debug logging for line 2 (6/48)
+    if (line.level === '6/48') {
+        console.log('[Line 2 Debug] User answer:', userAnswer);
+        console.log('[Line 2 Debug] Expected letters:', correctLetters);
+        console.log('[Line 2 Debug] User letter frequencies:', userLetterFreq);
+        console.log('[Line 2 Debug] Correct letter frequencies:', correctLetterFreq);
+        console.log('[Line 2 Debug] Correct count:', correctCount, 'out of', numLetters);
     }
     
     // Store this attempt
