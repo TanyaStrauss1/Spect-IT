@@ -2558,17 +2558,34 @@ function displaySpecialists(specialists) {
         return minA - minB;
     });
     
-    // Show summary of results
+    // Show summary of results with nearest location and web-scraped count
     const summary = document.getElementById('specialists-summary');
     if (summary) {
+        const nearest = filtered[0];
+        const nearestDistance = nearest ? (nearest.distance || 0).toFixed(1) : 'N/A';
+        const nearestName = nearest ? nearest.name : 'N/A';
+        const webScrapedCount = filtered.filter(s => s.source && (s.source.includes('web') || s.source.includes('scraped') || s.source.includes('Yellow') || s.source.includes('Brabys'))).length;
+        
         summary.innerHTML = `
-            <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #667eea;">
-                <p style="margin: 0; font-weight: 600; color: #667eea;">
-                    📊 Found ${filtered.length} optometrists and opticians within ${maxDistance} km
-                </p>
-                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: #666;">
-                    Organized by province • ${provinces.length} provinces • Closest: ${filtered[0]?.distance.toFixed(1)} km away
-                </p>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.3rem; color: white;">📍 Search Results</h3>
+                        <p style="margin: 0; font-size: 1rem; opacity: 0.95;">
+                            <strong>${filtered.length}</strong> specialist(s) found in <strong>${provinces.length}</strong> province(s)
+                            ${webScrapedCount > 0 ? `| <strong>${webScrapedCount}</strong> from web sources` : ''}
+                        </p>
+                    </div>
+                    ${nearest ? `
+                    <div style="text-align: right; background: rgba(255, 255, 255, 0.2); padding: 1rem; border-radius: 8px; backdrop-filter: blur(10px);">
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; font-weight: 600;">📍 Nearest Location</div>
+                        <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;">${nearestName}</div>
+                        <div style="font-size: 0.95rem; opacity: 0.9; display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
+                            <span>${nearestDistance} km away</span>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
             </div>
         `;
     }
