@@ -579,18 +579,35 @@ function updateDistanceDisplay(distance, isValid, status) {
 async function lockDistanceForTest() {
     if (!currentTest) return;
     
-    // Start AI eye tracking if available
+    // Start AI eye tracking if available - FULL AI CAPABILITIES
     if (currentTest.aiEngineAvailable && window.aiVisionEngine) {
         try {
             currentTest.eyeTrackingActive = true;
             await window.aiVisionEngine.startEyeTracking((measurements, metrics) => {
                 currentTest.aiMeasurements = measurements;
-                // Update UI with real-time metrics if needed
-                if (metrics.fps > 0) {
-                    // Optional: Display FPS or other metrics
+                
+                // Real-time AI feedback for optimal test conditions
+                updateAIFeedback(measurements, metrics);
+                
+                // AI-powered quality monitoring
+                if (measurements.leftEye && measurements.rightEye) {
+                    const avgOpenness = (measurements.leftEye.openness + measurements.rightEye.openness) / 2;
+                    if (avgOpenness < 0.7) {
+                        showAIWarning('Keep your eyes fully open for accurate results');
+                    }
+                    
+                    // Head position monitoring
+                    if (measurements.headPose) {
+                        const headStability = Math.abs(measurements.headPose.pitch) + 
+                                           Math.abs(measurements.headPose.yaw) + 
+                                           Math.abs(measurements.headPose.roll);
+                        if (headStability > 15) {
+                            showAIWarning('Keep your head still and look directly at the screen');
+                        }
+                    }
                 }
             });
-            console.log('[Visual Acuity Test] ✅ AI eye tracking started');
+            console.log('[Visual Acuity Test] ✅ AI eye tracking started with full capabilities');
         } catch (error) {
             console.warn('[Visual Acuity Test] AI eye tracking failed:', error);
             currentTest.eyeTrackingActive = false;
