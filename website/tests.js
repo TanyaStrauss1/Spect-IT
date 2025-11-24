@@ -124,14 +124,26 @@ async function startVisualAcuityTestInternal() {
             { level: '6/18', visualAngle: 15, logMAR: 0.48, letters: ['E', 'F', 'H', 'K', 'N'], correctAnswers: ['EFHKN', 'EFHNK', 'EFKHN', 'EFKNH', 'EFNHK', 'EFNKH', 'EHFKN', 'EHFNK', 'EHKFN', 'EHKNF', 'EHNFK', 'EHNKF', 'EKFHN', 'EKFNH', 'EKHFN', 'EKHNF', 'EKNFH', 'EKNHF', 'ENFHK', 'ENFKH', 'ENHFK', 'ENHKF', 'ENKFH', 'ENKHF', 'efhkn', 'efhnk', 'efkhn', 'efknh', 'efnhk', 'efnkh', 'ehfkn', 'ehfnk', 'ehkfn', 'ehknf', 'ehnfk', 'ehnkf', 'ekfhn', 'ekfnh', 'ekhfn', 'ekhnf', 'eknfh', 'eknhf', 'enfhk', 'enfkh', 'enhfk', 'enhkf', 'enkfh', 'enkhf'] },
             { level: '6/12', visualAngle: 10, logMAR: 0.3, letters: ['O', 'P', 'R', 'S', 'T'], correctAnswers: ['OPRST', 'OPRTS', 'OPSRT', 'OPSTR', 'OPTRS', 'OPTSR', 'ORPST', 'ORPTS', 'ORSPT', 'ORSTP', 'ORTPT', 'ORTSP', 'OSPRT', 'OSPTR', 'OSRPT', 'OSRTP', 'OSTPR', 'OSTRP', 'OTPRS', 'OTPSR', 'OTRPS', 'OTRSP', 'OTSPR', 'OTSRP', 'oprst', 'oprts', 'opsrt', 'opstr', 'optrs', 'optsr', 'orpst', 'orpts', 'orspt', 'orstp', 'ortpt', 'ortsp', 'osprt', 'osptr', 'osrpt', 'osrtp', 'ostpr', 'ostrp', 'otprs', 'otpsr', 'otrps', 'otrsp', 'otspr', 'otsrp'] },
             { level: '6/9', visualAngle: 7.5, logMAR: 0.18, letters: ['V', 'Z', 'C', 'D', 'E'], correctAnswers: ['VZCDE', 'VZCED', 'VZDCE', 'VZDEC', 'VZECD', 'VZEDC', 'VCZDE', 'VCZED', 'VCDZE', 'VCDEZ', 'VCEZD', 'VCEDZ', 'VDZCE', 'VDZEC', 'VDCZE', 'VDCEZ', 'VDEZC', 'VDECZ', 'VEZCD', 'VEZDC', 'VECZD', 'VECDZ', 'VEDZC', 'VEDCZ', 'vzcde', 'vzced', 'vzdce', 'vzdec', 'vzecd', 'vzedc', 'vczde', 'vczed', 'vcdze', 'vcdez', 'vcezd', 'vcedz', 'vdzce', 'vdzec', 'vdcze', 'vdcez', 'vdezc', 'vdecz', 'vezcd', 'vezdc', 'veczd', 'vecdz', 'vedzc', 'vedcz'] },
-            { level: '6/6', visualAngle: 5, logMAR: 0.0, letters: ['F', 'H', 'K', 'N', 'P'], correctAnswers: ['FHKNP', 'FHKN', 'FHKPN', 'FHNKP', 'FHN', 'FHPKN', 'FHPNK', 'FKHNP', 'FKHPN', 'FKH', 'FKNP', 'FKNH', 'FKPNH', 'FKPHN', 'FNHKP', 'FNH', 'FNHPK', 'FNKHP', 'FNKPH', 'FNPKH', 'FNP', 'FPHKN', 'FPHNK', 'FPKHN', 'FPKNH', 'FPNHK', 'FPNKH', 'fhknp', 'fhkpn', 'fhnkp', 'fhnpk', 'fhpkn', 'fhpnk', 'fkhnp', 'fkhpn', 'fknph', 'fknhp', 'fkpn', 'fkpn', 'fnhkp', 'fnhpk', 'fnkhp', 'fnkph', 'fnphk', 'fnpkh', 'fphkn', 'fphnk', 'fpkhn', 'fpknh', 'fpnhk', 'fpnkh'] },
-            { level: '6/5', visualAngle: 4, logMAR: -0.1, letters: ['R', 'S', 'T', 'V', 'Z'], correctAnswers: ['RSTVZ', 'RSTZV', 'RSV', 'RSVTZ', 'RSVZT', 'RSZTV', 'RSZVT', 'RTSVZ', 'RTSZV', 'RTVSZ', 'RTVZS', 'RTV', 'RTZSV', 'RTZVS', 'RVSTZ', 'RVSZT', 'RVT', 'RVTSZ', 'RVTZS', 'RVZST', 'RVZTS', 'RZSTV', 'RZSVT', 'RZTSV', 'RZTVS', 'RZVST', 'RZVTS', 'rstvz', 'rstzv', 'rsvtz', 'rsvzt', 'rsztv', 'rszvt', 'rtsvz', 'rtszv', 'rtvsz', 'rtvzs', 'rtzsv', 'rtzvs', 'rvstz', 'rvszt', 'rvtsz', 'rvtzs', 'rvzst', 'rvzts', 'rzstv', 'rzsvt', 'rztsv', 'rztvs', 'rzvst', 'rzvts'] },
+            { level: '6/6', visualAngle: 5, logMAR: 0.0, letters: ['F', 'H', 'K', 'N', 'P'], correctAnswers: ['FHKNP', 'FHKN', 'FHKPN', 'FHNKP', 'FHPKN', 'FHPNK', 'FKHNP', 'FKHPN', 'FKNP', 'FKNH', 'FKPNH', 'FKPHN', 'FNHKP', 'FNHPK', 'FNKHP', 'FNKPH', 'FNPKH', 'FPHKN', 'FPHNK', 'FPKHN', 'FPKNH', 'FPNHK', 'FPNKH', 'fhknp', 'fhkpn', 'fhnkp', 'fhnpk', 'fhpkn', 'fhpnk', 'fkhnp', 'fkhpn', 'fknph', 'fknhp', 'fnhkp', 'fnhpk', 'fnkhp', 'fnkph', 'fnphk', 'fnpkh', 'fphkn', 'fphnk', 'fpkhn', 'fpknh', 'fpnhk', 'fpnkh'] },
+            { level: '6/5', visualAngle: 4, logMAR: -0.1, letters: ['R', 'S', 'T', 'V', 'Z'], correctAnswers: ['RSTVZ', 'RSTZV', 'RSVTZ', 'RSVZT', 'RSZTV', 'RSZVT', 'RTSVZ', 'RTSZV', 'RTVSZ', 'RTVZS', 'RTZSV', 'RTZVS', 'RVSTZ', 'RVSZT', 'RVTSZ', 'RVTZS', 'RVZST', 'RVZTS', 'RZSTV', 'RZSVT', 'RZTSV', 'RZTVS', 'RZVST', 'RZVTS', 'rstvz', 'rstzv', 'rsvtz', 'rsvzt', 'rsztv', 'rszvt', 'rtsvz', 'rtszv', 'rtvsz', 'rtvzs', 'rtzsv', 'rtzvs', 'rvstz', 'rvszt', 'rvtsz', 'rvtzs', 'rvzst', 'rvzts', 'rzstv', 'rzsvt', 'rztsv', 'rztvs', 'rzvst', 'rzvts'] },
         ],
         userReadings: [] // Store what user actually reads
     };
     
+    // Ensure container exists before showing modal
+    const container = document.getElementById('test-container');
+    if (!container) {
+        console.error('[Visual Acuity Test] test-container not found');
+        alert('Error: Test container not found. Please refresh the page.');
+        return;
+    }
+    
     showTestModal();
-    await renderVisualAcuityTestWithLiDAR();
+    
+    // Small delay to ensure modal is visible
+    setTimeout(async () => {
+        await renderVisualAcuityTestWithLiDAR();
+    }, 100);
 }
 
 async function renderVisualAcuityTestWithLiDAR() {
@@ -767,21 +779,46 @@ function checkSnellenAnswer() {
 
 function answerVisualAcuity(correct) {
     if (!currentTest) {
-        console.error('No active test');
+        console.error('[Visual Acuity] No active test');
         return;
     }
     
-    // "Cannot Read" button clicked
+    // "Cannot Read" button clicked - continue to next line
     if (!correct) {
         const line = currentTest.lines[currentTest.currentLine];
+        const numLetters = line.letters.length;
+        
+        // Initialize line tracking if not exists
+        if (!currentTest.lineAttempts[currentTest.currentLine]) {
+            currentTest.lineAttempts[currentTest.currentLine] = {
+                attempts: [],
+                correctCount: 0,
+                passed: false
+            };
+        }
+        
         currentTest.userReadings.push({
             line: currentTest.currentLine,
             level: line.level,
             expected: line.letters.join('').toUpperCase(),
             userAnswer: 'CANNOT READ',
-            correct: false
+            correct: false,
+            correctCount: 0,
+            totalLetters: numLetters
         });
-        finishVisualAcuityTest();
+        
+        // Move to next line (test continues through all lines)
+        currentTest.currentLine++;
+        
+        if (currentTest.currentLine >= currentTest.lines.length) {
+            setTimeout(() => {
+                finishVisualAcuityTest();
+            }, 500);
+        } else {
+            setTimeout(() => {
+                renderVisualAcuityTestWithLiDAR();
+            }, 500);
+        }
         return;
     }
     
