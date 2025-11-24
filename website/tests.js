@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Enhanced Visual Acuity Test with LiDAR Distance Measurement
 async function startVisualAcuityTest() {
     try {
-        // Check if user has email before starting test (optional)
+        // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
                 startVisualAcuityTestInternal();
@@ -43,8 +43,8 @@ async function startVisualAcuityTest() {
         // If email check not available, proceed directly
         startVisualAcuityTestInternal();
     } catch (error) {
-        console.error('[Visual Acuity Test] Error starting test:', error);
-        alert('Error starting test. Please refresh the page and try again.');
+        console.error('[Visual Acuity Test] Error:', error);
+        alert('Error starting test. Please try again.');
     }
 }
 
@@ -110,60 +110,18 @@ async function startVisualAcuityTestInternal() {
         movementDetected: false,
         lineAttempts: {}, // Track attempts per line: { lineIndex: { attempts: [], correctCount: 0, passed: false } }
         lastPassedLine: -1, // Track the last line that was passed
-        // WHO-Compliant Snellen Chart (6m distance, 5 optotypes per line, 0.1 logMAR increments)
-        // WHO Standard: 5 optotypes per line, proportional spacing, standardized Sloan letters
-        // Sloan letters: C, D, E, F, H, K, N, O, P, R, S, T, V, Z (similar legibility)
-        // WHO Visual Impairment Classification (ICD-11):
-        // Normal: ≥6/12 (≥0.5 decimal, ≤0.3 logMAR) - Category 0
-        // Mild: 6/12 to 6/18 (0.5-0.33 decimal, 0.3-0.48 logMAR) - Category 1
-        // Moderate: 6/18 to 6/60 (0.33-0.1 decimal, 0.48-0.78 logMAR) - Category 2
-        // Severe: <6/60 to 3/60 (0.1-0.05 decimal, 0.78-1.3 logMAR) - Category 3
-        // Profound/Blind: <3/60 (<0.05 decimal, >1.3 logMAR) - Category 4-5
-        
-        // Helper function to generate correct answers (order doesn't matter for Snellen)
-        // WHO Standard: Accept any order of the correct letters
-        const generateCorrectAnswers = (letters) => {
-            if (!letters || letters.length === 0) return [];
-            const letterStr = letters.join('').toUpperCase();
-            const perms = [letterStr, letterStr.toLowerCase()];
-            // Generate key permutations for validation (deterministic, not random)
-            const unique = [...new Set(letters.map(l => l.toUpperCase()))];
-            if (unique.length === 5) {
-                // Add reverse and a few common permutations
-                perms.push(letterStr.split('').reverse().join(''));
-                // Add rotated versions
-                for (let i = 1; i < unique.length; i++) {
-                    const rotated = [...unique.slice(i), ...unique.slice(0, i)].join('');
-                    perms.push(rotated);
-                    perms.push(rotated.toLowerCase());
-                }
-            }
-            return [...new Set(perms)];
-        };
-        
-        // Create lines with pre-computed correctAnswers to avoid getter issues
-        const createLine = (level, visualAngle, logMAR, letters, whoCategory) => {
-            const line = {
-                level: level,
-                visualAngle: visualAngle,
-                logMAR: logMAR,
-                letters: letters,
-                whoCategory: whoCategory,
-                correctAnswers: generateCorrectAnswers(letters) // Pre-compute to avoid getter issues
-            };
-            return line;
-        };
-        
+        // Proper Snellen chart lines with standard optotypes
+        // Snellen optotypes: C, D, E, F, L, O, P, T, Z
         lines: [
-            createLine('6/60', 50, 1.0, ['E', 'F', 'P', 'T', 'O'], 'moderate'),
-            createLine('6/48', 40, 0.9, ['C', 'D', 'E', 'F', 'P'], 'moderate'),
-            createLine('6/36', 30, 0.78, ['H', 'K', 'N', 'O', 'R'], 'moderate'),
-            createLine('6/24', 20, 0.6, ['S', 'T', 'V', 'Z', 'C'], 'moderate'),
-            createLine('6/18', 15, 0.48, ['D', 'E', 'F', 'H', 'P'], 'moderate'),
-            createLine('6/12', 10, 0.3, ['K', 'N', 'O', 'R', 'S'], 'normal'),
-            createLine('6/9', 7.5, 0.18, ['T', 'V', 'Z', 'C', 'D'], 'normal'),
-            createLine('6/6', 5, 0.0, ['E', 'F', 'H', 'P', 'T'], 'normal'),
-            createLine('6/5', 4, -0.1, ['O', 'R', 'S', 'V', 'Z'], 'normal'),
+            { level: '6/60', visualAngle: 50, letters: ['E'], correctAnswers: ['E', 'e'] },
+            { level: '6/48', visualAngle: 40, letters: ['F', 'P'], correctAnswers: ['FP', 'PF', 'fp', 'pf'] },
+            { level: '6/36', visualAngle: 30, letters: ['T', 'O', 'Z'], correctAnswers: ['TOZ', 'TZO', 'OTZ', 'OZT', 'ZTO', 'ZOT', 'toz', 'tzo', 'otz', 'ozt', 'zto', 'zot'] },
+            { level: '6/24', visualAngle: 20, letters: ['L', 'P', 'E', 'D'], correctAnswers: ['LPED', 'LDPE', 'ELPD', 'EDLP', 'PELD', 'PDLE', 'lped', 'ldpe', 'elpd', 'edlp', 'peld', 'pdle'] },
+            { level: '6/18', visualAngle: 15, letters: ['P', 'E', 'C', 'F', 'D'], correctAnswers: ['PECFD', 'PEFCD', 'PEDFC', 'PEDCF', 'PEFDC', 'PEDFC', 'pecfd', 'pefcd', 'pedfc', 'pedcf', 'pefdc', 'pedfc'] },
+            { level: '6/12', visualAngle: 10, letters: ['F', 'D', 'P', 'E', 'C'], correctAnswers: ['FDPEC', 'FDEPC', 'FDPCE', 'FDECP', 'FEDPC', 'FEDCP', 'fdpec', 'fdepc', 'fdpce', 'fdecp', 'fedpc', 'fedcp'] },
+            { level: '6/9', visualAngle: 7.5, letters: ['E', 'D', 'F', 'C', 'Z', 'P'], correctAnswers: ['EDFCZP', 'EDFCPZ', 'EDFCZP', 'EDFZCP', 'EDFZPC', 'EDFCPZ', 'edfczp', 'edfcpz', 'edfczp', 'edfzcp', 'edfzpc', 'edfcpz'] },
+            { level: '6/6', visualAngle: 5, letters: ['F', 'E', 'L', 'O', 'P', 'Z', 'D'], correctAnswers: ['FELOPZD', 'FELOPDZ', 'FELOZPD', 'FELOZDP', 'FELODPZ', 'FELODZP', 'felopzd', 'felopdz', 'felozpd', 'felozdp', 'felodpz', 'felodzp'] },
+            { level: '6/5', visualAngle: 4, letters: ['L', 'E', 'F', 'D', 'P', 'O', 'T', 'E', 'C'], correctAnswers: ['LEFDPOTEC', 'LEFDPOETC', 'LEFDPOTCE', 'LEFDPOECT', 'LEFDPOCET', 'LEFDPOCTE', 'lefdpotec', 'lefdpoetc', 'lefdpotce', 'lefdpoect', 'lefdpocet', 'lefdp octe'] },
         ],
         userReadings: [] // Store what user actually reads
     };
@@ -173,30 +131,7 @@ async function startVisualAcuityTestInternal() {
 }
 
 async function renderVisualAcuityTestWithLiDAR() {
-    // Ensure container exists
-    let container = document.getElementById('test-container');
-    if (!container) {
-        console.error('[Visual Acuity Test] test-container not found, creating it');
-        const modal = document.getElementById('test-modal');
-        if (modal) {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                container = document.createElement('div');
-                container.id = 'test-container';
-                modalContent.appendChild(container);
-            }
-        }
-        if (!container) {
-            alert('Error: Test container not found. Please refresh the page.');
-            return;
-        }
-    }
-    
-    if (!currentTest || !currentTest.lines || currentTest.currentLine >= currentTest.lines.length) {
-        console.error('[Visual Acuity Test] Invalid test state');
-        return;
-    }
-    
+    const container = document.getElementById('test-container');
     const line = currentTest.lines[currentTest.currentLine];
     
     // Clear any previous feedback
@@ -660,16 +595,6 @@ function checkSnellenAnswer() {
     const correctLetters = line.letters.join('').toUpperCase();
     const numLetters = correctLetters.length;
     
-    // Ensure correctAnswers is available (should be pre-computed, but add fallback)
-    if (!line.correctAnswers || line.correctAnswers.length === 0) {
-        // Fallback: generate answers if not pre-computed
-        console.warn(`[Snellen Test] correctAnswers not found for line ${currentTest.currentLine}, generating fallback`);
-        const letterStr = correctLetters;
-        line.correctAnswers = [letterStr, letterStr.toLowerCase()];
-        // Add reverse and rotated versions
-        line.correctAnswers.push(letterStr.split('').reverse().join(''));
-    }
-    
     // Initialize line tracking if not exists
     if (!currentTest.lineAttempts[currentTest.currentLine]) {
         currentTest.lineAttempts[currentTest.currentLine] = {
@@ -681,45 +606,22 @@ function checkSnellenAnswer() {
     
     const lineData = currentTest.lineAttempts[currentTest.currentLine];
     
-    // WHO Standard: Calculate how many letters the user got correct (order-independent)
-    // Compare letter sets case-insensitively and account for duplicates
-    const userLetterArray = userAnswer.toUpperCase().split('').filter(l => l.trim() !== '' && l.length > 0);
-    const correctLetterArray = correctLetters.toUpperCase().split('').filter(l => l.length > 0);
+    // Calculate how many letters the user got correct
+    const userLetterArray = userAnswer.split('');
+    const correctLetterArray = correctLetters.split('');
     let correctCount = 0;
     
-    // Debug logging for line 3 (6/24) if needed
-    if (currentTest.currentLine === 3) {
-        console.log('[Snellen Test Line 3] User answer:', userAnswer);
-        console.log('[Snellen Test Line 3] Correct letters:', correctLetters);
-        console.log('[Snellen Test Line 3] User array:', userLetterArray);
-        console.log('[Snellen Test Line 3] Correct array:', correctLetterArray);
-    }
+    // Count correct letters (order doesn't matter)
+    const userLettersSet = new Set(userLetterArray);
+    const correctLettersSet = new Set(correctLetterArray);
     
-    // Create frequency maps for accurate counting (handles duplicate letters correctly)
-    const userLetterFreq = {};
-    const correctLetterFreq = {};
-    
-    userLetterArray.forEach(l => {
-        if (l && l.length > 0) {
-            userLetterFreq[l] = (userLetterFreq[l] || 0) + 1;
+    // Count matches
+    for (const letter of userLettersSet) {
+        if (correctLettersSet.has(letter)) {
+            const userCount = userLetterArray.filter(l => l === letter).length;
+            const correctCountForLetter = correctLetterArray.filter(l => l === letter).length;
+            correctCount += Math.min(userCount, correctCountForLetter);
         }
-    });
-    correctLetterArray.forEach(l => {
-        if (l && l.length > 0) {
-            correctLetterFreq[l] = (correctLetterFreq[l] || 0) + 1;
-        }
-    });
-    
-    // Count matches (accounting for duplicates - WHO standard)
-    for (const letter in correctLetterFreq) {
-        if (userLetterFreq[letter]) {
-            correctCount += Math.min(userLetterFreq[letter], correctLetterFreq[letter]);
-        }
-    }
-    
-    // Debug for line 3
-    if (currentTest.currentLine === 3) {
-        console.log('[Snellen Test Line 3] Correct count:', correctCount, 'out of', numLetters);
     }
     
     // Store this attempt
@@ -748,16 +650,17 @@ function checkSnellenAnswer() {
         currentTest.correct++;
     }
     
-    // WHO Standard passing criteria (5 optotypes per line):
-    // WHO recommends: Must correctly identify at least 4 out of 5 optotypes (80%) to pass a line
-    // This ensures clinical accuracy and aligns with WHO visual acuity testing standards
+    // Industry standard passing criteria:
+    // - 1-2 letters: Must get all correct
+    // - 3-5 letters: Must get at least 3 correct (or 4 out of 5)
+    // - 6+ letters: Must get at least 4-5 correct
     let requiredCorrect;
-    if (numLetters === 5) {
-        requiredCorrect = 4; // WHO standard: 4 out of 5 (80%) for 5-optotype lines
-    } else if (numLetters < 5) {
-        requiredCorrect = Math.ceil(numLetters * 0.8); // 80% for lines with fewer letters
+    if (numLetters <= 2) {
+        requiredCorrect = numLetters; // Must get all
+    } else if (numLetters <= 5) {
+        requiredCorrect = numLetters === 5 ? 4 : 3; // 4 out of 5, or 3 out of 3-4
     } else {
-        requiredCorrect = Math.ceil(numLetters * 0.8); // 80% for any other configurations
+        requiredCorrect = Math.ceil(numLetters * 0.7); // At least 70% correct for 6+ letters
     }
     
     // Check if line is passed
@@ -812,23 +715,21 @@ function checkSnellenAnswer() {
     } else {
         // Line not passed - check if we should allow another attempt
         if (lineData.attempts.length >= 3) {
-            // Maximum attempts reached for this line - always move to next line
-            currentTest.currentLine++;
-            
-            // If we've completed all lines, finish test
-            if (currentTest.currentLine >= currentTest.lines.length) {
+            // Maximum attempts reached for this line - move to next or finish
+            if (currentTest.currentLine < currentTest.lines.length - 1) {
+                // Move to next line
+                currentTest.currentLine++;
+                setTimeout(() => {
+                    renderVisualAcuityTestWithLiDAR();
+                    const nextInput = document.getElementById('snellen-answer');
+                    if (nextInput) nextInput.focus();
+                }, 1500);
+            } else {
+                // Last line failed - finish test
                 setTimeout(() => {
                     finishVisualAcuityTest();
                 }, 1500);
-                return;
             }
-            
-            // Move to next line (test continues even after wrong answers)
-            setTimeout(() => {
-                renderVisualAcuityTestWithLiDAR();
-                const nextInput = document.getElementById('snellen-answer');
-                if (nextInput) nextInput.focus();
-            }, 1500);
         } else {
             // Allow another attempt on same line
             setTimeout(() => {
@@ -845,7 +746,7 @@ function answerVisualAcuity(correct) {
         return;
     }
     
-    // "Cannot Read" button clicked - continue to next line instead of ending test
+    // "Cannot Read" button clicked
     if (!correct) {
         const line = currentTest.lines[currentTest.currentLine];
         currentTest.userReadings.push({
@@ -853,44 +754,9 @@ function answerVisualAcuity(correct) {
             level: line.level,
             expected: line.letters.join('').toUpperCase(),
             userAnswer: 'CANNOT READ',
-            correct: false,
-            correctCount: 0,
-            totalLetters: line.letters.length
+            correct: false
         });
-        
-        // Mark this line as attempted (failed)
-        if (!currentTest.lineAttempts[currentTest.currentLine]) {
-            currentTest.lineAttempts[currentTest.currentLine] = {
-                attempts: [],
-                correctCount: 0,
-                passed: false
-            };
-        }
-        currentTest.lineAttempts[currentTest.currentLine].attempts.push({
-            userAnswer: 'CANNOT READ',
-            correctCount: 0,
-            totalLetters: line.letters.length
-        });
-        
-        currentTest.total++;
-        
-        // Move to next line (test continues)
-        currentTest.currentLine++;
-        
-        // If we've completed all lines, finish test
-        if (currentTest.currentLine >= currentTest.lines.length) {
-            setTimeout(() => {
-                finishVisualAcuityTest();
-            }, 1000);
-            return;
-        }
-        
-        // Continue to next line
-        setTimeout(() => {
-            renderVisualAcuityTestWithLiDAR();
-            const nextInput = document.getElementById('snellen-answer');
-            if (nextInput) nextInput.focus();
-        }, 1000);
+        finishVisualAcuityTest();
         return;
     }
     
@@ -922,15 +788,14 @@ async function finishVisualAcuityTest() {
             const line = currentTest.lines[reading.line];
             const numLetters = line.letters.length;
             
-            // WHO Standard: Calculate required correct based on line size
-            // WHO recommends: 4 out of 5 (80%) for 5-optotype lines
+            // Calculate required correct based on line size
             let requiredCorrect;
-            if (numLetters === 5) {
-                requiredCorrect = 4; // WHO standard: 4 out of 5 (80%)
-            } else if (numLetters < 5) {
-                requiredCorrect = Math.ceil(numLetters * 0.8); // 80% for lines with fewer letters
+            if (numLetters <= 2) {
+                requiredCorrect = numLetters;
+            } else if (numLetters <= 5) {
+                requiredCorrect = numLetters === 5 ? 4 : 3;
             } else {
-                requiredCorrect = Math.ceil(numLetters * 0.8); // 80% for any other configurations
+                requiredCorrect = Math.ceil(numLetters * 0.7);
             }
             
             if (reading.correctCount >= requiredCorrect) {
@@ -1006,51 +871,23 @@ async function finishVisualAcuityTest() {
     else if (decimalAcuity >= 0.4) accuracyRating = 'Moderate';
     else accuracyRating = 'Low';
     
-    // WHO Visual Impairment Classification (ICD-11 standards)
-    // Based on best-corrected visual acuity in the better eye
+    // Interpretation
     let interpretation = '';
-    let whoCategory = 'unknown';
-    let whoSeverity = '';
-    
-    if (decimalAcuity >= 0.5) {
-        interpretation = 'Normal vision (WHO Category 0)';
-        whoCategory = 'normal';
-        whoSeverity = 'No impairment';
-    } else if (decimalAcuity >= 0.33) {
-        interpretation = 'Mild vision impairment (WHO Category 1)';
-        whoCategory = 'mild';
-        whoSeverity = 'Mild impairment';
-    } else if (decimalAcuity >= 0.1) {
-        interpretation = 'Moderate vision impairment (WHO Category 2)';
-        whoCategory = 'moderate';
-        whoSeverity = 'Moderate impairment';
-    } else if (decimalAcuity >= 0.05) {
-        interpretation = 'Severe vision impairment (WHO Category 3)';
-        whoCategory = 'severe';
-        whoSeverity = 'Severe impairment';
-    } else {
-        interpretation = 'Profound vision impairment or blindness (WHO Category 4-5) - Consult eye care professional immediately';
-        whoCategory = 'profound';
-        whoSeverity = 'Profound impairment or blindness';
-    }
-    
-    // Get WHO category from the last passed line
-    const lastPassedLine = currentTest.lines[Math.min(lastPassedLineIndex, currentTest.lines.length - 1)];
-    const whoCategoryFromLine = lastPassedLine.whoCategory || whoCategory;
+    if (decimalAcuity >= 1.0) interpretation = 'Normal or better vision';
+    else if (decimalAcuity >= 0.8) interpretation = 'Mild vision impairment';
+    else if (decimalAcuity >= 0.6) interpretation = 'Moderate vision impairment';
+    else if (decimalAcuity >= 0.4) interpretation = 'Severe vision impairment';
+    else interpretation = 'Profound vision impairment - consult an eye care professional';
     
     const result = {
         type: 'visual-acuity',
-        name: 'Snellen Visual Acuity Test (WHO-Compliant, AI-Enhanced)',
+        name: 'Snellen Visual Acuity Test (AI-Enhanced)',
         score: score,
         level: level,
         usNotation: usNotation,
         decimalAcuity: decimalAcuity,
-        logMAR: lastPassedLine.logMAR || (Math.log10(decimalAcuity)),
         accuracyRating: accuracyRating,
         interpretation: interpretation,
-        whoCategory: whoCategoryFromLine,
-        whoSeverity: whoSeverity,
-        whoCompliant: true,
         correct: currentTest.correct,
         total: currentTest.total,
         lastPassedLine: lastPassedLineIndex,
@@ -1092,7 +929,7 @@ function getSizeClass(size) {
 // Enhanced Color Blindness Test with Perfect Accuracy (Ishihara-style)
 function startColorBlindnessTest() {
     try {
-        // Check if user has email before starting test (optional)
+        // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
                 startColorBlindnessTestInternal();
@@ -1102,43 +939,31 @@ function startColorBlindnessTest() {
         
         startColorBlindnessTestInternal();
     } catch (error) {
-        console.error('[Color Blindness Test] Error starting test:', error);
-        alert('Error starting test. Please refresh the page and try again.');
+        console.error('[Color Blindness Test] Error:', error);
+        alert('Error starting test. Please try again.');
     }
 }
 
 function startColorBlindnessTestInternal() {
-    // WHO-Compliant Ishihara Color Vision Test
-    // WHO Standard: Minimum 14-16 plates for screening, 38 plates for comprehensive test
-    // Using 16 plates for screening (WHO minimum recommendation)
     currentTest = {
         type: 'color-blindness',
-        name: 'Ishihara Color Vision Test (WHO-Compliant)',
+        name: 'Color Blindness Test (Enhanced Accuracy)',
         currentPlate: 0,
         correct: 0,
         total: 0,
         answers: [], // Store all answers for detailed analysis
-        whoCompliant: true,
         plates: [
-            // WHO Standard Ishihara plates (16 plates minimum for screening)
-            // Plates 1-12: Screening plates (detect color vision deficiency)
-            { number: 12, colors: ['#ff6b6b', '#ffffff', '#4ecdc4'], answer: '12', type: 'protanopia', difficulty: 'screening', whoPlate: 1 },
-            { number: 8, colors: ['#4ecdc4', '#ffffff', '#95e1d3'], answer: '8', type: 'deutanopia', difficulty: 'screening', whoPlate: 2 },
-            { number: 29, colors: ['#ffe66d', '#ffffff', '#ffd93d'], answer: '29', type: 'tritanopia', difficulty: 'screening', whoPlate: 3 },
-            { number: 5, colors: ['#a8e6cf', '#ffffff', '#95e1d3'], answer: '5', type: 'protanopia', difficulty: 'screening', whoPlate: 4 },
-            { number: 3, colors: ['#ffd93d', '#ffffff', '#ffe66d'], answer: '3', type: 'deutanopia', difficulty: 'screening', whoPlate: 5 },
-            { number: 15, colors: ['#95e1d3', '#ffffff', '#aae5e5'], answer: '15', type: 'tritanopia', difficulty: 'screening', whoPlate: 6 },
-            { number: 74, colors: ['#f38181', '#ffffff', '#ff6b6b'], answer: '74', type: 'protanopia', difficulty: 'screening', whoPlate: 7 },
-            { number: 6, colors: ['#aae5e5', '#ffffff', '#4ecdc4'], answer: '6', type: 'deutanopia', difficulty: 'screening', whoPlate: 8 },
-            { number: 45, colors: ['#ffd93d', '#ffffff', '#ffe66d'], answer: '45', type: 'tritanopia', difficulty: 'screening', whoPlate: 9 },
-            { number: 16, colors: ['#ff6b6b', '#ffffff', '#f38181'], answer: '16', type: 'protanopia', difficulty: 'screening', whoPlate: 10 },
-            { number: 7, colors: ['#4ecdc4', '#ffffff', '#95e1d3'], answer: '7', type: 'deutanopia', difficulty: 'screening', whoPlate: 11 },
-            { number: 2, colors: ['#ffe66d', '#ffffff', '#ffd93d'], answer: '2', type: 'tritanopia', difficulty: 'screening', whoPlate: 12 },
-            // Plates 13-16: Classification plates (determine type and severity)
-            { number: 42, colors: ['#a8e6cf', '#ffffff', '#95e1d3'], answer: '42', type: 'protanopia', difficulty: 'classification', whoPlate: 13 },
-            { number: 35, colors: ['#ffd93d', '#ffffff', '#ffe66d'], answer: '35', type: 'deutanopia', difficulty: 'classification', whoPlate: 14 },
-            { number: 96, colors: ['#95e1d3', '#ffffff', '#aae5e5'], answer: '96', type: 'tritanopia', difficulty: 'classification', whoPlate: 15 },
-            { number: 26, colors: ['#f38181', '#ffffff', '#ff6b6b'], answer: '26', type: 'protanopia', difficulty: 'classification', whoPlate: 16 },
+            // Real Ishihara plate patterns (simplified for web)
+            { number: 12, colors: ['#ff6b6b', '#ffffff', '#4ecdc4'], answer: '12', type: 'protanopia', difficulty: 'easy' },
+            { number: 8, colors: ['#4ecdc4', '#ffffff', '#95e1d3'], answer: '8', type: 'deutanopia', difficulty: 'easy' },
+            { number: 29, colors: ['#ffe66d', '#ffffff', '#ffd93d'], answer: '29', type: 'tritanopia', difficulty: 'medium' },
+            { number: 5, colors: ['#a8e6cf', '#ffffff', '#95e1d3'], answer: '5', type: 'protanopia', difficulty: 'easy' },
+            { number: 3, colors: ['#ffd93d', '#ffffff', '#ffe66d'], answer: '3', type: 'deutanopia', difficulty: 'easy' },
+            { number: 15, colors: ['#95e1d3', '#ffffff', '#aae5e5'], answer: '15', type: 'tritanopia', difficulty: 'medium' },
+            { number: 74, colors: ['#f38181', '#ffffff', '#ff6b6b'], answer: '74', type: 'protanopia', difficulty: 'hard' },
+            { number: 6, colors: ['#aae5e5', '#ffffff', '#4ecdc4'], answer: '6', type: 'deutanopia', difficulty: 'hard' },
+            { number: 45, colors: ['#ffd93d', '#ffffff', '#ffe66d'], answer: '45', type: 'tritanopia', difficulty: 'hard' },
+            { number: 16, colors: ['#ff6b6b', '#ffffff', '#f38181'], answer: '16', type: 'protanopia', difficulty: 'hard' },
         ]
     };
     showTestModal();
@@ -1146,30 +971,7 @@ function startColorBlindnessTestInternal() {
 }
 
 function renderColorBlindnessTest() {
-    // Ensure container exists
-    let container = document.getElementById('test-container');
-    if (!container) {
-        console.error('[Color Blindness Test] test-container not found, creating it');
-        const modal = document.getElementById('test-modal');
-        if (modal) {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                container = document.createElement('div');
-                container.id = 'test-container';
-                modalContent.appendChild(container);
-            }
-        }
-        if (!container) {
-            alert('Error: Test container not found. Please refresh the page.');
-            return;
-        }
-    }
-    
-    if (!currentTest || !currentTest.plates || currentTest.currentPlate >= currentTest.plates.length) {
-        console.error('[Color Blindness Test] Invalid test state');
-        return;
-    }
-    
+    const container = document.getElementById('test-container');
     const plate = currentTest.plates[currentTest.currentPlate];
     
     // Generate Ishihara-style pattern with multiple colors for accuracy
@@ -1354,7 +1156,7 @@ function finishColorBlindnessTest() {
 // Enhanced Astigmatism Test with Multiple Test Types
 function startAstigmatismTest() {
     try {
-        // Check if user has email before starting test (optional)
+        // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
                 startAstigmatismTestInternal();
@@ -1364,8 +1166,8 @@ function startAstigmatismTest() {
         
         startAstigmatismTestInternal();
     } catch (error) {
-        console.error('[Astigmatism Test] Error starting test:', error);
-        alert('Error starting test. Please refresh the page and try again.');
+        console.error('[Astigmatism Test] Error:', error);
+        alert('Error starting test. Please try again.');
     }
 }
 
@@ -1512,30 +1314,7 @@ function generateStarBurstTests() {
 }
 
 function renderAstigmatismTest() {
-    // Ensure container exists
-    let container = document.getElementById('test-container');
-    if (!container) {
-        console.error('[Astigmatism Test] test-container not found, creating it');
-        const modal = document.getElementById('test-modal');
-        if (modal) {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                container = document.createElement('div');
-                container.id = 'test-container';
-                modalContent.appendChild(container);
-            }
-        }
-        if (!container) {
-            alert('Error: Test container not found. Please refresh the page.');
-            return;
-        }
-    }
-    
-    if (!currentTest || !currentTest.testTypes || currentTest.currentTestType >= currentTest.testTypes.length) {
-        console.error('[Astigmatism Test] Invalid test state');
-        return;
-    }
-    
+    const container = document.getElementById('test-container');
     const testType = currentTest.testTypes[currentTest.currentTestType];
     const image = testType.images[currentTest.currentImage];
     const totalTests = currentTest.testTypes.reduce((sum, tt) => sum + tt.images.length, 0);
@@ -1915,7 +1694,7 @@ async function finishAstigmatismTest() {
 // Contrast Sensitivity Test
 function startContrastTest() {
     try {
-        // Check if user has email before starting test (optional)
+        // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
                 startContrastTestInternal();
@@ -1925,8 +1704,8 @@ function startContrastTest() {
         
         startContrastTestInternal();
     } catch (error) {
-        console.error('[Contrast Test] Error starting test:', error);
-        alert('Error starting test. Please refresh the page and try again.');
+        console.error('[Contrast Test] Error:', error);
+        alert('Error starting test. Please try again.');
     }
 }
 
@@ -1944,30 +1723,7 @@ function startContrastTestInternal() {
 }
 
 function renderContrastTest() {
-    // Ensure container exists
-    let container = document.getElementById('test-container');
-    if (!container) {
-        console.error('[Contrast Test] test-container not found, creating it');
-        const modal = document.getElementById('test-modal');
-        if (modal) {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                container = document.createElement('div');
-                container.id = 'test-container';
-                modalContent.appendChild(container);
-            }
-        }
-        if (!container) {
-            alert('Error: Test container not found. Please refresh the page.');
-            return;
-        }
-    }
-    
-    if (!currentTest || !currentTest.levels || currentTest.currentLevel >= currentTest.levels.length) {
-        console.error('[Contrast Test] Invalid test state');
-        return;
-    }
-    
+    const container = document.getElementById('test-container');
     const contrast = currentTest.levels[currentTest.currentLevel];
     
     container.innerHTML = `
@@ -2025,7 +1781,7 @@ function finishContrastTest() {
 // Visual Field Test
 function startVisualFieldTest() {
     try {
-        // Check if user has email before starting test (optional)
+        // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
                 startVisualFieldTestInternal();
@@ -2035,8 +1791,8 @@ function startVisualFieldTest() {
         
         startVisualFieldTestInternal();
     } catch (error) {
-        console.error('[Visual Field Test] Error starting test:', error);
-        alert('Error starting test. Please refresh the page and try again.');
+        console.error('[Visual Field Test] Error:', error);
+        alert('Error starting test. Please try again.');
     }
 }
 
@@ -2053,29 +1809,7 @@ function startVisualFieldTestInternal() {
 }
 
 function renderVisualFieldTest() {
-    // Ensure container exists
-    let container = document.getElementById('test-container');
-    if (!container) {
-        console.error('[Visual Field Test] test-container not found, creating it');
-        const modal = document.getElementById('test-modal');
-        if (modal) {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                container = document.createElement('div');
-                container.id = 'test-container';
-                modalContent.appendChild(container);
-            }
-        }
-        if (!container) {
-            alert('Error: Test container not found. Please refresh the page.');
-            return;
-        }
-    }
-    
-    if (!currentTest) {
-        console.error('[Visual Field Test] Invalid test state');
-        return;
-    }
+    const container = document.getElementById('test-container');
     
     container.innerHTML = `
         <div class="test-interface">
@@ -2154,7 +1888,7 @@ let eyeMeasurements = {
 
 function startPrescriptionTest() {
     try {
-        // Check if user has email before starting test (optional)
+        // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
                 startPrescriptionTestInternal();
@@ -2164,8 +1898,8 @@ function startPrescriptionTest() {
         
         startPrescriptionTestInternal();
     } catch (error) {
-        console.error('[Prescription Test] Error starting test:', error);
-        alert('Error starting test. Please refresh the page and try again.');
+        console.error('[Prescription Test] Error:', error);
+        alert('Error starting test. Please try again.');
     }
 }
 
@@ -2182,29 +1916,7 @@ function startPrescriptionTestInternal() {
 }
 
 function renderPrescriptionTest() {
-    // Ensure container exists
-    let container = document.getElementById('test-container');
-    if (!container) {
-        console.error('[Prescription Test] test-container not found, creating it');
-        const modal = document.getElementById('test-modal');
-        if (modal) {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                container = document.createElement('div');
-                container.id = 'test-container';
-                modalContent.appendChild(container);
-            }
-        }
-        if (!container) {
-            alert('Error: Test container not found. Please refresh the page.');
-            return;
-        }
-    }
-    
-    if (!currentTest) {
-        console.error('[Prescription Test] Invalid test state');
-        return;
-    }
+    const container = document.getElementById('test-container');
     
     container.innerHTML = `
         <div class="test-interface">
@@ -2807,7 +2519,6 @@ function finishPrescriptionTest() {
 
 // Utility Functions
 function showTestModal() {
-    // Ensure modal exists before trying to show it
     let modal = document.getElementById('test-modal');
     if (!modal) {
         // Create modal if it doesn't exist
@@ -2822,28 +2533,12 @@ function showTestModal() {
         `;
         document.body.appendChild(modal);
     }
-    
-    // Show the modal
     modal.classList.add('active');
-    
-    // Ensure test-container exists
-    if (!document.getElementById('test-container')) {
-        const container = document.createElement('div');
-        container.id = 'test-container';
-        modal.querySelector('.modal-content').appendChild(container);
-    }
 }
 
 function closeTest() {
-    try {
-        const modal = document.getElementById('test-modal');
-        if (modal) {
-            modal.classList.remove('active');
-        }
-        currentTest = null;
-    } catch (error) {
-        console.error('[Close Test] Error closing test:', error);
-    }
+    document.getElementById('test-modal').classList.remove('active');
+    currentTest = null;
 }
 
 async function saveResult(result) {
