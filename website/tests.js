@@ -363,9 +363,10 @@ async function renderVisualAcuityTestWithLiDAR() {
                                 border: 3px solid rgba(0,0,0,0.08);
                                 -webkit-font-smoothing: antialiased;
                                 -moz-osx-font-smoothing: grayscale;
-                                max-width: calc(100vw - 4rem);
+                                max-width: 98vw;
                                 box-sizing: border-box;
-                                transform: scale(${Math.min(1, (currentTest.viewportWidth - 80) / (line.letters.length * fontSize * 1.2))});">
+                                transform: scale(1);
+                                transform-origin: center;">
                         ${line.letters.filter(letter => letter && letter.trim()).map((letter, idx) => 
                             `<span style="display: inline-flex; 
                                           align-items: center; 
