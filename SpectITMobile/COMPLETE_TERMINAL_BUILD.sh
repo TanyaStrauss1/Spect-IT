@@ -20,8 +20,11 @@ TEAM_ID="P7BPRR2MY3"
 APPLE_ID="tanstrauss@gmail.com"
 APPLE_PASSWORD="Zara57048576!"
 APP_STORE_ID="6755681856"
-WORKSPACE_PATH="ios/${APP_NAME}.xcworkspace"
-PROJECT_PATH="ios/${APP_NAME}.xcodeproj"
+
+# Find project files dynamically (exclude internal workspace files)
+WORKSPACE_PATH=$(find ios -maxdepth 1 -name "*.xcworkspace" -type d 2>/dev/null | head -1)
+PROJECT_PATH=$(find ios -maxdepth 1 -name "*.xcodeproj" -type d 2>/dev/null | head -1)
+
 ARCHIVE_PATH="build/${APP_NAME}.xcarchive"
 EXPORT_PATH="build/export"
 EXPORT_OPTIONS_PLIST="build/ExportOptions.plist"
@@ -50,16 +53,22 @@ fi
 echo "✅ Xcode found: $(xcodebuild -version | head -1)"
 
 # Check if project exists
-if [ -f "$WORKSPACE_PATH" ]; then
+if [ -n "$WORKSPACE_PATH" ] && [ -d "$WORKSPACE_PATH" ]; then
     BUILD_PATH="$WORKSPACE_PATH"
     BUILD_TYPE="-workspace"
-    echo "✅ Using Xcode workspace"
-elif [ -f "$PROJECT_PATH" ]; then
+    echo "✅ Using Xcode workspace: $WORKSPACE_PATH"
+elif [ -n "$PROJECT_PATH" ] && [ -d "$PROJECT_PATH" ]; then
     BUILD_PATH="$PROJECT_PATH"
     BUILD_TYPE="-project"
-    echo "✅ Using Xcode project"
+    echo "✅ Using Xcode project: $PROJECT_PATH"
 else
     echo "❌ Xcode project not found"
+    echo "   Looking for: ios/*.xcworkspace or ios/*.xcodeproj"
+    echo "   Found workspace: $WORKSPACE_PATH"
+    echo "   Found project: $PROJECT_PATH"
+    echo ""
+    echo "   Available files in ios/:"
+    ls -la ios/*.xcodeproj ios/*.xcworkspace 2>/dev/null || echo "   No project files found"
     exit 1
 fi
 
