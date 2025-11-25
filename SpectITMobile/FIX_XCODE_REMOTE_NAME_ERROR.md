@@ -22,11 +22,11 @@ When adding the remote in Xcode, use these values:
 
 ### Field 1: Name
 ```
-origin
+Spect-IT
 ```
 - This is just a label/name for the remote
-- Usually "origin" (standard git convention)
-- Can be any short name you want
+- Can be any name you want (e.g., "Spect-IT", "origin", etc.)
+- "Spect-IT" is a good descriptive name!
 
 ### Field 2: Remote URL (or Location)
 ```
@@ -59,9 +59,9 @@ https://github.com/TanyaStrauss1/Spect-IT.git
 
    **Name field:**
    ```
-   origin
+   Spect-IT
    ```
-   (Just the word "origin" - NOT the URL!)
+   (Just the name "Spect-IT" - NOT the URL!)
 
    **Remote URL field:**
    ```
@@ -88,7 +88,7 @@ https://github.com/TanyaStrauss1/Spect-IT.git
 │  Add Remote Repository                   │
 ├─────────────────────────────────────────┤
 │                                         │
-│  Name: [origin        ]  ← Short name! │
+│  Name: [Spect-IT      ]  ← Short name! │
 │                                         │
 │  Remote URL:                            │
 │  [https://github.com/...]  ← Full URL!│
@@ -141,7 +141,7 @@ After adding correctly, you should see:
 ## 💡 Quick Summary
 
 **The fix:**
-- **Name field:** `origin` (just the name)
+- **Name field:** `Spect-IT` (just the name)
 - **URL field:** `https://github.com/TanyaStrauss1/Spect-IT.git` (the full URL)
 
 **Don't put the URL in the Name field!**
@@ -150,7 +150,7 @@ After adding correctly, you should see:
 
 ## 🔗 Your Repository Info
 
-- **Name:** `origin`
+- **Name:** `Spect-IT`
 - **Remote URL:** `https://github.com/TanyaStrauss1/Spect-IT.git`
 - **Local Path:** `/Users/tanyastrauss/Spect-IT`
 - **Branch:** `main`
