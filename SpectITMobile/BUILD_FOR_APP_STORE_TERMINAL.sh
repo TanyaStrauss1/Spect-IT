@@ -101,7 +101,6 @@ xcodebuild archive \
     -configuration "$CONFIGURATION" \
     -archivePath "$ARCHIVE_PATH" \
     -destination "generic/platform=iOS" \
-    CODE_SIGN_IDENTITY="Apple Distribution" \
     CODE_SIGN_STYLE="Automatic" \
     DEVELOPMENT_TEAM="P7BPRR2MY3" \
     PROVISIONING_PROFILE_SPECIFIER="" \
