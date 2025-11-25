@@ -1,203 +1,203 @@
-# 🎯 Your Next Steps - Complete Guide
+# 📋 Next Steps - Complete Guide
 
-## 📊 Current Status
+## 🎯 Goal: Build and Submit App to App Store
 
-Based on your build process, here are your next steps:
+You're ready to build and submit your Spect-IT app to the App Store!
 
 ---
 
-## ✅ Step 1: Monitor Build Progress
+## 🚀 Option 1: EAS Cloud Build (Recommended)
 
-### Check Build Status:
+### Why EAS Build?
+- ✅ No local Xcode issues
+- ✅ No device registration needed
+- ✅ Builds in cloud (faster)
+- ✅ Automatically uploads to App Store Connect
+- ✅ Handles provisioning automatically
+
+### Step 1: Set Up Credentials
+
 ```bash
 cd /Users/tanyastrauss/Spect-IT/SpectITMobile
-./MONITOR_TERMINAL_BUILD.sh
+eas credentials
 ```
 
-### Or Watch Live:
+**Follow prompts:**
+1. Select: **iOS**
+2. Select: **production**
+3. Choose: **"Set up new credentials"**
+4. Apple ID: `tanstrauss@gmail.com`
+5. Password: (use app-specific password if 2FA enabled)
+
+**Get app-specific password:**
+- Go to: https://appleid.apple.com/account/manage
+- Security → App-Specific Passwords
+- Generate password for "EAS Build"
+
+### Step 2: Build
+
 ```bash
-tail -f build/complete_build.log
+eas build --platform ios --profile production
 ```
 
-### Expected Timeline:
-- **Build & Archive:** 5-15 minutes
-- **Export:** 5-10 minutes  
-- **Upload:** 5-10 minutes
-- **Total:** ~20-35 minutes
+**Time:** 15-30 minutes
+
+**What happens:**
+- Builds in cloud
+- Handles signing automatically
+- Uploads to App Store Connect automatically
+
+### Step 3: Monitor Build
+
+**Check progress:**
+- Terminal shows progress
+- Or: https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds
 
 ---
 
-## ✅ Step 2: Wait for Build to Complete
+## 🍎 Option 2: Xcode Build (Alternative)
 
-The build will automatically:
-1. ✅ Build and archive your app
-2. ✅ Export for App Store
-3. ✅ Upload to App Store Connect
+### Step 1: Open Xcode
 
-**You'll know it's done when:**
-- Script shows "✅ Upload successful!"
-- Or check logs for completion message
-
----
-
-## ✅ Step 3: Go to App Store Connect
-
-**Your App Store Connect:**
-https://appstoreconnect.apple.com/apps/6755681856/distribution/ios/version/inflight
-
-### Sign In:
-- Apple ID: `tanstrauss@gmail.com`
-- Password: `Zara57048576!`
-
----
-
-## ✅ Step 4: Wait for Build to Appear (10-30 minutes)
-
-After upload completes:
-1. **Go to App Store Connect** (link above)
-2. **Refresh the page** periodically
-3. **Look in "Build" section**
-4. **Wait for build status:**
-   - ⏳ "Processing" - Still being processed
-   - ✅ "Ready to Submit" - Build is ready!
-
----
-
-## ✅ Step 5: Select Your Build
-
-1. **Scroll to "Build" section**
-2. **Click:** "Select a build before you submit your app"
-3. **Select your build** (should show "Ready to Submit")
-4. **Click "Done"**
-
----
-
-## ✅ Step 6: Complete App Listing (REQUIRED)
-
-### 6.1 Screenshots (REQUIRED)
-
-**Minimum Required:**
-- **iPhone 6.7" Display:** 3 screenshots (1290 x 2796 pixels)
-- **iPhone 6.5" Display:** 3 screenshots (1242 x 2688 pixels)
-
-**How to Create:**
-1. Run app in iOS Simulator
-2. Take screenshots (Cmd + S)
-3. Resize to required dimensions
-4. Upload to App Store Connect
-
-### 6.2 App Description (REQUIRED)
-
-Write a compelling description:
-
-```
-Spect-IT is a professional eye health assessment app that brings comprehensive vision testing to your mobile device. Using advanced camera technology and medical-grade algorithms, Spect-IT provides accurate visual acuity measurements, prescription estimates, and eye health screenings.
-
-Key Features:
-• Professional visual acuity testing
-• Prescription measurement
-• Color blindness detection
-• Astigmatism testing
-• Find nearest eye care specialists
-• Store locator for eyewear retailers
-
-Perfect for regular eye health monitoring, pre-appointment screening, and vision tracking over time.
+```bash
+cd /Users/tanyastrauss/Spect-IT/SpectITMobile
+open ios/SpectIT.xcworkspace
 ```
 
-### 6.3 Keywords (REQUIRED)
+### Step 2: Configure Signing
 
-**Keywords:** (100 characters max, comma-separated)
-```
-eye test, vision test, eye exam, visual acuity, prescription, optometry, eye health, vision screening
-```
+1. **Click project** (blue icon) → Select **"SpectIT"** target
+2. **Click "Signing & Capabilities"** tab
+3. **✅ Check "Automatically manage signing"**
+4. **Select Team:** "Tanya Strauss (P7BPRR2MY3)"
+5. **Verify Bundle ID:** `com.spectit.app`
 
-### 6.4 Privacy Policy URL (REQUIRED)
+### Step 3: Archive
 
-- **Privacy Policy URL:** Required for submission
-- Create a privacy policy page
-- Must be accessible via URL
-- Example: `https://spect-it.com/privacy`
+1. **Select "Any iOS Device"** (top toolbar, not simulator)
+2. **Product → Archive**
+3. **Wait 5-15 minutes** for archive
 
-### 6.5 Support Information (REQUIRED)
+### Step 4: Distribute
 
-- **Support URL:** https://spect-it.com/support (or your support page)
-- **Contact Information:**
-  - First Name: Tanya
-  - Last Name: Strauss
-  - Phone: [Your phone number]
-  - Email: tanstrauss@gmail.com
-
-### 6.6 App Review Information
-
-- **Demo Account:** (if app requires login)
-  - Username: [demo username]
-  - Password: [demo password]
-- **Notes:** (optional)
-  - Any special instructions for reviewers
+1. **Click "Distribute App"** button
+2. **Select "App Store Connect"**
+3. **Choose "Upload"**
+4. **Follow prompts** (sign in if needed)
+5. **Wait for upload** (5-10 minutes)
 
 ---
 
-## ✅ Step 7: Review and Submit
+## 📤 After Build Uploads
 
-1. **Review all information:**
-   - ✅ Screenshots uploaded
-   - ✅ Description filled
-   - ✅ Keywords added
-   - ✅ Privacy policy URL provided
-   - ✅ Support info completed
-   - ✅ Build selected
-   - ✅ No errors or warnings
+### Step 1: Wait for Processing
 
-2. **Click "Submit for Review"** (top right)
+1. **Go to:** https://appstoreconnect.apple.com/apps/6755681856
+2. **Click "TestFlight" tab**
+3. **Wait 15-30 minutes** for processing
+4. **Status:** "Processing" → "Ready to Submit"
 
+### Step 2: Select Build
+
+1. **Click "App Store" tab** (NOT TestFlight)
+2. **Scroll to "Build" section**
+3. **Click "Select a build before you submit your app"**
+4. **Wait for builds to load** (10-30 seconds)
+5. **Select your build** (should show "Ready to Submit")
+6. **Click "Done"**
+
+### Step 3: Complete Required Fields
+
+**Required:**
+- [ ] **Screenshots** (minimum 3 per device size)
+  - iPhone 6.7" Display: 1290 x 2796 pixels
+  - iPhone 6.5" Display: 1242 x 2688 pixels
+  
+- [ ] **App Description** (at least 10 characters)
+
+- [ ] **Privacy Policy URL:**
+  - `https://tanyastrauss1.github.io/Spect-IT/privacy-policy.html`
+
+- [ ] **Support URL:**
+  - `https://www.spect-it.com`
+
+- [ ] **Category:**
+  - Primary: **Health & Fitness** or **Medical**
+
+- [ ] **Age Rating:**
+  - Complete questionnaire
+
+**Optional but recommended:**
+- [ ] App Subtitle
+- [ ] Keywords
+- [ ] Promotional Text
+- [ ] Marketing URL
+
+### Step 4: Submit for Review
+
+1. **Review all information**
+2. **Click "Submit for Review"** button (top right)
 3. **Confirm submission**
-
----
-
-## ✅ Step 8: Wait for Review
-
-- **Review Time:** 24-48 hours typically
-- **Status Updates:** Check App Store Connect
-- **Possible Outcomes:**
-  - ✅ **Approved** - App goes live!
-  - ⚠️ **Rejected** - Fix issues and resubmit
-  - 📝 **In Review** - Still being reviewed
+4. **Wait for Apple's review** (typically 1-3 days)
 
 ---
 
 ## 📋 Quick Checklist
 
-- [ ] Build completed and uploaded
-- [ ] Build appears in App Store Connect (10-30 min wait)
-- [ ] Build selected
-- [ ] Screenshots uploaded (minimum 3 for 6.7")
-- [ ] Description written
-- [ ] Keywords added
-- [ ] Privacy policy URL provided
-- [ ] Support information filled
-- [ ] App review information completed
+### Before Building:
+- [ ] EAS credentials set up (if using EAS)
+- [ ] Xcode signing configured (if using Xcode)
+- [ ] Team selected: P7BPRR2MY3
+
+### After Build:
+- [ ] Build uploaded successfully
+- [ ] Build status: "Ready to Submit" (not "Processing")
+- [ ] Build selected in "App Store" tab
 - [ ] All required fields completed
+- [ ] Screenshots uploaded
+- [ ] Privacy Policy URL added
+- [ ] Support URL added
+- [ ] Category selected
+- [ ] Age rating completed
 - [ ] Submitted for review
 
 ---
 
 ## 🔗 Important Links
 
-- **App Store Connect:** https://appstoreconnect.apple.com/apps/6755681856/distribution/ios/version/inflight
-- **Build Monitor:** https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds
-- **Full Guide:** `APP_STORE_CONNECT_STEPS.md`
+- **App Store Connect:** https://appstoreconnect.apple.com/apps/6755681856
+- **TestFlight:** https://appstoreconnect.apple.com/apps/6755681856/testflight/ios
+- **EAS Builds:** https://expo.dev/accounts/tstrauss/projects/spectit-mobile/builds
+- **Privacy Policy:** https://tanyastrauss1.github.io/Spect-IT/privacy-policy.html
 
 ---
 
-## ⏱️ Timeline Summary
+## 💡 Recommended Path
 
-1. **Build & Upload:** ~20-35 minutes (happening now)
-2. **Build Processing:** 10-30 minutes (after upload)
-3. **Complete Listing:** 30-60 minutes (your work)
-4. **App Review:** 24-48 hours (Apple's review)
-5. **Total:** ~2-4 days to App Store
+**Start with EAS Build:**
+1. Set up credentials: `eas credentials`
+2. Build: `eas build --platform ios --profile production`
+3. Wait for upload
+4. Complete App Store Connect steps
+5. Submit!
+
+**If EAS has issues, use Xcode:**
+- Open workspace
+- Archive
+- Distribute
+- Complete App Store Connect steps
+- Submit!
 
 ---
 
-**Right now: Monitor your build, then complete your app listing in App Store Connect!**
+## ⏱️ Timeline
 
+- **Build time:** 15-30 minutes
+- **Processing:** 15-30 minutes
+- **Review:** 1-3 days (typically)
+
+**Total:** ~2-4 days from build to App Store
+
+---
+
+**You're ready! Choose your build method and get started!**
