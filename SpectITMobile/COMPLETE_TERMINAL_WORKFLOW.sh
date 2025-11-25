@@ -109,6 +109,7 @@ xcodebuild archive \
     CODE_SIGN_STYLE="Automatic" \
     DEVELOPMENT_TEAM="P7BPRR2MY3" \
     PROVISIONING_PROFILE_SPECIFIER="" \
+    -allowProvisioningUpdates \
     > build/archive.log 2>&1
 
 ARCHIVE_EXIT_CODE=$?
@@ -161,6 +162,7 @@ xcodebuild -exportArchive \
     -archivePath "$ARCHIVE_PATH" \
     -exportPath "$EXPORT_PATH" \
     -exportOptionsPlist "$EXPORT_OPTIONS_PLIST" \
+    -allowProvisioningUpdates \
     > build/export.log 2>&1
 
 if [ $? -ne 0 ]; then
