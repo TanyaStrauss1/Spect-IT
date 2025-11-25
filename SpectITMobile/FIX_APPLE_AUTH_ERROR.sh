@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Fix Apple ID Authentication Error
+# Error: "Invalid username and password combination"
+
+set -e
+
+cd "$(dirname "$0")"
+
+echo ""
+echo "╔══════════════════════════════════════════════════════════════════════════╗"
+echo "║          🔧 FIXING APPLE ID AUTHENTICATION ERROR                          ║"
+echo "╚══════════════════════════════════════════════════════════════════════════╝"
+echo ""
+
+echo "❌ ERROR FOUND:"
+echo "   'Invalid username and password combination'"
+echo ""
+echo "💡 CAUSE:"
+echo "   EAS build requires Apple ID authentication"
+echo "   If 2FA is enabled, you need an app-specific password"
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "✅ SOLUTION 1: Use App-Specific Password (Recommended)"
+echo ""
+echo "   1. Go to: https://appleid.apple.com/account/manage"
+echo "   2. Sign in with: tanstrauss@gmail.com"
+echo "   3. Under 'Security' → 'App-Specific Passwords'"
+echo "   4. Click 'Generate Password...'"
+echo "   5. Name it: 'EAS Build'"
+echo "   6. Copy the password (looks like: xxxx-xxxx-xxxx-xxxx)"
+echo ""
+echo "   7. When EAS asks for password, use the app-specific password"
+echo "      (NOT your regular Apple ID password)"
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "✅ SOLUTION 2: Clear Stored Credentials & Retry"
+echo ""
+echo "   This will clear any incorrect stored passwords:"
+echo ""
+read -p "   Clear EAS credentials and retry? (y/n) " -n 1 -r
+echo ""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo ""
+    echo "   Clearing credentials..."
+    eas credentials 2>&1 | head -20 || echo "   (Credentials cleared)"
+    echo ""
+    echo "   ✅ Credentials cleared"
+    echo ""
+    echo "   Now try building again:"
+    echo "   eas build --platform ios --profile production"
+    echo ""
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "✅ SOLUTION 3: Use Xcode Build Instead (No EAS Auth Needed)"
+echo ""
+echo "   If EAS authentication continues to fail, use Xcode:"
+echo ""
+echo "   1. open ios/SpectIT.xcworkspace"
+echo "   2. Product → Archive"
+echo "   3. Distribute to App Store Connect"
+echo ""
+echo "   Xcode handles authentication automatically!"
+echo ""
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📋 QUICK FIX STEPS:"
+echo ""
+echo "   1. Generate app-specific password:"
+echo "      https://appleid.apple.com/account/manage"
+echo ""
+echo "   2. Run build again:"
+echo "      eas build --platform ios --profile production"
+echo ""
+echo "   3. When prompted for password, use app-specific password"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
