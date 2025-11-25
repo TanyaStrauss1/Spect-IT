@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Quick script to open App Store Connect and guide build selection
+
+set -e
+
+cd "$(dirname "$0")"
+
+echo ""
+echo "╔══════════════════════════════════════════════════════════════════════════╗"
+echo "║          🎯 QUICK FIX: Select Build in App Store Connect                  ║"
+echo "╚══════════════════════════════════════════════════════════════════════════╝"
+echo ""
+
+# Open App Store Connect
+echo "🌐 Opening App Store Connect..."
+open "https://appstoreconnect.apple.com/apps/6755681856/distribution/ios/version/inflight"
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📋 FOLLOW THESE STEPS:"
+echo ""
+echo "1️⃣  Sign in with: tanstrauss@gmail.com"
+echo ""
+echo "2️⃣  Click 'App Store' tab (top navigation)"
+echo "    ⚠️  NOT 'TestFlight' - must be 'App Store' tab"
+echo ""
+echo "3️⃣  Scroll down to 'Build' section"
+echo "    (Below 'App Preview and Screenshots')"
+echo ""
+echo "4️⃣  Click 'Select a build before you submit your app' button"
+echo "    (Or '+', 'Choose a build', or 'Add Build' button)"
+echo ""
+echo "5️⃣  Wait for builds to load (10-30 seconds)"
+echo ""
+echo "6️⃣  Select your build:"
+echo "    - Look for '1.0.0 (1)' or similar"
+echo "    - Status should be 'Ready to Submit'"
+echo "    - Click on it to select"
+echo ""
+echo "7️⃣  Click 'Done' button"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "⚠️  IF NO BUILD AVAILABLE:"
+echo ""
+echo "   Option 1: Check TestFlight tab first"
+echo "   - Builds appear there initially"
+echo "   - If status is 'Processing', wait 15-30 minutes"
+echo ""
+echo "   Option 2: Upload a new build"
+echo "   - Run: open ios/SpectIT.xcworkspace"
+echo "   - Product → Archive → Distribute to App Store Connect"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "✅ After selecting build, the error will disappear!"
+echo ""
+echo "📖 Full guide: SELECT_BUILD_NOW.md"
+echo ""
+
