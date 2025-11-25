@@ -1,0 +1,20 @@
+# Xcode Cloud Workflow Configuration
+# This file helps Xcode Cloud understand your project structure
+
+name: Build and Distribute Spect-IT
+scheme: SpectIT
+configuration: Release
+destination: generic/platform=iOS
+team_id: P7BPRR2MY3
+bundle_id: com.spectit.app
+
+# Build actions
+actions:
+  - archive
+  - distribute
+
+# Triggers
+triggers:
+  - type: git_push
+    branch: main
+  - type: manual
