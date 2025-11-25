@@ -1183,17 +1183,19 @@ function startColorBlindnessTestInternal() {
         total: 0,
         answers: [], // Store all answers for detailed analysis
         plates: [
-            // Real Ishihara plate patterns (simplified for web)
-            { number: 12, colors: ['#ff6b6b', '#ffffff', '#4ecdc4'], answer: '12', type: 'protanopia', difficulty: 'easy' },
-            { number: 8, colors: ['#4ecdc4', '#ffffff', '#95e1d3'], answer: '8', type: 'deutanopia', difficulty: 'easy' },
-            { number: 29, colors: ['#ffe66d', '#ffffff', '#ffd93d'], answer: '29', type: 'tritanopia', difficulty: 'medium' },
-            { number: 5, colors: ['#a8e6cf', '#ffffff', '#95e1d3'], answer: '5', type: 'protanopia', difficulty: 'easy' },
-            { number: 3, colors: ['#ffd93d', '#ffffff', '#ffe66d'], answer: '3', type: 'deutanopia', difficulty: 'easy' },
-            { number: 15, colors: ['#95e1d3', '#ffffff', '#aae5e5'], answer: '15', type: 'tritanopia', difficulty: 'medium' },
-            { number: 74, colors: ['#f38181', '#ffffff', '#ff6b6b'], answer: '74', type: 'protanopia', difficulty: 'hard' },
-            { number: 6, colors: ['#aae5e5', '#ffffff', '#4ecdc4'], answer: '6', type: 'deutanopia', difficulty: 'hard' },
-            { number: 45, colors: ['#ffd93d', '#ffffff', '#ffe66d'], answer: '45', type: 'tritanopia', difficulty: 'hard' },
-            { number: 16, colors: ['#ff6b6b', '#ffffff', '#f38181'], answer: '16', type: 'protanopia', difficulty: 'hard' },
+            // Improved Ishihara plate patterns with better color combinations
+            // Format: [number color (visible to normal), background color (visible to all)]
+            // Colors chosen to be distinguishable for normal vision but not for colorblind
+            { number: 12, colors: ['#d32f2f', '#f5deb3'], answer: '12', type: 'protanopia', difficulty: 'easy' },
+            { number: 8, colors: ['#1976d2', '#d3d3d3'], answer: '8', type: 'deutanopia', difficulty: 'easy' },
+            { number: 29, colors: ['#f57c00', '#fff9c4'], answer: '29', type: 'tritanopia', difficulty: 'medium' },
+            { number: 5, colors: ['#c62828', '#ffe0b2'], answer: '5', type: 'protanopia', difficulty: 'easy' },
+            { number: 3, colors: ['#1565c0', '#e1f5fe'], answer: '3', type: 'deutanopia', difficulty: 'easy' },
+            { number: 15, colors: ['#ff6f00', '#fff8e1'], answer: '15', type: 'tritanopia', difficulty: 'medium' },
+            { number: 74, colors: ['#b71c1c', '#ffccbc'], answer: '74', type: 'protanopia', difficulty: 'hard' },
+            { number: 6, colors: ['#0d47a1', '#bbdefb'], answer: '6', type: 'deutanopia', difficulty: 'hard' },
+            { number: 45, colors: ['#e65100', '#ffe082'], answer: '45', type: 'tritanopia', difficulty: 'hard' },
+            { number: 16, colors: ['#c2185b', '#f8bbd0'], answer: '16', type: 'protanopia', difficulty: 'hard' },
         ]
     };
     showTestModal();
@@ -1204,32 +1206,92 @@ function renderColorBlindnessTest() {
     const container = document.getElementById('test-container');
     const plate = currentTest.plates[currentTest.currentPlate];
     
-    // Generate Ishihara-style pattern with multiple colors for accuracy
-    const patternSize = 300;
-    const dotCount = 200;
-    let patternSVG = '<svg width="' + patternSize + '" height="' + patternSize + '" style="border-radius: 50%;">';
+    // Improved Ishihara plate generation
+    // Use responsive size for mobile devices
+    const isMobile = window.innerWidth < 768;
+    const patternSize = isMobile ? Math.min(window.innerWidth - 40, 400) : 450;
+    const centerX = patternSize / 2;
+    const centerY = patternSize / 2;
+    const radius = patternSize / 2 - 10;
     
-    // Create background pattern
+    // Proper Ishihara color combinations
+    // Background color (visible to all)
+    const bgColor = plate.colors && plate.colors.length > 1 ? plate.colors[1] : '#f0f0f0';
+    // Number color (visible to normal vision, hidden to colorblind)
+    const numberColor = plate.colors && plate.colors.length > 0 ? plate.colors[0] : '#ff6b6b';
+    
+    // Create canvas for better rendering
+    const canvas = document.createElement('canvas');
+    canvas.width = patternSize;
+    canvas.height = patternSize;
+    const ctx = canvas.getContext('2d');
+    
+    // Fill background
+    ctx.fillStyle = bgColor;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Generate dot pattern
+    const dotCount = Math.floor(patternSize * patternSize / 25); // Denser pattern
+    const dots = [];
+    
+    // Create grid-based pattern for better number visibility
+    const gridSize = 8;
+    const cellSize = patternSize / gridSize;
+    
+    // Generate number shape coordinates
+    const numberShape = getNumberShape(plate.number, centerX, centerY, radius * 0.6);
+    
+    // Place dots
     for (let i = 0; i < dotCount; i++) {
-        const x = Math.random() * patternSize;
-        const y = Math.random() * patternSize;
-        const distance = Math.sqrt(Math.pow(x - patternSize/2, 2) + Math.pow(y - patternSize/2, 2));
+        let x, y;
+        let attempts = 0;
         
-        if (distance < patternSize/2) {
-            // Use different colors based on position for Ishihara effect
-            const colorIndex = Math.floor(Math.random() * (plate.colors ? plate.colors.length : 1));
-            const color = plate.colors ? plate.colors[colorIndex] : (plate.color || '#ff6b6b');
-            const size = 3 + Math.random() * 2;
-            patternSVG += `<circle cx="${x}" cy="${y}" r="${size}" fill="${color}" opacity="0.8"/>`;
+        // Try to place dot within circle
+        do {
+            x = Math.random() * patternSize;
+            y = Math.random() * patternSize;
+            const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+            attempts++;
+        } while (distance >= radius && attempts < 50);
+        
+        if (attempts >= 50) continue;
+        
+        // Determine if dot is part of number or background
+        const isInNumber = isPointInNumberShape(x, y, numberShape);
+        
+        // Use number color for number dots, background color for others
+        // Add slight variation for realism
+        let dotColor;
+        if (isInNumber) {
+            // Number dots - use number color with slight variation
+            dotColor = numberColor;
+        } else {
+            // Background dots - use background color with slight variation
+            dotColor = bgColor;
         }
+        
+        // Add slight color variation for more realistic pattern
+        const variation = 15;
+        const rgb = hexToRgb(dotColor);
+        if (rgb) {
+            const r = Math.max(0, Math.min(255, rgb.r + (Math.random() - 0.5) * variation));
+            const g = Math.max(0, Math.min(255, rgb.g + (Math.random() - 0.5) * variation));
+            const b = Math.max(0, Math.min(255, rgb.b + (Math.random() - 0.5) * variation));
+            dotColor = `rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)})`;
+        }
+        
+        const dotSize = 2.5 + Math.random() * 2;
+        
+        ctx.fillStyle = dotColor;
+        ctx.beginPath();
+        ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+        ctx.fill();
     }
     
-    // Add number in center (visible to those with normal vision)
-    const numberColor = plate.colors ? plate.colors[0] : (plate.color || '#ff6b6b');
-    patternSVG += `<text x="${patternSize/2}" y="${patternSize/2 + 20}" 
-                     font-size="80" font-weight="bold" text-anchor="middle" 
-                     fill="${numberColor}" opacity="0.9">${plate.number}</text>`;
-    patternSVG += '</svg>';
+    // Convert canvas to data URL for SVG embedding
+    const canvasDataUrl = canvas.toDataURL('image/png');
     
     container.innerHTML = `
         <div class="test-interface">
@@ -1242,23 +1304,157 @@ function renderColorBlindnessTest() {
                     Plate ${currentTest.currentPlate + 1} of ${currentTest.plates.length}${plate.type ? ' | Type: ' + plate.type : ''}${plate.difficulty ? ' | Difficulty: ' + plate.difficulty : ''}
                 </p>
             </div>
-            <div class="test-display" style="display: flex; justify-content: center; align-items: center; min-height: 350px;">
-                <div class="ishihara-plate" style="background: radial-gradient(circle, ${plate.colors ? plate.colors[1] : '#ffffff'}, ${plate.colors ? plate.colors[2] : plate.color || '#ff6b6b'}); 
-                     width: ${patternSize}px; height: ${patternSize}px; border-radius: 50%; 
-                     display: flex; align-items: center; justify-content: center; 
-                     box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                    ${patternSVG}
+            <div class="test-display" style="display: flex; justify-content: center; align-items: center; min-height: 350px; padding: 20px;">
+                <div class="ishihara-plate" style="width: ${patternSize}px; height: ${patternSize}px; border-radius: 50%; 
+                     box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; background: ${bgColor};">
+                    <img src="${canvasDataUrl}" alt="Ishihara plate ${plate.number}" 
+                         style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />
                 </div>
             </div>
-            <div class="test-controls">
+            <div class="test-controls" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem;">
                 <input type="number" id="color-answer" placeholder="Enter number you see" 
                        style="padding: 0.75rem; border: 2px solid #667eea; border-radius: 8px; 
-                              font-size: 1.2rem; text-align: center; width: 250px; margin-right: 1rem;"
+                              font-size: 1.2rem; text-align: center; width: 250px; max-width: 90%;"
                        onkeypress="if(event.key==='Enter') answerColorBlindness()">
-                <button class="btn-next" onclick="answerColorBlindness()">Next Plate</button>
+                <button class="btn-next" onclick="answerColorBlindness()" 
+                        style="padding: 0.75rem 1.5rem; background: #667eea; color: white; border: none; 
+                               border-radius: 8px; font-size: 1.1rem; cursor: pointer; min-width: 120px;">
+                    Next Plate
+                </button>
             </div>
         </div>
     `;
+}
+
+// Helper function to convert hex to RGB
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+// Helper function to get number shape coordinates
+function getNumberShape(number, centerX, centerY, size) {
+    const shapes = {
+        '2': [
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.8, h: size * 0.15},
+            {x: centerX - size * 0.4, y: centerY - size * 0.1, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.4, y: centerY + size * 0.1, w: size * 0.8, h: size * 0.15},
+            {x: centerX + size * 0.25, y: centerY + size * 0.1, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.4, y: centerY + size * 0.3, w: size * 0.8, h: size * 0.15}
+        ],
+        '3': [
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.8, h: size * 0.15},
+            {x: centerX + size * 0.25, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX - size * 0.4, y: centerY, w: size * 0.6, h: size * 0.15},
+            {x: centerX + size * 0.25, y: centerY + size * 0.1, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.4, y: centerY + size * 0.3, w: size * 0.8, h: size * 0.15}
+        ],
+        '5': [
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.8, h: size * 0.15},
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.4, y: centerY - size * 0.1, w: size * 0.6, h: size * 0.15},
+            {x: centerX + size * 0.25, y: centerY, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.4, y: centerY + size * 0.3, w: size * 0.8, h: size * 0.15}
+        ],
+        '6': [
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.8, h: size * 0.15},
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX - size * 0.4, y: centerY, w: size * 0.6, h: size * 0.15},
+            {x: centerX + size * 0.25, y: centerY, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.4, y: centerY + size * 0.3, w: size * 0.8, h: size * 0.15}
+        ],
+        '8': [
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.8, h: size * 0.15},
+            {x: centerX - size * 0.4, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX + size * 0.25, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX - size * 0.4, y: centerY, w: size * 0.8, h: size * 0.15},
+            {x: centerX - size * 0.4, y: centerY + size * 0.3, w: size * 0.8, h: size * 0.15}
+        ],
+        '12': [
+            // '1'
+            {x: centerX - size * 0.3, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            // '2'
+            {x: centerX + size * 0.1, y: centerY - size * 0.3, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.45, y: centerY - size * 0.1, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.1, y: centerY + size * 0.1, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.1, y: centerY + size * 0.3, w: size * 0.5, h: size * 0.15}
+        ],
+        '15': [
+            // '1'
+            {x: centerX - size * 0.3, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            // '5'
+            {x: centerX + size * 0.1, y: centerY - size * 0.3, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.1, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.1, y: centerY - size * 0.1, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.35, y: centerY, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.1, y: centerY + size * 0.3, w: size * 0.4, h: size * 0.15}
+        ],
+        '16': [
+            // '1'
+            {x: centerX - size * 0.3, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            // '6'
+            {x: centerX + size * 0.1, y: centerY - size * 0.3, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.1, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX + size * 0.1, y: centerY, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.35, y: centerY, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.1, y: centerY + size * 0.3, w: size * 0.4, h: size * 0.15}
+        ],
+        '29': [
+            // '2'
+            {x: centerX - size * 0.3, y: centerY - size * 0.3, w: size * 0.4, h: size * 0.15},
+            {x: centerX - size * 0.3, y: centerY - size * 0.1, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.3, y: centerY + size * 0.1, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.05, y: centerY + size * 0.1, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.3, y: centerY + size * 0.3, w: size * 0.4, h: size * 0.15},
+            // '9'
+            {x: centerX + size * 0.15, y: centerY - size * 0.3, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.15, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.4, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.15, y: centerY, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.4, y: centerY, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.15, y: centerY + size * 0.3, w: size * 0.4, h: size * 0.15}
+        ],
+        '45': [
+            // '4'
+            {x: centerX - size * 0.3, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.4},
+            {x: centerX - size * 0.1, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX + size * 0.1, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX - size * 0.3, y: centerY, w: size * 0.4, h: size * 0.15},
+            // '5'
+            {x: centerX + size * 0.15, y: centerY - size * 0.3, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.15, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.15, y: centerY - size * 0.1, w: size * 0.4, h: size * 0.15},
+            {x: centerX + size * 0.4, y: centerY, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.15, y: centerY + size * 0.3, w: size * 0.4, h: size * 0.15}
+        ],
+        '74': [
+            // '7'
+            {x: centerX - size * 0.3, y: centerY - size * 0.3, w: size * 0.5, h: size * 0.15},
+            {x: centerX + size * 0.1, y: centerY - size * 0.1, w: size * 0.15, h: size * 0.5},
+            // '4'
+            {x: centerX + size * 0.15, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.4},
+            {x: centerX + size * 0.35, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX + size * 0.55, y: centerY - size * 0.3, w: size * 0.15, h: size * 0.6},
+            {x: centerX + size * 0.15, y: centerY, w: size * 0.55, h: size * 0.15}
+        ]
+    };
+    
+    return shapes[String(number)] || [];
+}
+
+// Helper function to check if point is in number shape
+function isPointInNumberShape(x, y, shape) {
+    for (let i = 0; i < shape.length; i++) {
+        const rect = shape[i];
+        if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function answerColorBlindness() {
