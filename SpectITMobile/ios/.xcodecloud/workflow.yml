@@ -10,6 +10,7 @@ bundle_id: com.spectit.app
 
 # Build actions
 actions:
+  - test
   - archive
   - distribute
 
