@@ -5,7 +5,7 @@ name: Build and Distribute Spect-IT
 scheme: SpectIT
 configuration: Release
 destination: generic/platform=iOS
-team_id: UHMT4AX5T7
+team_id: P7BPRR2MY3
 bundle_id: com.spectit.app
 
 # Build actions
