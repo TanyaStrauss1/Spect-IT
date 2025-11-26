@@ -1,24 +1,24 @@
 #!/bin/bash
-# Pre-build script for Xcode Cloud
-# This runs before the build starts
+
+# Xcode Cloud Pre-Build Script
+# Runs before building the app
 
 set -e
 
 echo "🚀 Xcode Cloud Pre-Build Script"
+echo "================================"
 echo ""
 
-# Install dependencies if needed
-if [ -f "package.json" ]; then
-    echo "📦 Installing npm dependencies..."
-    npm install
-fi
+# Install dependencies
+echo "📦 Installing dependencies..."
+cd "$CI_WORKSPACE"
+npm install
 
-# Install CocoaPods if needed
-if [ -f "ios/Podfile" ]; then
-    echo "📦 Installing CocoaPods dependencies..."
-    cd ios
-    pod install
-    cd ..
-fi
+# Install CocoaPods dependencies
+echo "📦 Installing CocoaPods..."
+cd ios
+pod install
+cd ..
 
 echo "✅ Pre-build complete"
+echo ""

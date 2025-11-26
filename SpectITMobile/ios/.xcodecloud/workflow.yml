@@ -1,5 +1,5 @@
 # Xcode Cloud Workflow Configuration
-# This file helps Xcode Cloud understand your project structure
+# This file defines the workflow for automated builds
 
 name: Build and Distribute Spect-IT
 scheme: SpectIT
@@ -18,3 +18,8 @@ triggers:
   - type: git_push
     branch: main
   - type: manual
+
+# Environment variables (if needed)
+# env:
+#   SUPABASE_URL: ${SUPABASE_URL}
+#   SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
