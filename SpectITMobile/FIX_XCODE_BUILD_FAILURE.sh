@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fix Xcode Build Failure
-# This script fixes common Xcode build issues
+# Comprehensive fix for common Xcode build issues
 
 set -e
 
@@ -11,27 +11,41 @@ echo "🔧 Fixing Xcode Build Failure"
 echo "=============================="
 echo ""
 
-# Step 1: Clean everything
+# Step 1: Clean build artifacts
 echo "1️⃣  Cleaning build artifacts..."
-rm -rf ~/Library/Developer/Xcode/DerivedData/SpectIT-*
-rm -rf ~/Library/Developer/Xcode/DerivedData/Spect-*
-rm -rf ios/build
-rm -rf build
-echo "   ✅ Cleaned derived data and build folders"
-echo ""
-
-# Step 2: Reinstall CocoaPods
-echo "2️⃣  Reinstalling CocoaPods dependencies..."
-cd ios
-if [ -d "Pods" ]; then
-    rm -rf Pods
-    rm -f Podfile.lock
-    echo "   ✅ Removed old Pods"
+if [ -d "ios/build" ]; then
+    rm -rf ios/build
+    echo "   ✅ Removed ios/build"
 fi
 
-pod install --repo-update
-echo "   ✅ CocoaPods reinstalled"
-cd ..
+if [ -d "build" ]; then
+    rm -rf build
+    echo "   ✅ Removed build"
+fi
+
+# Clean derived data
+DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
+if [ -d "$DERIVED_DATA" ]; then
+    find "$DERIVED_DATA" -name "SpectIT-*" -type d -exec rm -rf {} + 2>/dev/null || true
+    echo "   ✅ Cleaned derived data"
+fi
+echo ""
+
+# Step 2: Verify CocoaPods
+echo "2️⃣  Verifying CocoaPods..."
+if [ -f "ios/Podfile" ]; then
+    cd ios
+    if [ ! -d "Pods" ] || [ ! -f "Pods/Target Support Files/Pods-SpectIT/Pods-SpectIT.release.xcconfig" ]; then
+        echo "   ⚠️  CocoaPods not installed, installing..."
+        pod install --repo-update
+        echo "   ✅ CocoaPods installed"
+    else
+        echo "   ✅ CocoaPods already installed"
+    fi
+    cd ..
+else
+    echo "   ⚠️  Podfile not found"
+fi
 echo ""
 
 # Step 3: Verify project settings
@@ -39,71 +53,71 @@ echo "3️⃣  Verifying project settings..."
 if grep -q "DEVELOPMENT_TEAM = P7BPRR2MY3" ios/SpectIT.xcodeproj/project.pbxproj; then
     echo "   ✅ Team ID correct"
 else
-    echo "   ❌ Team ID issue"
+    echo "   ❌ Team ID incorrect"
 fi
 
 if grep -q "CODE_SIGN_STYLE = Automatic" ios/SpectIT.xcodeproj/project.pbxproj; then
-    echo "   ✅ Code signing automatic"
+    echo "   ✅ Code signing: Automatic"
 else
-    echo "   ❌ Code signing issue"
+    echo "   ❌ Code signing not Automatic"
+fi
+
+if grep -q "PRODUCT_BUNDLE_IDENTIFIER = com.spectit.app" ios/SpectIT.xcodeproj/project.pbxproj; then
+    echo "   ✅ Bundle ID correct"
+else
+    echo "   ❌ Bundle ID incorrect"
 fi
 echo ""
 
-# Step 4: Fix deployment target warnings
-echo "4️⃣  Checking deployment target..."
-DEPLOYMENT_TARGET=$(grep "IPHONEOS_DEPLOYMENT_TARGET" ios/SpectIT.xcodeproj/project.pbxproj | grep -v "//" | head -1 | sed 's/.*IPHONEOS_DEPLOYMENT_TARGET = \([^;]*\);.*/\1/')
-if [ "$DEPLOYMENT_TARGET" = "15.0" ]; then
-    echo "   ✅ Deployment target: $DEPLOYMENT_TARGET"
+# Step 4: Check for common issues
+echo "4️⃣  Checking for common issues..."
+
+# Check Info.plist
+if [ -f "ios/SpectIT/Info.plist" ]; then
+    echo "   ✅ Info.plist exists"
 else
-    echo "   ⚠️  Deployment target: $DEPLOYMENT_TARGET (should be 15.0)"
+    echo "   ❌ Info.plist missing"
+fi
+
+# Check entitlements
+if [ -f "ios/SpectIT/SpectIT.entitlements" ]; then
+    echo "   ✅ Entitlements file exists"
+else
+    echo "   ⚠️  Entitlements file missing"
+fi
+
+# Check scheme
+if [ -f "ios/SpectIT.xcodeproj/xcshareddata/xcschemes/SpectIT.xcscheme" ]; then
+    echo "   ✅ Scheme exists"
+else
+    echo "   ❌ Scheme missing"
 fi
 echo ""
 
-# Step 5: Update Podfile to fix deployment target warnings
-echo "5️⃣  Updating Podfile to fix deployment target warnings..."
-if [ -f "ios/Podfile.properties.json" ]; then
-    # Ensure minimum deployment target is 13.4 or higher
-    python3 << EOF
-import json
-import sys
-
-try:
-    with open('ios/Podfile.properties.json', 'r') as f:
-        data = json.load(f)
-    
-    # Set minimum deployment target to 13.4 if not set or too low
-    if 'ios' not in data:
-        data['ios'] = {}
-    if 'deploymentTarget' not in data['ios'] or float(data['ios']['deploymentTarget']) < 13.4:
-        data['ios']['deploymentTarget'] = '13.4'
-    
-    with open('ios/Podfile.properties.json', 'w') as f:
-        json.dump(data, f, indent=2)
-    
-    print("   ✅ Updated Podfile.properties.json")
-except Exception as e:
-    print(f"   ⚠️  Could not update Podfile.properties.json: {e}")
-    sys.exit(0)
-EOF
+# Step 5: Verify workspace
+echo "5️⃣  Verifying workspace..."
+if [ -f "ios/SpectIT.xcworkspace/contents.xcworkspacedata" ]; then
+    echo "   ✅ Workspace exists"
+    if grep -q "SpectIT.xcodeproj" ios/SpectIT.xcworkspace/contents.xcworkspacedata; then
+        echo "   ✅ Workspace references project correctly"
+    else
+        echo "   ⚠️  Workspace may need update"
+    fi
 else
-    echo "   ⚠️  Podfile.properties.json not found"
+    echo "   ❌ Workspace missing"
 fi
-echo ""
-
-# Step 6: Reinstall pods with updated settings
-echo "6️⃣  Reinstalling pods with updated settings..."
-cd ios
-pod install
-cd ..
-echo "   ✅ Pods reinstalled"
 echo ""
 
 echo "================================"
-echo "✅ Build fix complete"
+echo "✅ Build Fix Complete"
 echo ""
 echo "📋 Next Steps:"
 echo "   1. Open Xcode: open ios/SpectIT.xcworkspace"
 echo "   2. Product → Clean Build Folder (Cmd+Shift+K)"
 echo "   3. Product → Archive"
 echo ""
-
+echo "💡 If build still fails:"
+echo "   - Check Xcode console for exact error"
+echo "   - Verify signing in Signing & Capabilities"
+echo "   - Check build logs in Xcode"
+echo ""
