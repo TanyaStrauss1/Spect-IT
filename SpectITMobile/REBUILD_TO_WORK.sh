@@ -46,6 +46,10 @@ if [ -f "Podfile" ]; then
     rm -f Podfile.lock
     echo "   ✅ Removed old Pods"
     
+    # Fix encoding for CocoaPods
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    
     pod install --repo-update
     echo "   ✅ CocoaPods installed"
     
