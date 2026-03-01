@@ -2,6 +2,7 @@
   "name": "Spect-IT",
   "short_name": "Spect-IT",
   "description": "Professional-grade eye testing platform with comprehensive vision assessments. Visual acuity, color blindness, astigmatism, prescription measurement, and more.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -21,6 +22,18 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Testing",
+      "short_name": "Tests",
+      "url": "/#tests"
+    },
+    {
+      "name": "View Results",
+      "short_name": "Results",
+      "url": "/#results"
     }
   ],
   "screenshots": []

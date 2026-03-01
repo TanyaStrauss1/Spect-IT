@@ -79,12 +79,15 @@ window.addEventListener('scroll', function() {
     });
 });
 
-// Close modal on outside click
-document.getElementById('test-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeTest();
-    }
-});
+// Close modal on outside click (guard in case modal is created later)
+const testModal = document.getElementById('test-modal');
+if (testModal) {
+    testModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeTest();
+        }
+    });
+}
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {

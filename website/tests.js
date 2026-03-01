@@ -29,9 +29,23 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(loadTestHistory, 1000);
 });
 
+function runPreTestSafetyChecks(testName) {
+    const checks = [
+        'Use this only in a safe stationary setting (never while driving).',
+        'Set screen brightness to at least 70% and clean your screen.',
+        'Ensure moderate room lighting without strong glare on the display.',
+        'Wear your usual glasses/contact lenses unless instructed otherwise.'
+    ];
+    const proceed = window.confirm(
+        `${testName} safety and setup check:\n\n- ${checks.join('\n- ')}\n\nContinue?`
+    );
+    return proceed;
+}
+
 // Enhanced Visual Acuity Test with LiDAR Distance Measurement
 async function startVisualAcuityTest() {
     try {
+        if (!runPreTestSafetyChecks('Visual Acuity Test')) return;
         // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
@@ -1159,6 +1173,7 @@ function getSizeClass(size) {
 // Enhanced Color Blindness Test with Perfect Accuracy (Ishihara-style)
 function startColorBlindnessTest() {
     try {
+        if (!runPreTestSafetyChecks('Color Blindness Test')) return;
         // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
@@ -1582,6 +1597,7 @@ function finishColorBlindnessTest() {
 // Enhanced Astigmatism Test with Multiple Test Types
 function startAstigmatismTest() {
     try {
+        if (!runPreTestSafetyChecks('Astigmatism Test')) return;
         // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
@@ -2120,6 +2136,7 @@ async function finishAstigmatismTest() {
 // Contrast Sensitivity Test
 function startContrastTest() {
     try {
+        if (!runPreTestSafetyChecks('Contrast Sensitivity Test')) return;
         // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
@@ -2207,6 +2224,7 @@ function finishContrastTest() {
 // Visual Field Test
 function startVisualFieldTest() {
     try {
+        if (!runPreTestSafetyChecks('Visual Field Test')) return;
         // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
@@ -2303,6 +2321,7 @@ function finishVisualFieldTest() {
 // ========== Amsler Grid (Macular / Central Vision Screening) ==========
 function startAmslerGridTest() {
     try {
+        if (!runPreTestSafetyChecks('Amsler Grid Test')) return;
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => startAmslerGridTestInternal());
             return;
@@ -2399,8 +2418,8 @@ function finishAmslerGridTest(hasDistortion) {
     const result = {
         type: 'amsler-grid',
         name: 'Amsler Grid',
-        result: hasDistortion ? 'Possible central vision concern – recommend professional exam' : 'No distortion reported',
-        note: hasDistortion ? 'Always follow up with an eye care professional for macular health.' : null,
+        result: hasDistortion ? 'Possible central vision concern – same-day professional exam recommended' : 'No distortion reported',
+        note: hasDistortion ? 'Urgent: sudden distortion, missing areas, or wavy lines can indicate a retinal/macular issue. Seek professional care promptly.' : null,
         date: new Date().toISOString()
     };
     saveResult(result);
@@ -2420,6 +2439,7 @@ const JAEGER_LEVELS = [
 
 function startNearVisionTest() {
     try {
+        if (!runPreTestSafetyChecks('Near Vision Test')) return;
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => startNearVisionTestInternal());
             return;
@@ -2495,6 +2515,7 @@ function finishNearVisionTest() {
 // ========== Duochrome (Red-Green) Refinement ==========
 function startDuochromeTest() {
     try {
+        if (!runPreTestSafetyChecks('Duochrome Test')) return;
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => startDuochromeTestInternal());
             return;
@@ -2593,6 +2614,7 @@ const STEREO_LEVELS = [
 
 function startStereoAcuityTest() {
     try {
+        if (!runPreTestSafetyChecks('Stereo Acuity Test')) return;
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => startStereoAcuityTestInternal());
             return;
@@ -2715,6 +2737,7 @@ let eyeMeasurements = {
 
 function startPrescriptionTest() {
     try {
+        if (!runPreTestSafetyChecks('Refractive Screening (Prescription Estimate)')) return;
         // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
