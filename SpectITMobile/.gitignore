@@ -19,5 +19,9 @@ dist/
 # Dependencies
 node_modules/
 
+# Expo local state
+.expo/
+.expo-shared/
+
 # OS
 .DS_Store

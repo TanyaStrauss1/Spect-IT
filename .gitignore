@@ -46,6 +46,7 @@ Thumbs.db
 # Expo
 .expo/
 .expo-shared/
+SpectITMobile/.expo/
 
 # iOS
 ios/Pods/
