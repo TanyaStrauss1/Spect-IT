@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Spect-IT - Advanced Professional Eye Testing Platform</title>
     <meta name="description" content="Professional-grade eye testing platform with comprehensive vision assessments. Visual acuity, color blindness, astigmatism, prescription measurement, and more.">
+    
+    <!-- PWA / App -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Spect-IT">
     
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
@@ -138,16 +145,64 @@
                         <button class="btn btn-test" onclick="startVisualFieldTest()">Start Test</button>
                     </div>
 
-                    <!-- Visual Acuity Test (Moved to last position) -->
+                    <!-- Visual Acuity Test -->
                     <div class="test-card" data-test="visual-acuity">
                         <div class="test-icon">📏</div>
                         <h3>Visual Acuity Test</h3>
-                        <p>Measure distance and near vision using Snellen chart</p>
+                        <p>Measure distance vision using Snellen chart (WHO standard)</p>
                         <div class="test-details">
                             <span class="test-duration">⏱️ 3-5 min</span>
                             <span class="test-accuracy">🎯 High Accuracy</span>
                         </div>
                         <button class="btn btn-test" onclick="startVisualAcuityTest()">Start Test</button>
+                    </div>
+
+                    <!-- Amsler Grid -->
+                    <div class="test-card" data-test="amsler-grid">
+                        <div class="test-icon">⊞</div>
+                        <h3>Amsler Grid</h3>
+                        <p>Screen for macular health: waviness, blank spots, distortion</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 1-2 min</span>
+                            <span class="test-accuracy">🎯 Screening</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startAmslerGridTest()">Start Test</button>
+                    </div>
+
+                    <!-- Near Vision / Jaeger -->
+                    <div class="test-card" data-test="near-vision">
+                        <div class="test-icon">📖</div>
+                        <h3>Near Vision (Jaeger)</h3>
+                        <p>Reading acuity at 35 cm – fine print, labels, screens</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 2-3 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startNearVisionTest()">Start Test</button>
+                    </div>
+
+                    <!-- Duochrome (Red-Green) -->
+                    <div class="test-card" data-test="duochrome">
+                        <div class="test-icon">🔴🟢</div>
+                        <h3>Duochrome (Red-Green)</h3>
+                        <p>Refine sphere power – which side looks clearer?</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 1-2 min</span>
+                            <span class="test-accuracy">🎯 Refinement</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startDuochromeTest()">Start Test</button>
+                    </div>
+
+                    <!-- Stereo Acuity -->
+                    <div class="test-card" data-test="stereo-acuity">
+                        <div class="test-icon">👀</div>
+                        <h3>Stereo Acuity</h3>
+                        <p>Depth perception – which shape appears closer?</p>
+                        <div class="test-details">
+                            <span class="test-duration">⏱️ 2-3 min</span>
+                            <span class="test-accuracy">🎯 High Accuracy</span>
+                        </div>
+                        <button class="btn btn-test" onclick="startStereoAcuityTest()">Start Test</button>
                     </div>
                 </div>
             </div>
@@ -265,6 +320,7 @@
     <script src="supabase-storage.js"></script>
     <script src="config-loader.js"></script>
     <script src="ai-vision-engine.js"></script>
+    <script src="lidar-engine.js"></script>
     <script src="premium-features.js"></script>
     <script src="spectit-location.js"></script>
     <script src="premium-dashboard.js"></script>
@@ -323,6 +379,10 @@
                 'startContrastTest',
                 'startVisualFieldTest',
                 'startPrescriptionTest',
+                'startAmslerGridTest',
+                'startNearVisionTest',
+                'startDuochromeTest',
+                'startStereoAcuityTest',
                 'closeTest',
                 'closeImmediateResult',
                 'closeOverallResults',

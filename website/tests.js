@@ -4,7 +4,7 @@ let currentTest = null;
 let testResults = [];
 let testHistory = JSON.parse(localStorage.getItem('testHistory') || '[]');
 let completedTests = JSON.parse(localStorage.getItem('completedTests') || '[]'); // Track completed tests
-const ALL_TESTS = ['visual-acuity', 'color-blindness', 'astigmatism', 'contrast', 'visual-field', 'prescription'];
+const ALL_TESTS = ['visual-acuity', 'color-blindness', 'astigmatism', 'contrast', 'visual-field', 'prescription', 'amsler-grid', 'near-vision', 'duochrome', 'stereo-acuity'];
 
 // Load test history from Supabase on page load
 async function loadTestHistory() {
@@ -2300,6 +2300,406 @@ function finishVisualFieldTest() {
     showResult(result);
 }
 
+// ========== Amsler Grid (Macular / Central Vision Screening) ==========
+function startAmslerGridTest() {
+    try {
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => startAmslerGridTestInternal());
+            return;
+        }
+        startAmslerGridTestInternal();
+    } catch (e) {
+        console.error('[Amsler Grid] Error:', e);
+        alert('Error starting test. Please try again.');
+    }
+}
+
+function startAmslerGridTestInternal() {
+    currentTest = {
+        type: 'amsler-grid',
+        name: 'Amsler Grid',
+        step: 'instructions',
+        eye: 'both',
+        distortion: null,
+        date: new Date().toISOString()
+    };
+    showTestModal();
+    renderAmslerGridTest();
+}
+
+function renderAmslerGridTest() {
+    const container = document.getElementById('test-container');
+    if (currentTest.step === 'instructions') {
+        container.innerHTML = `
+            <div class="test-interface">
+                <h2 class="test-title">Amsler Grid</h2>
+                <div class="test-instructions">
+                    <p><strong>Purpose:</strong> Screens for central vision problems (e.g. macular changes).</p>
+                    <p><strong>Instructions:</strong></p>
+                    <ul style="text-align: left; margin: 1rem 0;">
+                        <li>Hold the device at normal reading distance (about 35 cm / 14 in).</li>
+                        <li>Cover one eye. Stare only at the center dot.</li>
+                        <li>Check if all lines are straight and the grid is complete (no waviness, blank areas, or distortion).</li>
+                        <li>Repeat with the other eye.</li>
+                    </ul>
+                </div>
+                <div class="test-controls">
+                    <button class="btn btn-primary" onclick="currentTest.step='grid'; renderAmslerGridTest();">Show Grid</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    if (currentTest.step === 'grid') {
+        const size = Math.min(400, window.innerWidth - 60);
+        const cell = Math.max(8, Math.floor(size / 20));
+        const gridSize = cell * 20;
+        container.innerHTML = `
+            <div class="test-interface">
+                <h2 class="test-title">Amsler Grid – Stare at the center dot</h2>
+                <p style="margin-bottom: 1rem;">Cover one eye. Keep your gaze on the center. Are all lines straight? Any missing or wavy areas?</p>
+                <div class="test-display" style="display: flex; justify-content: center;">
+                    <div id="amsler-canvas-wrap" style="width: ${gridSize}px; height: ${gridSize}px; background: #fff; border: 2px solid #333;">
+                        <canvas id="amsler-canvas" width="${gridSize}" height="${gridSize}"></canvas>
+                    </div>
+                </div>
+                <div class="test-controls" style="flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="finishAmslerGridTest(false)">All lines straight, no issues</button>
+                    <button class="btn btn-incorrect" onclick="finishAmslerGridTest(true)">I see waviness, blank spots, or distortion</button>
+                </div>
+            </div>
+        `;
+        const canvas = document.getElementById('amsler-canvas');
+        const ctx = canvas.getContext('2d');
+        const s = gridSize;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 20; i++) {
+            const p = (i / 20) * s;
+            ctx.beginPath();
+            ctx.moveTo(p, 0);
+            ctx.lineTo(p, s);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, p);
+            ctx.lineTo(s, p);
+            ctx.stroke();
+        }
+        const cx = s / 2, cy = s / 2, r = 4;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+    }
+}
+
+function finishAmslerGridTest(hasDistortion) {
+    currentTest.distortion = hasDistortion;
+    const result = {
+        type: 'amsler-grid',
+        name: 'Amsler Grid',
+        result: hasDistortion ? 'Possible central vision concern – recommend professional exam' : 'No distortion reported',
+        note: hasDistortion ? 'Always follow up with an eye care professional for macular health.' : null,
+        date: new Date().toISOString()
+    };
+    saveResult(result);
+    showResult(result);
+}
+
+// ========== Near Vision / Jaeger (Reading Acuity) ==========
+const JAEGER_LEVELS = [
+    { id: 'J1', size: 22, text: 'The quick brown fox jumps over the lazy dog. 0123456789.', approx: '20/25' },
+    { id: 'J2', size: 18, text: 'Pack my box with five dozen liquor jugs. 0123456789.', approx: '20/32' },
+    { id: 'J3', size: 14, text: 'How vexingly quick daft zebras jump! 0123456789.', approx: '20/40' },
+    { id: 'J4', size: 12, text: 'Sphinx of black quartz, judge my vow. 0123456789.', approx: '20/50' },
+    { id: 'J5', size: 10, text: 'Waltz, bad nymph, for quick jigs vex. 0123456789.', approx: '20/63' },
+    { id: 'J6', size: 8, text: 'Glib jocks quiz nymph to vex dwarf. 0123456789.', approx: '20/80' },
+    { id: 'J7', size: 6, text: 'Sphinx of black quartz, judge my vow.', approx: '20/100' }
+];
+
+function startNearVisionTest() {
+    try {
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => startNearVisionTestInternal());
+            return;
+        }
+        startNearVisionTestInternal();
+    } catch (e) {
+        console.error('[Near Vision] Error:', e);
+        alert('Error starting test. Please try again.');
+    }
+}
+
+function startNearVisionTestInternal() {
+    currentTest = {
+        type: 'near-vision',
+        name: 'Near Vision (Jaeger)',
+        currentIndex: 0,
+        bestLevel: null,
+        date: new Date().toISOString()
+    };
+    showTestModal();
+    renderNearVisionTest();
+}
+
+function renderNearVisionTest() {
+    const container = document.getElementById('test-container');
+    const level = JAEGER_LEVELS[currentTest.currentIndex];
+    container.innerHTML = `
+        <div class="test-interface">
+            <h2 class="test-title">Near Vision (Jaeger)</h2>
+            <div class="test-instructions">
+                <p>Hold device at <strong>35 cm (14 inches)</strong> from your eyes. Read the text below. Can you read it clearly?</p>
+                <p>Level ${currentTest.currentIndex + 1} of ${JAEGER_LEVELS.length} – ${level.id} (≈ ${level.approx})</p>
+            </div>
+            <div class="test-display" style="background: #fff; padding: 2rem; border-radius: 12px; margin: 1rem 0; text-align: left;">
+                <p id="jaeger-text" style="font-size: ${level.size}px; line-height: 1.6; color: #000; margin: 0;">${level.text}</p>
+            </div>
+            <div class="test-controls">
+                <button class="btn-correct" onclick="answerNearVision(true)">I can read it</button>
+                <button class="btn-incorrect" onclick="answerNearVision(false)">I cannot read it clearly</button>
+            </div>
+        </div>
+    `;
+}
+
+function answerNearVision(canRead) {
+    const level = JAEGER_LEVELS[currentTest.currentIndex];
+    if (canRead) {
+        currentTest.bestLevel = level;
+        currentTest.currentIndex++;
+        if (currentTest.currentIndex >= JAEGER_LEVELS.length) {
+            finishNearVisionTest();
+            return;
+        }
+        renderNearVisionTest();
+    } else {
+        finishNearVisionTest();
+    }
+}
+
+function finishNearVisionTest() {
+    const j = currentTest.bestLevel || JAEGER_LEVELS[0];
+    const result = {
+        type: 'near-vision',
+        name: 'Near Vision (Jaeger)',
+        level: j.id,
+        result: `Best reading level: ${j.id} (≈ ${j.approx} near equivalent)`,
+        date: new Date().toISOString()
+    };
+    saveResult(result);
+    showResult(result);
+}
+
+// ========== Duochrome (Red-Green) Refinement ==========
+function startDuochromeTest() {
+    try {
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => startDuochromeTestInternal());
+            return;
+        }
+        startDuochromeTestInternal();
+    } catch (e) {
+        console.error('[Duochrome] Error:', e);
+        alert('Error starting test. Please try again.');
+    }
+}
+
+function startDuochromeTestInternal() {
+    currentTest = {
+        type: 'duochrome',
+        name: 'Duochrome (Red-Green)',
+        round: 0,
+        redClearer: 0,
+        greenClearer: 0,
+        total: 0,
+        maxRounds: 5,
+        date: new Date().toISOString()
+    };
+    showTestModal();
+    renderDuochromeTest();
+}
+
+function renderDuochromeTest() {
+    const container = document.getElementById('test-container');
+    const letters = 'CDEHKNORSVZ';
+    const pick = () => letters[Math.floor(Math.random() * letters.length)];
+    const left = pick(), right = pick();
+    currentTest.currentLeft = left;
+    currentTest.currentRight = right;
+    container.innerHTML = `
+        <div class="test-interface">
+            <h2 class="test-title">Duochrome (Red-Green)</h2>
+            <div class="test-instructions">
+                <p>Which side looks <strong>clearer or sharper</strong> – the red side or the green side? If equal, choose Equal.</p>
+                <p>Round ${currentTest.round + 1} of ${currentTest.maxRounds}</p>
+            </div>
+            <div class="test-display" style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin: 1rem 0;">
+                <div style="width: 140px; height: 120px; background: #c62828; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 48px; font-weight: bold; color: #fff;">${left}</span>
+                </div>
+                <div style="width: 140px; height: 120px; background: #2e7d32; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 48px; font-weight: bold; color: #fff;">${right}</span>
+                </div>
+            </div>
+            <div class="test-controls">
+                <button class="btn btn-primary" onclick="answerDuochrome('red')">Red clearer</button>
+                <button class="btn btn-primary" onclick="answerDuochrome('green')">Green clearer</button>
+                <button class="btn btn-secondary" onclick="answerDuochrome('equal')">Equal</button>
+            </div>
+        </div>
+    `;
+}
+
+function answerDuochrome(choice) {
+    currentTest.total++;
+    if (choice === 'red') currentTest.redClearer++;
+    if (choice === 'green') currentTest.greenClearer++;
+    currentTest.round++;
+    if (currentTest.round >= currentTest.maxRounds) {
+        finishDuochromeTest();
+        return;
+    }
+    renderDuochromeTest();
+}
+
+function finishDuochromeTest() {
+    let interpretation = 'Equal – sphere may be balanced.';
+    if (currentTest.redClearer > currentTest.greenClearer + 1) {
+        interpretation = 'Red clearer – may indicate slight over-minus or under-plus; consider professional refraction.';
+    } else if (currentTest.greenClearer > currentTest.redClearer + 1) {
+        interpretation = 'Green clearer – may indicate slight under-minus or over-plus; consider professional refraction.';
+    }
+    const result = {
+        type: 'duochrome',
+        name: 'Duochrome (Red-Green)',
+        result: interpretation,
+        note: 'Used to refine sphere power. For actual prescription, see an optometrist.',
+        date: new Date().toISOString()
+    };
+    saveResult(result);
+    showResult(result);
+}
+
+// ========== Stereo Acuity (Depth Perception) ==========
+const STEREO_LEVELS = [
+    { arcSec: 400, pxOffset: 24, label: '400"' },
+    { arcSec: 200, pxOffset: 12, label: '200"' },
+    { arcSec: 100, pxOffset: 6, label: '100"' },
+    { arcSec: 60, pxOffset: 4, label: '60"' },
+    { arcSec: 40, pxOffset: 2, label: '40"' }
+];
+
+function startStereoAcuityTest() {
+    try {
+        if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
+            window.requireEmailBeforeTest(() => startStereoAcuityTestInternal());
+            return;
+        }
+        startStereoAcuityTestInternal();
+    } catch (e) {
+        console.error('[Stereo Acuity] Error:', e);
+        alert('Error starting test. Please try again.');
+    }
+}
+
+function startStereoAcuityTestInternal() {
+    currentTest = {
+        type: 'stereo-acuity',
+        name: 'Stereo Acuity',
+        currentIndex: 0,
+        correct: 0,
+        bestArcSec: null,
+        date: new Date().toISOString()
+    };
+    showTestModal();
+    renderStereoAcuityTest();
+}
+
+function renderStereoAcuityTest() {
+    const container = document.getElementById('test-container');
+    const level = STEREO_LEVELS[currentTest.currentIndex];
+    const offset = level.pxOffset;
+    const whichCloser = Math.random() < 0.5 ? 'left' : 'right';
+    currentTest.correctAnswer = whichCloser;
+    // Red-cyan anaglyph: "closer" shape has negative parallax (red right, cyan left)
+    const parallax = whichCloser === 'left' ? -offset : offset;
+    const redShift = parallax;   // red layer shift (left eye)
+    const cyanShift = -parallax; // cyan layer shift (right eye)
+    container.innerHTML = `
+        <div class="test-interface">
+            <h2 class="test-title">Stereo Acuity</h2>
+            <div class="test-instructions">
+                <p><strong>Red-cyan 3D:</strong> Use red-cyan (or red-blue) 3D glasses for real depth. Which circle appears <strong>closer</strong>? No glasses? Choose by best guess.</p>
+                <p>Level ${currentTest.currentIndex + 1} of ${STEREO_LEVELS.length} (${level.label})</p>
+            </div>
+            <div class="test-display" style="position: relative; width: 320px; height: 140px; margin: 1rem auto; background: #111;">
+                <canvas id="stereo-canvas" width="320" height="140" style="display: block; margin: 0 auto;"></canvas>
+            </div>
+            <div class="test-controls">
+                <button class="btn btn-primary" onclick="answerStereoAcuity('left')">Left closer</button>
+                <button class="btn btn-primary" onclick="answerStereoAcuity('right')">Right closer</button>
+            </div>
+        </div>
+    `;
+    const canvas = document.getElementById('stereo-canvas');
+    const ctx = canvas.getContext('2d');
+    const w = 320, h = 140;
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, w, h);
+    const cx1 = w * 0.35, cx2 = w * 0.65, cy = h / 2, r = 26;
+    // Negative parallax = shape appears closer (red shifted right, cyan shifted left)
+    const leftParallax = whichCloser === 'left' ? -offset : 0;
+    const rightParallax = whichCloser === 'right' ? -offset : 0;
+    // Left circle (red = left eye, cyan = right eye)
+    ctx.fillStyle = 'rgba(255,0,0,0.95)';
+    ctx.beginPath();
+    ctx.arc(cx1 + leftParallax, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,255,255,0.95)';
+    ctx.beginPath();
+    ctx.arc(cx1 - leftParallax, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Right circle
+    ctx.fillStyle = 'rgba(255,0,0,0.95)';
+    ctx.beginPath();
+    ctx.arc(cx2 + rightParallax, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,255,255,0.95)';
+    ctx.beginPath();
+    ctx.arc(cx2 - rightParallax, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function answerStereoAcuity(choice) {
+    const level = STEREO_LEVELS[currentTest.currentIndex];
+    const correct = choice === currentTest.correctAnswer;
+    if (correct) {
+        currentTest.correct++;
+        currentTest.bestArcSec = level.arcSec;
+    }
+    currentTest.currentIndex++;
+    if (currentTest.currentIndex >= STEREO_LEVELS.length || !correct) {
+        finishStereoAcuityTest();
+        return;
+    }
+    renderStereoAcuityTest();
+}
+
+function finishStereoAcuityTest() {
+    const best = currentTest.bestArcSec != null ? `${currentTest.bestArcSec}"` : 'N/A';
+    const result = {
+        type: 'stereo-acuity',
+        name: 'Stereo Acuity',
+        result: `Best stereo acuity: ${best} arc seconds`,
+        note: currentTest.bestArcSec <= 60 ? 'Good depth perception.' : (currentTest.bestArcSec <= 200 ? 'Moderate stereo acuity.' : 'Consider an in-person stereo test for confirmation.'),
+        date: new Date().toISOString()
+    };
+    saveResult(result);
+    showResult(result);
+}
+
 // Prescription Test with LiDAR/TrueDepth Measurement
 let prescriptionVideo = null;
 let prescriptionStream = null;
@@ -2307,6 +2707,7 @@ let prescriptionCanvas = null;
 let prescriptionCtx = null;
 let faceMeshModel = null;
 let measurementInterval = null;
+let prescriptionDistanceSamples = [];
 let eyeMeasurements = {
     left: { measurements: [], average: null },
     right: { measurements: [], average: null }
@@ -2330,11 +2731,20 @@ function startPrescriptionTest() {
 }
 
 function startPrescriptionTestInternal() {
+    prescriptionDistanceSamples = [];
+    eyeMeasurements = {
+        left: { measurements: [], average: null },
+        right: { measurements: [], average: null }
+    };
+
     currentTest = {
         type: 'prescription',
         name: 'Prescription Measurement (LiDAR)',
         eye: 'both',
         measurements: [],
+        measurementMethod: 'camera-estimation',
+        distanceMethod: 'camera-estimation',
+        lidarSessionActive: false,
         startTime: Date.now()
     };
     showTestModal();
@@ -2352,9 +2762,9 @@ function renderPrescriptionTest() {
                 <p>1. Allow camera access when prompted</p>
                 <p>2. Position your face 12-18 inches (30-45 cm) from the camera</p>
                 <p>3. Look directly at the camera and keep still</p>
-                <p>4. The system will use LiDAR/TrueDepth to measure your eyes</p>
-                <p>5. Measurement takes 10-15 seconds per eye</p>
-                <p style="color: #f59e0b; margin-top: 1rem;"><strong>Note:</strong> Best results on devices with TrueDepth camera (iPhone X and later, iPad Pro)</p>
+                <p>4. If your device supports depth sensing, LiDAR/TrueDepth will be used for distance calibration</p>
+                <p>5. Measurement takes about 15 seconds total</p>
+                <p style="color: #f59e0b; margin-top: 1rem;"><strong>Clinical Note:</strong> This is a screening estimate and not a final glasses prescription.</p>
             </div>
             <div class="test-display" id="prescription-display">
                 <div id="prescription-status" style="text-align: center; padding: 2rem;">
@@ -2386,6 +2796,20 @@ async function initiatePrescriptionMeasurement() {
         document.getElementById('prescription-status').style.display = 'none';
         document.getElementById('measurement-progress').style.display = 'block';
         document.getElementById('prescription-controls').style.display = 'flex';
+
+        // Try to initialize LiDAR/TrueDepth-assisted distance tracking (if available)
+        if (window.lidarEngine && typeof window.lidarEngine.initialize === 'function') {
+            try {
+                const setup = await window.lidarEngine.initialize(0.35, 0.25); // 35cm target, 25% tolerance
+                if (setup && setup.available) {
+                    currentTest.measurementMethod = 'lidar-assisted';
+                    currentTest.distanceMethod = 'lidar-depth';
+                    currentTest.lidarSessionActive = true;
+                }
+            } catch (lidarError) {
+                console.warn('LiDAR initialization unavailable, continuing with camera estimation:', lidarError);
+            }
+        }
         
         // Request camera access
         prescriptionStream = await navigator.mediaDevices.getUserMedia({
@@ -2411,6 +2835,13 @@ async function initiatePrescriptionMeasurement() {
         await initializeFaceMeshForPrescription();
         
         // Start measurement
+        const methodEl = document.getElementById('measurement-details');
+        if (methodEl) {
+            const methodText = currentTest.measurementMethod === 'lidar-assisted'
+                ? 'Depth-assisted calibration active (LiDAR/TrueDepth)'
+                : 'Camera-based geometric estimation active';
+            methodEl.textContent = methodText;
+        }
         startPrescriptionMeasurement();
         
     } catch (error) {
@@ -2444,12 +2875,16 @@ async function initializeFaceMeshForPrescription() {
 function startPrescriptionMeasurement() {
     let measurementCount = 0;
     const totalMeasurements = 30; // 30 measurements over 15 seconds
-    const eyeToTest = currentTest.eye === 'both' ? (measurementCount < 15 ? 'left' : 'right') : currentTest.eye;
+    let rightEyeStatusShown = false;
     
     updateMeasurementStatus('left', 0);
     
     measurementInterval = setInterval(() => {
         if (prescriptionVideo && prescriptionVideo.readyState === prescriptionVideo.HAVE_ENOUGH_DATA) {
+            const eyeToTest = currentTest.eye === 'both'
+                ? (measurementCount < totalMeasurements / 2 ? 'left' : 'right')
+                : currentTest.eye;
+
             // Draw video frame
             prescriptionCtx.drawImage(prescriptionVideo, 0, 0, prescriptionCanvas.width, prescriptionCanvas.height);
             
@@ -2470,8 +2905,9 @@ function startPrescriptionMeasurement() {
             updateMeasurementProgress(progress, measurementCount, totalMeasurements);
             
             // Switch eyes if testing both
-            if (currentTest.eye === 'both' && measurementCount === 15) {
+            if (currentTest.eye === 'both' && measurementCount >= totalMeasurements / 2 && !rightEyeStatusShown) {
                 updateMeasurementStatus('right', 0);
+                rightEyeStatusShown = true;
             }
             
             if (measurementCount >= totalMeasurements) {
@@ -2527,16 +2963,40 @@ function getEyeLandmarks(landmarks, eye) {
     const eyePoints = indices.map(idx => {
         const point = landmarks[idx];
         if (point) {
+            const rawX = point.x ?? point[0];
+            const rawY = point.y ?? point[1];
+            const rawZ = point.z ?? point[2] ?? 0;
+            const x = rawX <= 1 ? rawX * prescriptionCanvas.width : rawX;
+            const y = rawY <= 1 ? rawY * prescriptionCanvas.height : rawY;
             return {
-                x: point.x || point.x * prescriptionCanvas.width,
-                y: point.y || point.y * prescriptionCanvas.height,
-                z: point.z || 0
+                x: Number.isFinite(x) ? x : 0,
+                y: Number.isFinite(y) ? y : 0,
+                z: Number.isFinite(rawZ) ? rawZ : 0
             };
         }
         return null;
     }).filter(p => p !== null);
     
     return eyePoints.length > 0 ? eyePoints : null;
+}
+
+function getBestPrescriptionDistanceCm() {
+    if (window.lidarEngine && currentTest && currentTest.measurementMethod === 'lidar-assisted') {
+        const distanceMeters = window.lidarEngine.currentDistance || window.lidarEngine.getAverageDistance?.();
+        if (Number.isFinite(distanceMeters) && distanceMeters > 0) {
+            const distanceCm = distanceMeters * 100;
+            prescriptionDistanceSamples.push(distanceCm);
+            if (prescriptionDistanceSamples.length > 50) prescriptionDistanceSamples.shift();
+            return {
+                value: distanceCm,
+                source: 'lidar'
+            };
+        }
+    }
+    return {
+        value: null,
+        source: 'camera'
+    };
 }
 
 function calculateEyeMeasurements(eyeLandmarks, eye) {
@@ -2554,11 +3014,11 @@ function calculateEyeMeasurements(eyeLandmarks, eye) {
     const centerY = ys.reduce((a, b) => a + b, 0) / ys.length;
     const centerZ = zs.reduce((a, b) => a + b, 0) / zs.length;
     
-    // Calculate distance from camera (using depth if available)
-    const distance = centerZ || estimateDistance(width, height);
+    // Calculate distance from LiDAR when available, otherwise estimate from camera geometry
+    const distanceEstimate = getBestPrescriptionDistanceCm();
+    const distance = distanceEstimate.value ?? estimateDistance(width, height);
     
-    // Estimate refractive error based on eye measurements
-    // This is a simplified algorithm - real LiDAR would provide more accurate depth
+    // Estimate refractive error based on stable geometric features + distance calibration
     const refractiveError = estimateRefractiveError(width, height, depth, distance);
     
     return {
@@ -2571,159 +3031,80 @@ function calculateEyeMeasurements(eyeLandmarks, eye) {
         refractiveError: refractiveError,
         sphere: refractiveError.sphere,
         cylinder: refractiveError.cylinder,
-        axis: refractiveError.axis
+        axis: refractiveError.axis,
+        confidence: refractiveError.confidence,
+        distanceSource: distanceEstimate.value ? 'lidar' : 'camera'
     };
 }
 
 function estimateDistance(width, height) {
-    // Enhanced distance estimation with perfect accuracy
-    // Uses calibrated measurements based on known eye dimensions
-    
-    // Standard adult eye dimensions
-    const standardEyeWidthMM = 24.2; // Average adult eye width in mm
-    const standardEyeHeightMM = 23.7; // Average adult eye height in mm
-    
-    // Get camera/screen properties for calibration
+    // Camera-geometry fallback for distance when depth sensing is unavailable.
     const canvasWidth = prescriptionCanvas.width;
-    const canvasHeight = prescriptionCanvas.height;
     
-    // Calculate pixel density (assuming standard web camera)
-    // Most webcams have ~640x480 resolution at close range
     const estimatedFOV = 60; // degrees (typical webcam FOV)
-    const sensorWidth = 6.17; // mm (typical webcam sensor width)
+    const sensorWidthMM = 6.17; // mm (typical small camera sensor)
     
-    // Calculate distance using similar triangles
-    // object_size / distance = image_size / focal_length
-    const focalLength = (sensorWidth / 2) / Math.tan((estimatedFOV * Math.PI / 180) / 2);
+    const focalLengthMM = (sensorWidthMM / 2) / Math.tan((estimatedFOV * Math.PI / 180) / 2);
     
-    // Use average of width and height for better accuracy
+    // Use average corneal/iris-scale proxy in pixels.
+    const standardEyeSizeMM = 24.0;
     const averageEyeSize = (width + height) / 2;
-    const averageStandardSize = (standardEyeWidthMM + standardEyeHeightMM) / 2;
+    if (!Number.isFinite(averageEyeSize) || averageEyeSize <= 0) return 35;
     
-    // Calculate distance using pinhole camera model
-    const distanceMM = (averageStandardSize * focalLength) / (averageEyeSize * (sensorWidth / canvasWidth));
+    // Pinhole model approximation.
+    const distanceMM = (standardEyeSizeMM * focalLengthMM) / (averageEyeSize * (sensorWidthMM / canvasWidth));
     
-    // Convert to cm and apply calibration correction
     let distanceCM = distanceMM / 10;
     
-    // Apply calibration factor based on device type
-    // Mobile devices typically have different camera characteristics
+    // Mobile front cameras are often wider; calibrate slightly.
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (isMobile) {
-        // Mobile cameras often have wider FOV
         distanceCM *= 0.9;
     }
     
-    // Clamp to realistic range (20-60cm for eye testing)
+    // Realistic handheld reading-test range.
     distanceCM = Math.max(20, Math.min(60, distanceCM));
     
     return parseFloat(distanceCM.toFixed(1));
 }
 
 function estimateRefractiveError(width, height, depth, distance) {
-    // Enhanced refractive error estimation with perfect accuracy
-    // Uses advanced algorithms based on eye geometry and depth measurements
-    
-    // Calculate precise eye shape metrics
-    const aspectRatio = height / width;
-    const depthRatio = depth / width;
-    const eyeVolume = (width * height * depth) / 1000; // Approximate volume
-    
-    // Standard eye dimensions (adult)
-    const standardWidth = 24; // mm
-    const standardHeight = 24; // mm
-    const standardDepth = 24; // mm
-    
-    // Calculate deviations from standard
-    const widthDeviation = Math.abs(width - standardWidth) / standardWidth;
-    const heightDeviation = Math.abs(height - standardHeight) / standardHeight;
-    const depthDeviation = Math.abs(depth - standardDepth) / standardDepth;
-    
-    // Enhanced sphere estimation (myopia/hyperopia)
-    // Based on multiple factors for accuracy
-    let sphere = 0;
-    
-    // Factor 1: Distance from optimal (30-40cm is optimal)
-    const optimalDistance = 35; // cm
-    const distanceDeviation = distance - optimalDistance;
-    if (distanceDeviation < -5) {
-        // Too close - possible myopia
-        sphere = -(Math.abs(distanceDeviation) / 3);
-    } else if (distanceDeviation > 5) {
-        // Too far - possible hyperopia
-        sphere = (distanceDeviation / 5);
-    }
-    
-    // Factor 2: Eye shape (axial length affects refraction)
-    if (depth > standardDepth * 1.1) {
-        // Longer eye - more myopic
-        sphere -= 0.5;
-    } else if (depth < standardDepth * 0.9) {
-        // Shorter eye - more hyperopic
-        sphere += 0.5;
-    }
-    
-    // Factor 3: Corneal curvature (estimated from width/height ratio)
-    const cornealCurvature = (width + height) / 2;
-    const standardCurvature = (standardWidth + standardHeight) / 2;
-    const curvatureDeviation = (cornealCurvature - standardCurvature) / standardCurvature;
-    sphere += curvatureDeviation * 2;
-    
-    // Enhanced cylinder estimation (astigmatism)
-    // Based on corneal shape irregularities
-    let cylinder = 0;
-    const idealAspectRatio = 0.8; // Ideal eye aspect ratio
-    const aspectDeviation = Math.abs(aspectRatio - idealAspectRatio);
-    
-    if (aspectDeviation > 0.1) {
-        // Significant deviation indicates astigmatism
-        cylinder = aspectDeviation * 3;
-    }
-    
-    // Additional factors for cylinder
-    if (widthDeviation > 0.15 || heightDeviation > 0.15) {
-        cylinder += Math.max(widthDeviation, heightDeviation) * 1.5;
-    }
-    
-    // Enhanced axis estimation (astigmatism orientation)
-    // Based on eye orientation and shape
+    // Deterministic screening heuristic:
+    // - sphere driven mostly by sustained working distance behavior
+    // - cylinder/axis from geometric asymmetry of tracked eye landmarks
+    const safeWidth = Math.max(width, 1);
+    const safeHeight = Math.max(height, 1);
+    const aspectRatio = safeHeight / safeWidth;
+
+    // Sphere estimate: closer habitual distance trends toward minus, farther toward plus.
+    const distanceDelta = 35 - distance; // cm from nominal 35cm reading distance
+    let sphere = (distanceDelta / 10) * -0.5;
+
+    // Small depth-shape contribution when z-range is available.
+    const depthFactor = Number.isFinite(depth) ? Math.max(-0.4, Math.min(0.4, depth * -0.2)) : 0;
+    sphere += depthFactor;
+
+    // Cylinder estimate from non-circularity.
+    const circularityError = Math.abs(1 - aspectRatio);
+    let cylinder = circularityError < 0.08 ? 0 : (circularityError - 0.08) * 6.5;
+
+    // Axis orientation from principal elongation.
     let axis = 0;
-    if (cylinder > 0.25) {
-        // Calculate axis from eye orientation
-        // If width > height, axis is horizontal (0-180)
-        // If height > width, axis is vertical (90-270)
-        if (width > height * 1.1) {
-            axis = 0; // Horizontal astigmatism
-        } else if (height > width * 1.1) {
-            axis = 90; // Vertical astigmatism
-        } else {
-            // Oblique astigmatism
-            const angle = Math.atan2(height - width, width) * (180 / Math.PI);
-            axis = (angle + 180) % 180;
-        }
-        
-        // Add small random variation for realism (±5 degrees)
-        axis += (Math.random() - 0.5) * 10;
-        axis = Math.max(0, Math.min(180, axis));
+    if (cylinder >= 0.25) {
+        if (safeWidth > safeHeight * 1.08) axis = 180;
+        else if (safeHeight > safeWidth * 1.08) axis = 90;
+        else axis = 45;
     }
-    
-    // Apply statistical smoothing for accuracy
-    // Real measurements have some variance
-    sphere = sphere * 0.8 + (Math.random() - 0.5) * 0.2;
-    cylinder = cylinder * 0.9 + (Math.random() - 0.5) * 0.1;
-    
-    // Clamp values to realistic clinical ranges
-    sphere = Math.max(-8, Math.min(8, sphere));
-    cylinder = Math.max(0, Math.min(6, cylinder));
-    
-    // Round to 0.25D increments (standard prescription precision)
+
+    // Clamp to screening-safe ranges and quarter-diopter steps.
+    sphere = Math.max(-6, Math.min(6, sphere));
+    cylinder = Math.max(0, Math.min(4, cylinder));
     sphere = Math.round(sphere * 4) / 4;
     cylinder = Math.round(cylinder * 4) / 4;
-    axis = Math.round(axis);
-    
-    return { 
-        sphere: parseFloat(sphere.toFixed(2)), 
-        cylinder: parseFloat(cylinder.toFixed(2)), 
+
+    return {
+        sphere: parseFloat(sphere.toFixed(2)),
+        cylinder: parseFloat(cylinder.toFixed(2)),
         axis: Math.round(axis),
         confidence: calculateMeasurementConfidence(width, height, depth, distance)
     };
@@ -2796,7 +3177,14 @@ function updateMeasurementProgress(progress, current, total) {
     }
     
     if (detailsEl) {
-        detailsEl.textContent = `Progress: ${current}/${total} measurements (${Math.round(progress)}%)`;
+        const method = currentTest && currentTest.measurementMethod === 'lidar-assisted'
+            ? 'LiDAR depth-assisted'
+            : 'Camera-estimated';
+        const latestDistance = prescriptionDistanceSamples.length > 0
+            ? prescriptionDistanceSamples[prescriptionDistanceSamples.length - 1]
+            : null;
+        const distanceText = latestDistance ? ` | Distance: ${latestDistance.toFixed(1)} cm` : '';
+        detailsEl.textContent = `Progress: ${current}/${total} measurements (${Math.round(progress)}%) | Method: ${method}${distanceText}`;
     }
 }
 
@@ -2815,6 +3203,11 @@ function stopPrescriptionMeasurement() {
         prescriptionVideo.srcObject = null;
         prescriptionVideo.style.display = 'none';
     }
+
+    if (currentTest && currentTest.lidarSessionActive && window.lidarEngine && typeof window.lidarEngine.stop === 'function') {
+        window.lidarEngine.stop();
+        currentTest.lidarSessionActive = false;
+    }
     
     document.getElementById('measurement-progress').style.display = 'none';
 }
@@ -2827,11 +3220,13 @@ function calculatePrescriptionResults() {
             const avgSphere = measurements.reduce((sum, m) => sum + (m.sphere || 0), 0) / measurements.length;
             const avgCylinder = measurements.reduce((sum, m) => sum + (m.cylinder || 0), 0) / measurements.length;
             const avgAxis = measurements.reduce((sum, m) => sum + (m.axis || 0), 0) / measurements.length;
+            const avgConfidence = measurements.reduce((sum, m) => sum + (m.confidence || 0), 0) / measurements.length;
             
             eyeMeasurements[eye].average = {
                 sphere: avgSphere,
                 cylinder: avgCylinder,
-                axis: avgAxis
+                axis: avgAxis,
+                confidence: avgConfidence
             };
         }
     });
@@ -2848,6 +3243,11 @@ function calculatePrescriptionResults() {
     } else if (rightEye) {
         prescriptionText = `Right: ${formatPrescription(rightEye)}`;
     }
+
+    const confidenceValues = [leftEye?.confidence, rightEye?.confidence].filter(v => typeof v === 'number');
+    const overallConfidence = confidenceValues.length > 0
+        ? Math.round((confidenceValues.reduce((a, b) => a + b, 0) / confidenceValues.length) * 100)
+        : 0;
     
     const result = {
         type: 'prescription',
@@ -2856,8 +3256,11 @@ function calculatePrescriptionResults() {
         rightEye: rightEye,
         prescription: prescriptionText,
         measurements: currentTest.measurements.length,
-        method: 'LiDAR/TrueDepth',
-        note: 'This is an estimate using LiDAR technology. Consult an eye care professional for accurate prescription.',
+        method: currentTest.measurementMethod === 'lidar-assisted'
+            ? 'LiDAR/TrueDepth depth-assisted'
+            : 'Camera-based geometric estimation',
+        details: `Confidence: ${overallConfidence}%`,
+        note: 'Screening estimate only. Use this as guidance and confirm with a licensed eye care professional before buying spectacles.',
         date: new Date().toISOString()
     };
     
@@ -2885,7 +3288,7 @@ function showPrescriptionResult(result) {
     const container = document.getElementById('test-container');
     container.innerHTML = `
         <div class="test-interface">
-            <h2 class="test-title">LiDAR Measurement Complete!</h2>
+            <h2 class="test-title">Refractive Screening Complete!</h2>
             <div class="result-card">
                 <div class="result-header">
                     <div class="result-title">${result.name}</div>
@@ -2900,6 +3303,7 @@ function showPrescriptionResult(result) {
                                 Sphere: ${result.leftEye.sphere > 0 ? '+' : ''}${result.leftEye.sphere.toFixed(2)} D
                                 ${result.leftEye.cylinder !== 0 ? ` | Cylinder: ${result.leftEye.cylinder > 0 ? '+' : ''}${result.leftEye.cylinder.toFixed(2)} D` : ''}
                                 ${result.leftEye.axis !== 0 ? ` | Axis: ${Math.round(result.leftEye.axis)}°` : ''}
+                                ${typeof result.leftEye.confidence === 'number' ? ` | Confidence: ${Math.round(result.leftEye.confidence * 100)}%` : ''}
                             </div>
                         </div>
                     ` : ''}
@@ -2910,6 +3314,7 @@ function showPrescriptionResult(result) {
                                 Sphere: ${result.rightEye.sphere > 0 ? '+' : ''}${result.rightEye.sphere.toFixed(2)} D
                                 ${result.rightEye.cylinder !== 0 ? ` | Cylinder: ${result.rightEye.cylinder > 0 ? '+' : ''}${result.rightEye.cylinder.toFixed(2)} D` : ''}
                                 ${result.rightEye.axis !== 0 ? ` | Axis: ${Math.round(result.rightEye.axis)}°` : ''}
+                                ${typeof result.rightEye.confidence === 'number' ? ` | Confidence: ${Math.round(result.rightEye.confidence * 100)}%` : ''}
                             </div>
                         </div>
                     ` : ''}
@@ -2919,7 +3324,7 @@ function showPrescriptionResult(result) {
                     <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
                         <li>Method: ${result.method}</li>
                         <li>Measurements taken: ${result.measurements}</li>
-                        <li>Technology: LiDAR/TrueDepth Camera</li>
+                        <li>${result.details || ''}</li>
                     </ul>
                 </div>
                 <div style="margin-top: 1rem; padding: 1rem; background: #fee; border-radius: 8px; border-left: 4px solid #ef4444;">
@@ -2983,6 +3388,10 @@ async function saveResult(result) {
         else if (name.includes('contrast')) testType = 'contrast';
         else if (name.includes('visual field') || name.includes('field')) testType = 'visual-field';
         else if (name.includes('prescription')) testType = 'prescription';
+        else if (name.includes('amsler')) testType = 'amsler-grid';
+        else if (name.includes('near vision') || name.includes('jaeger') || name.includes('reading')) testType = 'near-vision';
+        else if (name.includes('duochrome') || name.includes('red-green')) testType = 'duochrome';
+        else if (name.includes('stereo')) testType = 'stereo-acuity';
         else testType = name.replace(/\s+/g, '-');
     }
     
@@ -3205,9 +3614,10 @@ function showResult(result) {
                     <div class="result-date">${new Date(result.date).toLocaleDateString()}</div>
                 </div>
                 ${result.score !== undefined ? `<div class="result-score">Score: ${(result.score * 100).toFixed(0)}%</div>` : ''}
-                ${result.level ? `<div class="result-details"><strong>Visual Acuity:</strong> ${result.level}</div>` : ''}
+                ${result.level ? `<div class="result-details"><strong>Level:</strong> ${result.level}</div>` : ''}
                 ${result.result ? `<div class="result-details"><strong>Result:</strong> ${result.result}</div>` : ''}
                 ${result.estimate ? `<div class="result-details"><strong>Estimate:</strong> ${result.estimate}</div>` : ''}
+                ${result.details ? `<div class="result-details">${result.details}</div>` : ''}
                 ${result.note ? `<div class="result-details" style="margin-top: 1rem; color: #f59e0b;"><strong>Note:</strong> ${result.note}</div>` : ''}
             </div>
             <div class="test-controls">
@@ -3501,6 +3911,10 @@ window.startAstigmatismTest = startAstigmatismTest;
 window.startContrastTest = startContrastTest;
 window.startVisualFieldTest = startVisualFieldTest;
 window.startPrescriptionTest = startPrescriptionTest;
+window.startAmslerGridTest = startAmslerGridTest;
+window.startNearVisionTest = startNearVisionTest;
+window.startDuochromeTest = startDuochromeTest;
+window.startStereoAcuityTest = startStereoAcuityTest;
 window.closeImmediateResult = closeImmediateResult;
 window.closeOverallResults = closeOverallResults;
 window.closeTest = closeTest;

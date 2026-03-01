@@ -1,5 +1,16 @@
 // Advanced Eye Testing Platform - Main App Logic
 
+// Register Service Worker for PWA / Install as App
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js', { scope: './' }).then(function (reg) {
+      if (reg.installing) console.log('Spect-IT: Service worker installing');
+      else if (reg.waiting) console.log('Spect-IT: Service worker waiting');
+      else if (reg.active) console.log('Spect-IT: Service worker active');
+    }).catch(function (err) { console.warn('Spect-IT: Service worker registration failed', err); });
+  });
+}
+
 // Smooth scrolling
 document.addEventListener('DOMContentLoaded', function() {
     // Handle hash navigation on page load
