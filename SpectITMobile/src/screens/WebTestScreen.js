@@ -13,18 +13,42 @@ import { Colors } from '../constants/colors';
 export default function WebTestScreen({ route, navigation }) {
   const { testId } = route.params || {};
   const [loading, setLoading] = useState(true);
+  const BASE_URL = 'https://www.spect-it.com';
 
-  // Map test IDs to website test URLs
+  // Map test IDs to website routes
   const testUrls = {
-    'prescription': 'https://www.spect-it.com#prescription',
-    'color-blindness': 'https://www.spect-it.com#color-blindness',
-    'astigmatism': 'https://www.spect-it.com#astigmatism',
-    'contrast': 'https://www.spect-it.com#contrast',
-    'visual-field': 'https://www.spect-it.com#visual-field',
-    'visual-acuity': 'https://www.spect-it.com#visual-acuity',
+    prescription: `${BASE_URL}#tests`,
+    'color-blindness': `${BASE_URL}#tests`,
+    astigmatism: `${BASE_URL}#tests`,
+    contrast: `${BASE_URL}#tests`,
+    'visual-field': `${BASE_URL}#tests`,
+    'visual-acuity': `${BASE_URL}#tests`,
+    'amsler-grid': `${BASE_URL}#tests`,
+    'near-vision': `${BASE_URL}#tests`,
+    duochrome: `${BASE_URL}#tests`,
+    'stereo-acuity': `${BASE_URL}#tests`,
   };
 
-  const testUrl = testUrls[testId] || 'https://www.spect-it.com#tests';
+  const testUrl = testUrls[testId] || `${BASE_URL}#tests`;
+  const injectedAutoStartScript = `
+    (function () {
+      var testId = ${JSON.stringify(testId || '')};
+      if (!testId) return true;
+      function startMatchingTest() {
+        var card = document.querySelector('.test-card[data-test="' + testId + '"]');
+        if (!card) return false;
+        var button = card.querySelector('button.btn-test');
+        if (button) {
+          button.click();
+          return true;
+        }
+        return false;
+      }
+      setTimeout(startMatchingTest, 900);
+      setTimeout(startMatchingTest, 1800);
+      return true;
+    })();
+  `;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,6 +65,7 @@ export default function WebTestScreen({ route, navigation }) {
         style={styles.webview}
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
+        injectedJavaScript={injectedAutoStartScript}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         geolocationEnabled={true}

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { Colors } from '../constants/colors';
 
@@ -58,13 +59,54 @@ const tests = [
     duration: '3-5 min',
     accuracy: 'High Accuracy',
   },
+  {
+    id: 'amsler-grid',
+    icon: '⊞',
+    title: 'Amsler Grid',
+    description: 'Screen central vision for distortion or missing areas',
+    duration: '1-2 min',
+    accuracy: 'Screening',
+  },
+  {
+    id: 'near-vision',
+    icon: '📖',
+    title: 'Near Vision (Jaeger)',
+    description: 'Assess near reading acuity at standard reading distance',
+    duration: '2-3 min',
+    accuracy: 'High Accuracy',
+  },
+  {
+    id: 'duochrome',
+    icon: '🔴🟢',
+    title: 'Duochrome (Red-Green)',
+    description: 'Refine sphere endpoint by red-green balance',
+    duration: '1-2 min',
+    accuracy: 'Refinement',
+  },
+  {
+    id: 'stereo-acuity',
+    icon: '👀',
+    title: 'Stereo Acuity',
+    description: 'Evaluate binocular depth perception',
+    duration: '2-3 min',
+    accuracy: 'High Accuracy',
+  },
 ];
 
 export default function TestsScreen({ navigation }) {
+  const showSafetyGate = (onContinue) => {
+    Alert.alert(
+      'Safety & Setup Check',
+      'Use this only while stationary, not while driving. Set screen brightness high, use moderate room light, and wear your usual correction unless instructed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Continue', onPress: onContinue },
+      ]
+    );
+  };
+
   const handleTestPress = (testId) => {
-    // For now, open web version of test
-    // Later can be replaced with native test implementation
-    navigation.navigate('WebTest', { testId });
+    showSafetyGate(() => navigation.navigate('WebTest', { testId }));
   };
 
   return (
@@ -73,6 +115,12 @@ export default function TestsScreen({ navigation }) {
         <View style={styles.header}>
           <Text style={styles.title}>Vision Tests</Text>
           <Text style={styles.subtitle}>Comprehensive eye health assessment tools</Text>
+        </View>
+        <View style={styles.disclaimerCard}>
+          <Text style={styles.disclaimerTitle}>Clinical Safety Notice</Text>
+          <Text style={styles.disclaimerText}>
+            These tests provide screening estimates only and do not replace a full professional eye examination.
+          </Text>
         </View>
 
         <View style={styles.testsGrid}>
@@ -133,6 +181,25 @@ const styles = StyleSheet.create({
   },
   testsGrid: {
     gap: 20,
+  },
+  disclaimerCard: {
+    backgroundColor: '#fff7ed',
+    borderLeftWidth: 4,
+    borderLeftColor: '#f59e0b',
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 16,
+  },
+  disclaimerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400e',
+    marginBottom: 4,
+  },
+  disclaimerText: {
+    fontSize: 13,
+    color: '#7c2d12',
+    lineHeight: 18,
   },
   testCard: {
     backgroundColor: Colors.white,
