@@ -7,40 +7,40 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/svg+xml" href="logo-icon.svg">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; color: #0f172a; }
-  header { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: .75rem; }
-  header .mark { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,.18); display: grid; place-items: center; font-size: 1.3rem; }
-  header h1 { font-family: 'Sora', sans-serif; font-size: 1.2rem; }
-  header .env { margin-left: auto; font-size: .8rem; opacity: .9; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: #f3f1ec; color: #0f1419; }
+  header { background: linear-gradient(135deg,#0c1524,#1e3a5f); color: #fff; padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: .75rem; border-bottom: 1px solid rgba(201,169,98,.25); }
+  header .mark { width: 40px; height: 40px; border-radius: 10px; background: rgba(201,169,98,.15); border: 1px solid rgba(201,169,98,.35); display: grid; place-items: center; font-size: 1.3rem; }
+  header h1 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 600; }
+  header .env { margin-left: auto; font-size: .8rem; opacity: .85; letter-spacing: .04em; }
   .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
   .bar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.25rem; }
-  .bar input, .bar select { padding: .6rem .8rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font: inherit; background: #fff; }
+  .bar input, .bar select { padding: .6rem .8rem; border: 1px solid #e5e0d8; border-radius: 10px; font: inherit; background: #fff; }
   .bar input { flex: 1; min-width: 200px; }
-  .btn { padding: .6rem 1.1rem; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font: inherit; }
-  .btn.primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
-  .btn.ghost { background: #fff; border: 1.5px solid #e2e8f0; color: #334155; }
-  .status-line { font-size: .85rem; color: #64748b; margin-bottom: 1rem; }
-  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.1rem 1.25rem; margin-bottom: .9rem; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+  .btn { padding: .6rem 1.1rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font: inherit; letter-spacing: .02em; }
+  .btn.primary { background: linear-gradient(135deg,#a8864a,#c9a962); color: #152a45; border: 1px solid rgba(168,134,74,.25); }
+  .btn.ghost { background: #fff; border: 1px solid #e5e0d8; color: #1e2936; }
+  .status-line { font-size: .85rem; color: #5c6570; margin-bottom: 1rem; }
+  .card { background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 1.1rem 1.25rem; margin-bottom: .9rem; box-shadow: 0 1px 2px rgba(15,20,25,.05); }
   .card .top { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
-  .card h3 { font-size: 1.05rem; }
-  .muted { color: #64748b; font-size: .9rem; }
-  .badge { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: .25rem .6rem; border-radius: 999px; }
-  .b-requested { background: #fef3c7; color: #92400e; }
-  .b-confirmed { background: #dcfce7; color: #166534; }
-  .b-declined, .b-cancelled { background: #fee2e2; color: #991b1b; }
-  .b-completed { background: #dbeafe; color: #1e40af; }
+  .card h3 { font-size: 1.1rem; font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+  .muted { color: #5c6570; font-size: .9rem; }
+  .badge { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: .25rem .6rem; border-radius: 999px; }
+  .b-requested { background: #faf6ee; color: #8a6d2f; border: 1px solid rgba(201,169,98,.3); }
+  .b-confirmed { background: #eef5f0; color: #2d5a45; }
+  .b-declined, .b-cancelled { background: #faf0f0; color: #8b4040; }
+  .b-completed { background: #eef2f6; color: #1e3a5f; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: .5rem 1.5rem; margin: .8rem 0; }
   .grid div span { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
   .grid div strong { font-size: .95rem; }
   .actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
   .actions button { font-size: .85rem; padding: .45rem .9rem; }
   .results { margin-top: .6rem; font-size: .85rem; }
-  details summary { cursor: pointer; color: #4f46e5; font-weight: 600; }
-  pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .75rem; overflow: auto; font-size: .78rem; margin-top: .5rem; }
-  .empty { text-align: center; color: #64748b; padding: 3rem 1rem; }
-  .note { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 12px; padding: .8rem 1rem; font-size: .85rem; margin-bottom: 1.25rem; }
+  details summary { cursor: pointer; color: #a8864a; font-weight: 600; }
+  pre { background: #faf9f7; border: 1px solid #e5e0d8; border-radius: 10px; padding: .75rem; overflow: auto; font-size: .78rem; margin-top: .5rem; }
+  .empty { text-align: center; color: #5c6570; padding: 3rem 1rem; }
+  .note { background: #faf6ee; border: 1px solid rgba(201,169,98,.35); color: #8a6d2f; border-radius: 12px; padding: .8rem 1rem; font-size: .85rem; margin-bottom: 1.25rem; }
 </style>
 </head>
 <body>
