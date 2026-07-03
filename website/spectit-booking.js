@@ -231,19 +231,40 @@
   // Works once that function is deployed; silently no-ops otherwise.
   function notifyBooking(appt) {
     try {
-      if (typeof supabase === 'undefined' || !supabase.functions) return;
       var when = fmtDatePretty(appt.date, appt.time);
-      supabase.functions.invoke('send-email', {
-        body: {
-          to: appt.patient.email,
-          subject: 'Your Spect-IT appointment request \u2013 ' + appt.specialist.name,
-          text: 'Hi ' + appt.patient.name + ',\n\nYour appointment request has been sent to ' +
-            appt.specialist.name + ' for ' + when + ' (' + appt.serviceLabel + ').\n' +
-            'The practice will confirm the time with you. Address: ' + (appt.specialist.address || '') + '.\n\n' +
-            (appt.results ? 'Your latest Spect-IT results were attached for the optometrist.\n\n' : '') +
-            'This is an appointment request via Spect-IT, not medical advice.'
-        }
+      var patientBody = 'Hi ' + appt.patient.name + ',\n\nYour appointment request has been sent to ' +
+        appt.specialist.name + ' for ' + when + ' (' + appt.serviceLabel + ').\n' +
+        'The practice will confirm the time with you. Address: ' + (appt.specialist.address || '') + '.\n\n' +
+        (appt.results ? 'Your latest Spect-IT results were attached for the optometrist.\n\n' : '') +
+        'This is an appointment request via Spect-IT, not medical advice.';
+
+      var invoke = window.SupabaseStorage && window.SupabaseStorage.invoke;
+      if (!invoke) return;
+
+      invoke('send-email', {
+        to: appt.patient.email,
+        subject: 'Your Spect-IT appointment request \u2013 ' + appt.specialist.name,
+        text: patientBody
       }).catch(function () {});
+
+      if (appt.specialist.phone) {
+        invoke('send-sms', {
+          to: appt.specialist.phone,
+          body: 'Spect-IT: New booking request from ' + appt.patient.name + ' for ' + when + '. Open your practice console to confirm.'
+        }).catch(function () {});
+      }
+
+      var practiceEmail = appt.specialist.email;
+      if (practiceEmail) {
+        invoke('send-email', {
+          to: practiceEmail,
+          subject: 'New Spect-IT appointment request \u2013 ' + appt.patient.name,
+          text: 'New appointment request:\n\nPatient: ' + appt.patient.name + ' (' + appt.patient.email + ')\n' +
+            'Phone: ' + (appt.patient.phone || '\u2014') + '\nService: ' + appt.serviceLabel + '\nWhen: ' + when + '\n' +
+            (appt.patient.notes ? 'Notes: ' + appt.patient.notes + '\n' : '') +
+            (appt.results ? 'Spect-IT results attached in the booking record.\n' : '')
+        }).catch(function () {});
+      }
     } catch (e) {}
   }
 

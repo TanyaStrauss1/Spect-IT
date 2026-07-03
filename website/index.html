@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Spect-IT - Advanced Professional Eye Testing Platform</title>
-    <meta name="description" content="Professional-grade eye testing platform with comprehensive vision assessments. Visual acuity, color blindness, astigmatism, prescription measurement, and more.">
+    <meta name="description" content="Clinical-grade vision screening from home. Visual acuity, colour blindness, astigmatism, contrast sensitivity, refractive screening, and specialist booking — private and secure.">
     <meta name="keywords" content="eye test, vision test, visual acuity, color blindness test, astigmatism test, prescription measurement, optometrist, ophthalmologist, eye health, South Africa">
     <meta name="author" content="Spect-IT">
     <meta name="robots" content="index, follow">
@@ -24,7 +24,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.spect-it.com/">
     <meta property="og:title" content="Spect-IT - Advanced Professional Eye Testing Platform">
-    <meta property="og:description" content="AI-powered professional-grade vision assessment with 3D face mapping, advanced eye tracking, and comprehensive analytics.">
+    <meta property="og:description" content="Clinical-grade vision screening from home: visual acuity, colour vision, astigmatism, contrast sensitivity, and refractive screening with physician-ready results.">
     <meta property="og:image" content="https://www.spect-it.com/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -35,7 +35,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://www.spect-it.com/">
     <meta name="twitter:title" content="Spect-IT - Advanced Professional Eye Testing Platform">
-    <meta name="twitter:description" content="AI-powered professional-grade vision assessment with 3D face mapping, advanced eye tracking, and comprehensive analytics.">
+    <meta name="twitter:description" content="Clinical-grade vision screening from home — ten professional tests with clear, physician-ready results. Book nearby optometrists.">
     <meta name="twitter:image" content="https://www.spect-it.com/og-image.png">
 
     <!-- Styles -->
@@ -46,6 +46,9 @@
     <link rel="stylesheet" href="email-signup-styles.css">
     <link rel="stylesheet" href="lidar-styles.css">
     <link rel="stylesheet" href="spectit-enhanced.css">
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"MedicalWebPage","name":"Spect-IT","description":"Clinical-grade vision screening platform","url":"https://www.spect-it.com/","medicalAudience":{"@type":"Patient"},"publisher":{"@type":"Organization","name":"Spect-IT","url":"https://www.spect-it.com/"}}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
@@ -338,6 +341,7 @@
         <section id="results" class="results-section">
             <div class="container">
                 <h2>Test Results</h2>
+                <p class="section-subtitle" style="margin-bottom:1.5rem">Download or share your screening report for your optometrist.</p>
                 <div id="premium-dashboard"></div>
                 <div id="results-container">
                     <div class="no-results">
@@ -350,10 +354,10 @@
         <!-- Find Specialists Section -->
         <section id="find-specialists" class="specialists-section">
             <div class="container">
-                <h2 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem;">👁️ Find Eye Care Specialists</h2>
-                <p class="section-subtitle" style="color: #666; font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem;">
-                    Search all <strong>optometrists</strong>, <strong>ophthalmologists</strong>, and <strong>opticians</strong> across South Africa<br>
-                    <span style="color: #667eea; font-weight: 500;">Organized by province and proximity • Real-time distance calculation • Book appointments online</span>
+                <h2 class="section-heading" style="text-align:center;margin-bottom:.5rem">Find Eye Care Specialists</h2>
+                <p class="section-subtitle" style="margin-bottom: 1.5rem;">
+                    Search <strong>optometrists</strong>, <strong>ophthalmologists</strong>, and <strong>opticians</strong> across South Africa<br>
+                    <span style="color: var(--accent-dark, #a8864a); font-weight: 500;">By province and proximity • Distance calculation • Book appointments online</span>
                 </p>
                 <div style="margin-bottom: 1.25rem;">
                     <button class="btn btn-secondary" onclick="myAppointments()" style="border-radius: 999px; font-weight: 600;">📅 My appointments</button>
@@ -361,16 +365,14 @@
                 <div id="specialists-summary"></div>
                 
                 <div class="location-controls">
-                    <div class="location-status" id="location-status" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); flex-wrap: wrap; gap: 1rem;">
+                    <div class="location-status" id="location-status" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: linear-gradient(135deg, #0c1524 0%, #1e3a5f 100%); border-radius: 14px; color: white; border: 1px solid rgba(201,169,98,.25); flex-wrap: wrap; gap: 1rem;">
                         <div style="flex: 1; min-width: 200px;">
                             <span id="location-text" style="font-size: 1.1rem; font-weight: 500; display: block; margin-bottom: 0.5rem;">📍 Click to find specialists near you</span>
                             <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">Uses your current location or enter an address manually</p>
                         </div>
                         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                             <button class="btn btn-primary" id="find-specialists-btn" onclick="findNearestSpecialists()" 
-                                    style="background: white; color: #667eea; font-weight: 600; padding: 0.875rem 1.75rem; border-radius: 8px; border: none; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"
-                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.25)';"
-                                    onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)';">
+                                    style="background: linear-gradient(135deg,#a8864a,#c9a962); color: #152a45; font-weight: 600; padding: 0.875rem 1.75rem; border-radius: 999px; border: none; cursor: pointer;">
                                 🔍 Find Nearest Specialists
                             </button>
                             <button class="btn btn-secondary" onclick="showManualLocationInput()" 
@@ -391,7 +393,7 @@
                                oninput="updateDistanceFilter(this.value)" 
                                style="flex: 1; min-width: 200px; height: 8px; border-radius: 4px; background: #ddd; outline: none; cursor: pointer;"
                                title="Adjust search radius">
-                        <span id="distance-value" style="font-weight: 700; color: #667eea; min-width: 80px; font-size: 1.1rem; text-align: center; background: white; padding: 0.5rem 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);">
+                        <span id="distance-value" style="font-weight: 700; color: #a8864a; min-width: 80px; font-size: 1.1rem; text-align: center; background: white; padding: 0.5rem 1rem; border-radius: 8px;">
                             50 km
                         </span>
                         <button class="btn btn-secondary" onclick="applyDistanceFilter()" style="font-size: 0.95rem; padding: 0.75rem 1.5rem; font-weight: 600; border-radius: 8px; transition: all 0.3s;" 
@@ -483,6 +485,8 @@
 
     <!-- Scripts - Load in correct order -->
     <script src="supabase-config.js"></script>
+    <script src="spectit-monitor.js"></script>
+    <script src="spectit-product-images.js"></script>
     <script src="supabase-storage.js"></script>
     <script src="config-loader.js"></script>
     <script src="ai-vision-engine.js"></script>
@@ -496,7 +500,9 @@
     <script src="shop.js"></script>
     <script src="email-signup-modal.js"></script>
     <script src="spectit-prescription.js"></script>
+    <script src="spectit-calibration.js"></script>
     <script src="spectit-booking.js"></script>
+    <script src="spectit-export.js"></script>
     <script src="spectit-enhanced.js"></script>
     
     <!-- Initialize app with error handling -->

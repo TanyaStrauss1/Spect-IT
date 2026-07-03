@@ -41,6 +41,10 @@
   pre { background: #faf9f7; border: 1px solid #e5e0d8; border-radius: 10px; padding: .75rem; overflow: auto; font-size: .78rem; margin-top: .5rem; }
   .empty { text-align: center; color: #5c6570; padding: 3rem 1rem; }
   .note { background: #faf6ee; border: 1px solid rgba(201,169,98,.35); color: #8a6d2f; border-radius: 12px; padding: .8rem 1rem; font-size: .85rem; margin-bottom: 1.25rem; }
+  .login-panel { max-width: 400px; margin: 3rem auto; background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 2rem; box-shadow: 0 8px 28px rgba(15,20,25,.08); }
+  .login-panel h2 { font-family: 'Cormorant Garamond', serif; margin-bottom: .5rem; }
+  .login-panel input { width: 100%; padding: .65rem .8rem; border: 1px solid #e5e0d8; border-radius: 10px; margin: .5rem 0 1rem; font: inherit; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -50,7 +54,18 @@
     <span class="env" id="env">connecting…</span>
   </header>
   <div class="wrap">
-    <div class="note">Internal MVP console. There is no provider login yet — anyone with this link can view/manage requests. Before real use, add provider authentication and per-practice access. Bookings appear here once the Supabase <code>appointments</code> table exists (see <code>CREATE_APPOINTMENTS_TABLE.sql</code>).</div>
+    <div id="login-panel" class="login-panel">
+      <h2>Practice access</h2>
+      <p class="muted" style="margin-bottom:1rem">Enter your practice access code to view appointment requests.</p>
+      <label class="muted" for="pin">Access code</label>
+      <input id="pin" type="password" placeholder="Provided by Spect-IT" autocomplete="current-password">
+      <label class="muted" for="practiceId">Practice ID (optional)</label>
+      <input id="practiceId" type="text" placeholder="Google place_id filter">
+      <button class="btn primary" style="width:100%" onclick="login()">Sign in</button>
+      <p class="muted" id="login-err" style="margin-top:.75rem;color:#8b4040"></p>
+    </div>
+    <div id="console-panel" class="hidden">
+    <div class="note">Protected by access code. Set <code>SPECTIT_PROVIDER_PIN</code> in Supabase secrets. For production, add per-practice Supabase Auth accounts.</div>
     <div class="bar">
       <input id="q" type="text" placeholder="Filter by practice or patient name…" oninput="render()">
       <select id="statusFilter" onchange="render()">
@@ -65,12 +80,50 @@
     </div>
     <div class="status-line" id="statusLine"></div>
     <div id="list"></div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script>
     let ALL = [];
+    const AUTH_KEY = 'spectit_provider_token';
+
+    function isAuthed() {
+      return !!sessionStorage.getItem(AUTH_KEY);
+    }
+
+    function showConsole() {
+      document.getElementById('login-panel').classList.add('hidden');
+      document.getElementById('console-panel').classList.remove('hidden');
+    }
+
+    async function login() {
+      const pin = document.getElementById('pin').value;
+      const practiceId = document.getElementById('practiceId').value.trim();
+      const err = document.getElementById('login-err');
+      err.textContent = '';
+      if (!pin) { err.textContent = 'Enter your access code.'; return; }
+      try {
+        if (window.SupabaseStorage && window.SupabaseStorage.invoke) {
+          const { data, error } = await window.SupabaseStorage.invoke('provider-auth', { pin, practiceId });
+          if (error || !data || !data.success) {
+            err.textContent = (data && data.error) || 'Invalid access code.';
+            return;
+          }
+          sessionStorage.setItem(AUTH_KEY, data.token || 'ok');
+          if (practiceId) sessionStorage.setItem('spectit_practice_filter', practiceId);
+        } else {
+          // Offline dev fallback — remove in production
+          if (pin.length < 4) { err.textContent = 'Invalid access code.'; return; }
+          sessionStorage.setItem(AUTH_KEY, 'dev');
+        }
+        showConsole();
+        load();
+      } catch (e) {
+        err.textContent = 'Could not verify access code.';
+      }
+    }
 
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
     function fmtWhen(d,t){ try { return new Date(d+'T'+(t||'09:00')).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})+' · '+t; } catch(e){ return d+' '+t; } }
@@ -85,7 +138,8 @@
       document.getElementById('env').textContent = 'connected';
       sl.textContent = 'Loading appointments…';
       try {
-        ALL = await window.SupabaseStorage.appointments.listAll();
+        const placeId = sessionStorage.getItem('spectit_practice_filter') || '';
+        ALL = await window.SupabaseStorage.appointments.listAll(placeId || undefined);
         sl.textContent = ALL.length + ' appointment(s) in the database.';
       } catch (e) {
         sl.textContent = 'Could not load appointments (has the SQL table been created?).';
@@ -138,14 +192,29 @@
     async function setStatus(apptId, status) {
       try {
         await window.SupabaseStorage.appointments.setStatus(apptId, status);
-        // reflect locally
         ALL = ALL.map(function (a) { return a.appt_id === apptId ? Object.assign({}, a, { status: status }) : a; });
+        var row = ALL.find(function (a) { return a.appt_id === apptId; });
+        if (row && window.SupabaseStorage.invoke) {
+          var email = row.user_email;
+          var when = fmtWhen(row.appt_date, row.appt_time);
+          if (email && (status === 'confirmed' || status === 'declined')) {
+            window.SupabaseStorage.invoke('send-email', {
+              to: email,
+              subject: 'Appointment ' + status + ' — ' + (row.practice_name || 'your practice'),
+              text: 'Hi ' + (row.patient_name || '') + ',\n\nYour appointment request for ' + when + ' has been ' + status + '.\n\nPractice: ' + (row.practice_name || '') + '\n\n— Spect-IT'
+            }).catch(function () {});
+          }
+        }
         render();
       } catch (e) { alert('Could not update status.'); }
     }
 
-    // Give supabase-config.js a tick to initialize on DOMContentLoaded.
-    window.addEventListener('load', function () { setTimeout(load, 400); });
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (isAuthed()) { showConsole(); load(); }
+        else { document.getElementById('env').textContent = 'sign in required'; }
+      }, 400);
+    });
   </script>
 </body>
 </html>

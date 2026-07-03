@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spectit-v4';
+const CACHE_NAME = 'spectit-v5';
 const OFFLINE_URL = 'offline.html';
 
 const PRECACHE_URLS = [

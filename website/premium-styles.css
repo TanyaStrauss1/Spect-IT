@@ -1,441 +1,73 @@
 /**
- * SPECT-IT PREMIUM STYLES
- * Most Advanced Eye Testing App - Professional Grade UI/UX
+ * SPECT-IT PREMIUM STYLES — aligned with spectit-enhanced.css luxury medical palette.
+ * Loaded before spectit-enhanced.css; enhanced overrides where needed.
  */
 
-/* Premium Color Scheme */
 :root {
-    --premium-gold: #FFD700;
-    --premium-platinum: #E5E4E2;
-    --premium-purple: #667eea;
-    --premium-dark: #1a1a2e;
-    --premium-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --premium-gold-gradient: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    --premium-gold: #c9a962;
+    --premium-platinum: #f3f1ec;
+    --premium-purple: #1e3a5f;
+    --premium-dark: #0c1524;
+    --premium-gradient: linear-gradient(135deg, #152a45 0%, #1e3a5f 100%);
+    --premium-gold-gradient: linear-gradient(135deg, #a8864a 0%, #c9a962 50%, #e8d5a3 100%);
 }
 
-/* Premium Badge */
-.premium-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--premium-gold-gradient);
-    color: var(--premium-dark);
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-    animation: premium-glow 2s ease-in-out infinite;
-}
-
-@keyframes premium-glow {
-    0%, 100% { box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3); }
-    50% { box-shadow: 0 4px 16px rgba(255, 215, 0, 0.6); }
-}
-
-.premium-badge::before {
-    content: "⭐";
-    font-size: 1rem;
-}
-
-/* Premium Test Cards */
-.test-card.premium {
-    position: relative;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-    border: 2px solid var(--premium-purple);
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-}
-
-.test-card.premium::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--premium-gradient);
-}
-
-.test-card.premium:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 16px 48px rgba(102, 126, 234, 0.25);
-    border-color: var(--premium-gold);
-}
-
-.test-card.premium .test-icon {
-    font-size: 3.5rem;
-    background: var(--premium-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));
-}
-
-/* Premium Analytics Dashboard */
+/* Premium dashboard — navy clinical panel */
 .premium-dashboard {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--premium-gradient);
+    border: 1px solid rgba(201, 169, 98, 0.25);
     border-radius: 20px;
-    padding: 2rem;
-    color: white;
-    box-shadow: 0 16px 48px rgba(102, 126, 234, 0.3);
-    margin: 2rem 0;
-}
-
-.premium-dashboard h2 {
-    color: white;
+    color: #fff;
+    padding: 1.5rem;
     margin-bottom: 1.5rem;
-    font-size: 2rem;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.premium-metrics {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
 }
 
 .premium-metric {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
-}
-
-.premium-metric:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-4px);
-}
-
-.premium-metric-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0.5rem 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.premium-metric-label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Premium Test Results */
-.premium-results {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    margin: 2rem 0;
-    border-left: 4px solid var(--premium-purple);
-}
-
-.premium-results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #f0f0f0;
-}
-
-.premium-results-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--premium-dark);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.premium-score-circle {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: var(--premium-gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-    font-weight: 700;
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
-    position: relative;
-}
-
-.premium-score-circle::after {
-    content: "";
-    position: absolute;
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-}
-
-/* Premium Insights */
-.premium-insights {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(201, 169, 98, 0.2);
+    border-radius: 14px;
+    padding: 1rem;
 }
 
 .premium-insight-card {
-    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
-    border-radius: 12px;
-    padding: 1.5rem;
-    border-left: 4px solid var(--premium-purple);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
-}
-
-.premium-insight-card:hover {
-    transform: translateX(8px);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
-}
-
-.premium-insight-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-
-.premium-insight-title {
-    font-weight: 700;
-    color: var(--premium-dark);
-    margin-bottom: 0.5rem;
-}
-
-.premium-insight-text {
-    color: #666;
-    font-size: 0.9rem;
-    line-height: 1.6;
-}
-
-/* Premium Recommendations */
-.premium-recommendations {
-    background: linear-gradient(135deg, #fff5e6 0%, #ffffff 100%);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-top: 2rem;
-    border: 2px solid var(--premium-gold);
-}
-
-.premium-recommendations h3 {
-    color: var(--premium-dark);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.premium-recommendations h3::before {
-    content: "💡";
-    font-size: 1.5rem;
-}
-
-.premium-recommendation-item {
+    background: #fff;
+    border: 1px solid #e5e0d8;
+    border-radius: 14px;
     padding: 1rem;
-    margin: 0.5rem 0;
-    background: white;
-    border-radius: 8px;
-    border-left: 4px solid var(--premium-gold);
-    display: flex;
-    align-items: start;
-    gap: 1rem;
+    color: var(--premium-dark);
 }
 
-.premium-recommendation-priority {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.premium-recommendation-priority.high {
-    background: #ff4444;
-    color: white;
-}
-
-.premium-recommendation-priority.medium {
-    background: #ffaa00;
-    color: white;
-}
-
-.premium-recommendation-priority.low {
-    background: #44ff44;
-    color: #333;
-}
-
-/* Premium Loading Animation */
 .premium-loader {
-    display: inline-block;
+    border: 3px solid rgba(201, 169, 98, 0.2);
+    border-top-color: var(--premium-gold);
+    border-radius: 50%;
     width: 40px;
     height: 40px;
-    border: 4px solid rgba(102, 126, 234, 0.2);
-    border-top-color: var(--premium-purple);
-    border-radius: 50%;
-    animation: premium-spin 1s linear infinite;
+    animation: premium-spin 0.8s linear infinite;
 }
 
 @keyframes premium-spin {
     to { transform: rotate(360deg); }
 }
 
-/* Premium Progress Bar */
-.premium-progress {
-    width: 100%;
-    height: 8px;
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-    margin: 1rem 0;
+.test-card.premium {
+    background: #fff;
+    border: 1px solid rgba(201, 169, 98, 0.35);
+    box-shadow: 0 8px 28px rgba(21, 42, 69, 0.1);
 }
 
-.premium-progress-bar {
-    height: 100%;
-    background: var(--premium-gradient);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+.test-card.premium::before {
+    background: var(--premium-gold-gradient);
+    height: 2px;
 }
 
-/* Premium Test Interface */
-.premium-test-interface {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
-    margin: 2rem 0;
+.test-card.premium:hover {
+    border-color: var(--premium-gold);
+    transform: translateY(-5px);
 }
 
-.premium-test-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 2px solid #f0f0f0;
-}
+/* Badge styling owned by spectit-enhanced.css */
 
-.premium-test-title {
-    font-size: 2rem;
-    font-weight: 700;
-    background: var(--premium-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-}
-
-.premium-test-subtitle {
-    color: #666;
-    font-size: 1rem;
-}
-
-/* Premium Eye Tracking Display */
-.premium-eye-tracking {
-    background: var(--premium-dark);
-    border-radius: 12px;
-    padding: 1.5rem;
-    color: white;
-    margin: 1rem 0;
-}
-
-.premium-eye-metrics {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.premium-eye-metric {
-    text-align: center;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-}
-
-.premium-eye-metric-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--premium-gold);
-    margin: 0.5rem 0;
-}
-
-.premium-eye-metric-label {
-    font-size: 0.85rem;
-    opacity: 0.8;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Premium Animations */
-@keyframes premium-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.premium-fade-in {
-    animation: premium-fade-in 0.5s ease-out;
-}
-
-@keyframes premium-scale-in {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.premium-scale-in {
-    animation: premium-scale-in 0.3s ease-out;
-}
-
-/* Premium Responsive */
-@media (max-width: 768px) {
-    .premium-metrics {
-        grid-template-columns: 1fr;
-    }
-    
-    .premium-insights {
-        grid-template-columns: 1fr;
-    }
-    
-    .premium-dashboard {
-        padding: 1.5rem;
-    }
-    
-    .premium-test-interface {
-        padding: 1.5rem;
-    }
-}
-
-/* Premium Print Styles */
 @media print {
-    .premium-results {
-        box-shadow: none;
-        border: 1px solid #ddd;
-    }
-    
-    .premium-dashboard {
-        background: white;
-        color: #333;
-    }
+    .premium-dashboard { background: #fff !important; color: #000 !important; border: 1px solid #ccc; }
 }
-

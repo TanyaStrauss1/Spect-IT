@@ -6,6 +6,14 @@ let userEmail = localStorage.getItem('spectit_user_email') || null;
 let testResultsPendingEmail = [];
 let pendingTestFunction = null; // Store the test function to call after email signup
 
+function runPendingTest(fn) {
+    if (window.SpectitCalibration && window.SpectitCalibration.ensureBeforeTest) {
+        window.SpectitCalibration.ensureBeforeTest(fn);
+    } else if (typeof fn === 'function') {
+        fn();
+    }
+}
+
 // Initialize: Check if user is already signed in on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Reload email from localStorage in case it was set in another tab
@@ -39,11 +47,17 @@ function updateSignedInUI(email) {
     }
 }
 
-// Check if user has email, if not show modal
+// Check if user has email, if not show modal; then ensure screen calibration
 function requireEmailBeforeTest(testFunction) {
+    function runTest() {
+        if (window.SpectitCalibration && window.SpectitCalibration.ensureBeforeTest) {
+            window.SpectitCalibration.ensureBeforeTest(testFunction);
+        } else if (typeof testFunction === 'function') {
+            testFunction();
+        }
+    }
     if (userEmail) {
-        // User already has email, proceed with test
-        testFunction();
+        runTest();
         return;
     }
     
@@ -58,7 +72,7 @@ function showEmailSignupModalForTesting() {
     // If user already has email, don't show modal
     if (userEmail) {
         if (pendingTestFunction) {
-            pendingTestFunction();
+            runPendingTest(pendingTestFunction);
             pendingTestFunction = null;
         }
         return;
@@ -196,7 +210,7 @@ async function handleEmailSignup(event) {
     // If there's a pending test function, call it
     if (pendingTestFunction) {
         setTimeout(() => {
-            pendingTestFunction();
+            runPendingTest(pendingTestFunction);
             pendingTestFunction = null;
         }, 500);
     }

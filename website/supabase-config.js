@@ -445,6 +445,11 @@ document.addEventListener('DOMContentLoaded', function() {
 window.SupabaseStorage = {
     init: initSupabase,
     isAvailable: isSupabaseAvailable,
+    getClient: function () { return supabaseClient; },
+    invoke: async function (name, body) {
+        if (!isSupabaseAvailable()) return { data: null, error: new Error('Supabase unavailable') };
+        return supabaseClient.functions.invoke(name, { body: body || {} });
+    },
     users: UserStorage,
     testResults: TestResultsStorage,
     cart: CartStorage,

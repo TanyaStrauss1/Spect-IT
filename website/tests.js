@@ -3471,22 +3471,16 @@ async function sendResultsToEmail(result, email) {
         // Optional: Try Supabase Edge Function if available
         if (window.SupabaseStorage && window.SupabaseStorage.isAvailable()) {
             try {
-                const supabase = window.SupabaseStorage.getClient();
-                if (supabase && supabase.functions) {
-                    // Try Supabase Edge Function (if configured)
-                    const { data, error } = await supabase.functions.invoke('send-email', {
-                        body: {
-                            to: email,
-                            subject: emailSubject,
-                            html: emailBody,
-                            testResult: result
-                        }
-                    });
+                const { data, error } = await window.SupabaseStorage.invoke('send-email', {
+                    to: email,
+                    subject: emailSubject,
+                    html: emailBody,
+                    testResult: result
+                });
                     
-                    if (!error) {
+                if (!error && data && data.success) {
                         console.log('Test results sent via Supabase email service');
                     }
-                }
             } catch (supabaseError) {
                 console.log('Supabase email service not available, using mailto method');
             }
@@ -3704,8 +3698,8 @@ function updateHistoryChart() {
             datasets: [{
                 label: 'Test Score (%)',
                 data: scores,
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderColor: '#c9a962',
+                backgroundColor: 'rgba(201, 169, 98, 0.12)',
                 tension: 0.4,
                 fill: true
             }]

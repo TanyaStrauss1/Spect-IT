@@ -564,17 +564,23 @@ function determineCategory(name) {
 // Get default product image
 function getDefaultImage(name) {
     const category = determineCategory(name);
+    if (window.SpectitProductImages) {
+        return window.SpectitProductImages.category(category);
+    }
     const images = {
-        'contact-lenses': 'https://via.placeholder.com/300x300?text=Contact+Lenses',
-        'frames': 'https://via.placeholder.com/300x300?text=Eyeglass+Frames',
-        'sunglasses': 'https://via.placeholder.com/300x300?text=Sunglasses',
-        'reading-glasses': 'https://via.placeholder.com/300x300?text=Reading+Glasses'
+        'contact-lenses': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect fill="#faf9f7" width="300" height="300"/></svg>'),
+        'frames': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect fill="#faf9f7" width="300" height="300"/></svg>'),
+        'sunglasses': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect fill="#faf9f7" width="300" height="300"/></svg>'),
+        'reading-glasses': 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect fill="#faf9f7" width="300" height="300"/></svg>')
     };
     return images[category] || images.frames;
 }
 
 // Fallback products (curated South African retailer products)
 function getFallbackProducts() {
+    var img = function (name, cat) {
+        return window.SpectitProductImages ? window.SpectitProductImages.product(name, cat) : getDefaultImage(name);
+    };
     return [
         // Contact Lenses
         {
@@ -582,7 +588,7 @@ function getFallbackProducts() {
             name: 'Acuvue Oasys 1-Day (30 pack)',
             retailer: 'Spec-Savers',
             price: 450.00,
-            image: 'https://via.placeholder.com/300x300?text=Acuvue+Oasys',
+            image: img('Acuvue Oasys', 'contact-lenses'),
             category: 'contact-lenses',
             description: 'Premium daily disposable contact lenses with UV protection',
             inStock: true
@@ -592,7 +598,7 @@ function getFallbackProducts() {
             name: 'Air Optix Aqua Monthly (6 pack)',
             retailer: 'OPSM',
             price: 380.00,
-            image: 'https://via.placeholder.com/300x300?text=Air+Optix',
+            image: img('Air Optix', 'contact-lenses'),
             category: 'contact-lenses',
             description: 'Comfortable monthly lenses with high oxygen permeability',
             inStock: true
@@ -602,7 +608,7 @@ function getFallbackProducts() {
             name: 'Biofinity Toric (6 pack)',
             retailer: 'Vision Express',
             price: 520.00,
-            image: 'https://via.placeholder.com/300x300?text=Biofinity',
+            image: img('Biofinity', 'contact-lenses'),
             category: 'contact-lenses',
             description: 'Monthly toric lenses for astigmatism correction',
             inStock: true
@@ -613,7 +619,7 @@ function getFallbackProducts() {
             name: 'Ray-Ban RB2140 Original Wayfarer',
             retailer: 'OPSM',
             price: 1890.00,
-            image: 'https://via.placeholder.com/300x300?text=Ray-Ban+Wayfarer',
+            image: img('Ray-Ban Wayfarer', 'frames'),
             category: 'frames',
             description: 'Classic wayfarer frame in black',
             sizes: ['Small', 'Medium', 'Large'],
@@ -625,7 +631,7 @@ function getFallbackProducts() {
             name: 'Oakley OO9208 Holbrook',
             retailer: 'Vision Express',
             price: 2450.00,
-            image: 'https://via.placeholder.com/300x300?text=Oakley+Holbrook',
+            image: img('Oakley Holbrook', 'frames'),
             category: 'frames',
             description: 'Modern rectangular frame with metal accents',
             sizes: ['Medium', 'Large'],
@@ -637,7 +643,7 @@ function getFallbackProducts() {
             name: 'Tom Ford FT5234',
             retailer: 'Spec-Savers',
             price: 3200.00,
-            image: 'https://via.placeholder.com/300x300?text=Tom+Ford',
+            image: img('Tom Ford', 'frames'),
             category: 'frames',
             description: 'Luxury acetate frame with titanium accents',
             sizes: ['Medium', 'Large'],
@@ -650,7 +656,7 @@ function getFallbackProducts() {
             name: 'Ray-Ban RB3025 Aviator Classic',
             retailer: 'OPSM',
             price: 1650.00,
-            image: 'https://via.placeholder.com/300x300?text=Ray-Ban+Aviator',
+            image: img('Ray-Ban Aviator', 'sunglasses'),
             category: 'sunglasses',
             description: 'Classic aviator sunglasses with green lenses',
             inStock: true
@@ -660,7 +666,7 @@ function getFallbackProducts() {
             name: 'Oakley OO9208 Holbrook Sunglasses',
             retailer: 'Vision Express',
             price: 1950.00,
-            image: 'https://via.placeholder.com/300x300?text=Oakley+Sunglasses',
+            image: img('Oakley Sunglasses', 'sunglasses'),
             category: 'sunglasses',
             description: 'Sport sunglasses with polarized lenses',
             inStock: true
@@ -670,7 +676,7 @@ function getFallbackProducts() {
             name: 'Maui Jim Peahi',
             retailer: 'Spec-Savers',
             price: 2800.00,
-            image: 'https://via.placeholder.com/300x300?text=Maui+Jim',
+            image: img('Maui Jim', 'sunglasses'),
             category: 'sunglasses',
             description: 'Premium polarized sunglasses with SuperThin Glass',
             inStock: true
@@ -681,7 +687,7 @@ function getFallbackProducts() {
             name: 'Foster Grant Reading Glasses +1.00',
             retailer: 'Clicks',
             price: 120.00,
-            image: 'https://via.placeholder.com/300x300?text=Reading+Glasses',
+            image: img('Reading Glasses', 'reading-glasses'),
             category: 'reading-glasses',
             description: 'Basic reading glasses, strength +1.00',
             strengths: ['+1.00', '+1.50', '+2.00', '+2.50', '+3.00'],
@@ -692,7 +698,7 @@ function getFallbackProducts() {
             name: 'Magnivision Reading Glasses +1.50',
             retailer: 'Clicks',
             price: 150.00,
-            image: 'https://via.placeholder.com/300x300?text=Magnivision',
+            image: img('Magnivision', 'reading-glasses'),
             category: 'reading-glasses',
             description: 'Comfortable reading glasses with blue light filter',
             strengths: ['+1.00', '+1.50', '+2.00', '+2.50'],
@@ -827,16 +833,13 @@ function handleImageError(imgId, productName) {
     
     // Try multiple fallback sources
     const fallbacks = [
-        `https://source.unsplash.com/400x400/?${encodeURIComponent(productName)}`,
-        `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=400&q=80`,
-        getDefaultImage(productName),
-        'https://via.placeholder.com/400x400?text=' + encodeURIComponent(productName.substring(0, 20))
+        getDefaultImage(productName)
     ];
     
     let currentFallback = 0;
     const tryNext = () => {
         if (currentFallback >= fallbacks.length) {
-            img.src = 'https://via.placeholder.com/400x400?text=Image+Not+Available';
+            img.src = getDefaultImage(productName);
             return;
         }
         
