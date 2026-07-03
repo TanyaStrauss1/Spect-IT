@@ -8,28 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		19C14702035E091B4BF23ECF /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F227DC3DEFADF39646DCDB52 /* ExpoModulesProvider.swift */; };
+		26F3DD12FD8666F6BF0ADD0D /* libPods-SpectIT.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D1609F32BB1F5839BDB59B4 /* libPods-SpectIT.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		94732986BB3F8C2A578C5A28 /* libPods-SpectIT.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9771B8725DE5AB9FC06BFE54 /* libPods-SpectIT.a */; };
-		97F68CA1CD2EF122CFDEB4A6 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C50E84AB47EDFF0A340F7D /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E2411B8F82233E2B85262411 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0241657D45322BFA68DB4523 /* PrivacyInfo.xcprivacy */; };
+		DAF664D994EA74AF5C7D50A5 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7104AD3E020D80307157E18B /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0241657D45322BFA68DB4523 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = SpectIT/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		0B9886D7CA75B1F3E1695087 /* Pods-SpectIT.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpectIT.release.xcconfig"; path = "Target Support Files/Pods-SpectIT/Pods-SpectIT.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* SpectIT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SpectIT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SpectIT/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SpectIT/Info.plist; sourceTree = "<group>"; };
-		9771B8725DE5AB9FC06BFE54 /* libPods-SpectIT.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SpectIT.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D1609F32BB1F5839BDB59B4 /* libPods-SpectIT.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SpectIT.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7104AD3E020D80307157E18B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = SpectIT/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = SpectIT/SplashScreen.storyboard; sourceTree = "<group>"; };
+		AB4866C116357FE4C124207F /* Pods-SpectIT.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpectIT.debug.xcconfig"; path = "Target Support Files/Pods-SpectIT/Pods-SpectIT.debug.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C6E1A10431362EEA52FF9949 /* Pods-SpectIT.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpectIT.debug.xcconfig"; path = "Target Support Files/Pods-SpectIT/Pods-SpectIT.debug.xcconfig"; sourceTree = "<group>"; };
-		C8C50E84AB47EDFF0A340F7D /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SpectIT/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		ED8539D6ABB47F411E7F8D98 /* Pods-SpectIT.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpectIT.release.xcconfig"; path = "Target Support Files/Pods-SpectIT/Pods-SpectIT.release.xcconfig"; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SpectIT/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* SpectIT-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "SpectIT-Bridging-Header.h"; path = "SpectIT/SpectIT-Bridging-Header.h"; sourceTree = "<group>"; };
+		F227DC3DEFADF39646DCDB52 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SpectIT/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				94732986BB3F8C2A578C5A28 /* libPods-SpectIT.a in Frameworks */,
+				26F3DD12FD8666F6BF0ADD0D /* libPods-SpectIT.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,7 +53,23 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				0241657D45322BFA68DB4523 /* PrivacyInfo.xcprivacy */,
+				7104AD3E020D80307157E18B /* PrivacyInfo.xcprivacy */,
+			);
+			name = SpectIT;
+			sourceTree = "<group>";
+		};
+		22ADEEB1AE5FDEC6807D3A67 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				2CD293A10B20E645018E5591 /* SpectIT */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		2CD293A10B20E645018E5591 /* SpectIT */ = {
+			isa = PBXGroup;
+			children = (
+				F227DC3DEFADF39646DCDB52 /* ExpoModulesProvider.swift */,
 			);
 			name = SpectIT;
 			sourceTree = "<group>";
@@ -62,7 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				9771B8725DE5AB9FC06BFE54 /* libPods-SpectIT.a */,
+				6D1609F32BB1F5839BDB59B4 /* libPods-SpectIT.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -81,8 +97,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				B685BFE93D5F86F6F905F905 /* Pods */,
-				D18467234884EF5B09A45ACF /* ExpoModulesProviders */,
+				A060141BDD41EFC32512E38C /* Pods */,
+				22ADEEB1AE5FDEC6807D3A67 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -97,11 +113,11 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B685BFE93D5F86F6F905F905 /* Pods */ = {
+		A060141BDD41EFC32512E38C /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				C6E1A10431362EEA52FF9949 /* Pods-SpectIT.debug.xcconfig */,
-				0B9886D7CA75B1F3E1695087 /* Pods-SpectIT.release.xcconfig */,
+				AB4866C116357FE4C124207F /* Pods-SpectIT.debug.xcconfig */,
+				ED8539D6ABB47F411E7F8D98 /* Pods-SpectIT.release.xcconfig */,
 			);
 			name = Pods;
 			path = Pods;
@@ -116,22 +132,6 @@
 			path = SpectIT/Supporting;
 			sourceTree = "<group>";
 		};
-		D18467234884EF5B09A45ACF /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				E7550FCFAC1787423B187153 /* SpectIT */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
-		E7550FCFAC1787423B187153 /* SpectIT */ = {
-			isa = PBXGroup;
-			children = (
-				C8C50E84AB47EDFF0A340F7D /* ExpoModulesProvider.swift */,
-			);
-			name = SpectIT;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "SpectIT" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				ABF5664667BB21294029B257 /* [Expo] Configure project */,
+				D93AB0C8F6932AA0C8449AC2 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				1F7EF4F74CB1C90FC0B831BA /* [CP] Embed Pods Frameworks */,
+				03336DEA71BBC40E3B70BAE2 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				E2411B8F82233E2B85262411 /* PrivacyInfo.xcprivacy in Resources */,
+				DAF664D994EA74AF5C7D50A5 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -220,29 +220,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
-		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-SpectIT-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		1F7EF4F74CB1C90FC0B831BA /* [CP] Embed Pods Frameworks */ = {
+		03336DEA71BBC40E3B70BAE2 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -274,6 +252,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SpectIT/Pods-SpectIT-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-SpectIT-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
@@ -310,7 +310,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SpectIT/Pods-SpectIT-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		ABF5664667BB21294029B257 /* [Expo] Configure project */ = {
+		D93AB0C8F6932AA0C8449AC2 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -342,7 +342,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				97F68CA1CD2EF122CFDEB4A6 /* ExpoModulesProvider.swift in Sources */,
+				19C14702035E091B4BF23ECF /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,7 +351,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C6E1A10431362EEA52FF9949 /* Pods-SpectIT.debug.xcconfig */;
+			baseConfigurationReference = AB4866C116357FE4C124207F /* Pods-SpectIT.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -388,7 +388,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B9886D7CA75B1F3E1695087 /* Pods-SpectIT.release.xcconfig */;
+			baseConfigurationReference = ED8539D6ABB47F411E7F8D98 /* Pods-SpectIT.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
