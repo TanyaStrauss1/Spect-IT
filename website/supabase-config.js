@@ -332,6 +332,110 @@ const OrdersStorage = {
     }
 };
 
+// Appointments Storage (bookings with optometrists)
+const AppointmentsStorage = {
+    _local() { try { return JSON.parse(localStorage.getItem('spectit_appointments') || '[]'); } catch (e) { return []; } },
+    _saveLocal(list) { localStorage.setItem('spectit_appointments', JSON.stringify(list)); },
+
+    _row(appt) {
+        return {
+            appt_id: appt.id,
+            user_email: appt.patient && appt.patient.email,
+            practice_place_id: appt.specialist && appt.specialist.place_id,
+            practice_name: appt.specialist && appt.specialist.name,
+            practice_phone: appt.specialist && appt.specialist.phone,
+            practice_address: appt.specialist && appt.specialist.address,
+            service: appt.service,
+            service_label: appt.serviceLabel,
+            appt_date: appt.date,
+            appt_time: appt.time,
+            duration_mins: appt.durationMins,
+            status: appt.status || 'requested',
+            patient_name: appt.patient && appt.patient.name,
+            patient_phone: appt.patient && appt.patient.phone,
+            patient_notes: appt.patient && appt.patient.notes,
+            results: appt.results || null,
+            data: appt,
+            created_at: appt.createdAt || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+    },
+
+    // Save/replace an appointment (local-first, then cloud sync).
+    async save(appt) {
+        const list = this._local();
+        const idx = list.findIndex(a => a.id === appt.id);
+        if (idx >= 0) list[idx] = appt; else list.push(appt);
+        this._saveLocal(list);
+
+        if (!isSupabaseAvailable()) return { success: true, method: 'localStorage' };
+        try {
+            const { data, error } = await supabaseClient
+                .from('appointments')
+                .upsert(this._row(appt), { onConflict: 'appt_id' });
+            if (error) throw error;
+            return { success: true, method: 'supabase', data };
+        } catch (error) {
+            console.error('Error saving appointment to Supabase:', error);
+            return { success: true, method: 'localStorage-fallback' };
+        }
+    },
+
+    // List a user's appointments (merged local + cloud).
+    async list(userEmail) {
+        const local = this._local();
+        if (!isSupabaseAvailable() || !userEmail) return local;
+        try {
+            const { data, error } = await supabaseClient
+                .from('appointments')
+                .select('*')
+                .eq('user_email', userEmail)
+                .order('appt_date', { ascending: true });
+            if (error) throw error;
+            const remote = (data || []).map(r => r.data || r);
+            const map = {};
+            [].concat(local, remote).forEach(a => { if (a && a.id) map[a.id] = a; });
+            return Object.keys(map).map(k => map[k]);
+        } catch (error) {
+            console.error('Error listing appointments from Supabase:', error);
+            return local;
+        }
+    },
+
+    // Provider console: all appointments (optionally filtered by practice).
+    async listAll(placeId) {
+        if (!isSupabaseAvailable()) return [];
+        try {
+            let q = supabaseClient.from('appointments').select('*').order('appt_date', { ascending: true });
+            if (placeId) q = q.eq('practice_place_id', placeId);
+            const { data, error } = await q;
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Error listing all appointments:', error);
+            return [];
+        }
+    },
+
+    // Update status (requested/confirmed/declined/cancelled/completed).
+    async setStatus(apptId, status) {
+        const list = this._local().map(a => (a.id === apptId ? Object.assign({}, a, { status: status }) : a));
+        this._saveLocal(list);
+        if (!isSupabaseAvailable()) return { success: true, method: 'localStorage' };
+        try {
+            const { error } = await supabaseClient
+                .from('appointments')
+                .update({ status: status, updated_at: new Date().toISOString() })
+                .eq('appt_id', apptId);
+            if (error) throw error;
+            return { success: true, method: 'supabase' };
+        } catch (error) {
+            console.error('Error updating appointment status:', error);
+            return { success: true, method: 'localStorage-fallback' };
+        }
+    }
+};
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initSupabase();
@@ -344,5 +448,6 @@ window.SupabaseStorage = {
     users: UserStorage,
     testResults: TestResultsStorage,
     cart: CartStorage,
-    orders: OrdersStorage
+    orders: OrdersStorage,
+    appointments: AppointmentsStorage
 };
