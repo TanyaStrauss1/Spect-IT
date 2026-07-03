@@ -1,17 +1,21 @@
 PODS:
-  - Capacitor (5.7.8):
+  - Capacitor (8.4.1):
     - CapacitorCordova
-  - CapacitorApp (5.0.8):
+  - CapacitorApp (8.1.0):
     - Capacitor
-  - CapacitorCamera (5.0.10):
+  - CapacitorCamera (8.2.0):
     - Capacitor
-  - CapacitorCordova (5.7.8)
-  - CapacitorGeolocation (5.0.8):
+    - IONCameraLib (~> 1.0.4)
+  - CapacitorCordova (8.4.1)
+  - CapacitorGeolocation (8.2.0):
     - Capacitor
-  - CapacitorSplashScreen (5.0.8):
+    - IONGeolocationLib (= 2.1.0)
+  - CapacitorSplashScreen (8.0.1):
     - Capacitor
-  - CapacitorStatusBar (5.0.8):
+  - CapacitorStatusBar (8.0.2):
     - Capacitor
+  - IONCameraLib (1.0.4)
+  - IONGeolocationLib (2.1.0)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
@@ -21,6 +25,11 @@ DEPENDENCIES:
   - "CapacitorGeolocation (from `../../node_modules/@capacitor/geolocation`)"
   - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+
+SPEC REPOS:
+  trunk:
+    - IONCameraLib
+    - IONGeolocationLib
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -39,14 +48,16 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/status-bar"
 
 SPEC CHECKSUMS:
-  Capacitor: 9686e5711b48a1aa84671ede795d0175848abcba
-  CapacitorApp: 8026f7ce1ac72780258d05a90c07deb5c724c0fa
-  CapacitorCamera: 916a67c6726fabcc623df79d3f934828f2520103
-  CapacitorCordova: 31ab98dca2ddcee051027a1afe7e8c85c82f7297
-  CapacitorGeolocation: 6beed87d5d2b80745f03a84db4ab2269bc872c9c
-  CapacitorSplashScreen: 0b962a2bee014151569dc59b089ba0e93daeeaf0
-  CapacitorStatusBar: 8e0a8f213504695505dc8c4f808dffbe03aa0e0f
+  Capacitor: 35242afe195b1e53c58ca1b827d1b444c5e6602b
+  CapacitorApp: 449ffe26375e96f8aaaee625ac6e01e5c57c8650
+  CapacitorCamera: 8f6acf83664118321111e76acef86390211ccb08
+  CapacitorCordova: eebe6bcf807b1b06f3f48237650f96bbcd0eef09
+  CapacitorGeolocation: b36f6287bfc9f2eefa04dc900496f2c8ae666136
+  CapacitorSplashScreen: 4b46c72298db552b3c57ce021ef028b6dc7f1fa7
+  CapacitorStatusBar: 01d5763b4ed720de5ce2edbc938de6a98f4c8f32
+  IONCameraLib: f2349804460bd9e3f892e42109b8d996ab3fa19d
+  IONGeolocationLib: 6a7b6f76063fb1b01cfb14fae7d0f526e3c9b271
 
-PODFILE CHECKSUM: 6fe97ade3c2fe194a6aa14b456f57be2c79160bb
+PODFILE CHECKSUM: 946569bf797f7b6ce25fa33150e594bede269b25
 
 COCOAPODS: 1.16.2
