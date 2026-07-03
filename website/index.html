@@ -42,6 +42,9 @@
     <link rel="stylesheet" href="premium-shop-styles.css">
     <link rel="stylesheet" href="email-signup-styles.css">
     <link rel="stylesheet" href="lidar-styles.css">
+    <link rel="stylesheet" href="spectit-enhanced.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
@@ -62,52 +65,88 @@
             </div>
             <ul class="nav-links">
                 <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#how" class="nav-link">How it works</a></li>
                 <li><a href="#tests" class="nav-link">Tests</a></li>
                 <li><a href="#shop" class="nav-link">Shop</a></li>
                 <li><a href="#find-specialists" class="nav-link">Find Specialists</a></li>
                 <li><a href="#results" class="nav-link">Results</a></li>
+                <li><a href="#tests" class="nav-link nav-cta">Start free test</a></li>
             </ul>
+            <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
         </nav>
     </header>
 
     <main>
         <!-- Hero Section -->
         <section id="home" class="hero">
+            <span class="hero-orb o1" aria-hidden="true"></span>
+            <span class="hero-orb o2" aria-hidden="true"></span>
             <div class="container">
-                <div class="premium-badge" style="margin-bottom: 1rem;">Premium Advanced Eye Testing</div>
-                <h1>Spect-IT</h1>
-                <p class="hero-subtitle">AI-powered professional-grade vision assessment with 3D face mapping, advanced eye tracking, and comprehensive analytics</p>
+                <div class="premium-badge">👁️ AI-Powered Vision Assessment</div>
+                <h1>See clearly with <span class="grad-word">Spect-IT</span></h1>
+                <p class="hero-subtitle">Professional-grade eye tests you can take from home in minutes. AI-driven visual acuity, colour, astigmatism, contrast &amp; more — with instant, easy-to-understand results.</p>
+                <div class="hero-cta">
+                    <a href="#tests" class="btn btn-gradient">Start your free test</a>
+                    <a href="#how" class="btn btn-ghost">See how it works</a>
+                </div>
                 <div class="hero-features">
-                    <div class="feature-item">
-                        <span class="feature-icon">🔬</span>
-                        <span>Accurate Results</span>
+                    <div class="feature-item"><span class="feature-icon">🔬</span><span>Clinically-inspired</span></div>
+                    <div class="feature-item"><span class="feature-icon">⚡</span><span>Results in minutes</span></div>
+                    <div class="feature-item"><span class="feature-icon">📱</span><span>Any device</span></div>
+                    <div class="feature-item"><span class="feature-icon">🔒</span><span>Private &amp; secure</span></div>
+                </div>
+                <div class="hero-trust">
+                    <span>10 professional vision tests</span>
+                    <span class="dot" aria-hidden="true"></span>
+                    <span>No sign-up to start</span>
+                    <span class="dot" aria-hidden="true"></span>
+                    <span>Find specialists near you</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it works -->
+        <section id="how" class="how-section">
+            <div class="container">
+                <div class="section-heading reveal">
+                    <span class="eyebrow">How it works</span>
+                    <h2>Your eye check in three simple steps</h2>
+                    <p>No appointment, no waiting room. Get meaningful insight into your vision in just a few minutes.</p>
+                </div>
+                <div class="steps-grid">
+                    <div class="step-card reveal">
+                        <div class="step-num">1</div>
+                        <h3>Choose a test</h3>
+                        <p>Pick from ten professional assessments — from visual acuity and colour vision to astigmatism, contrast, macular health and depth perception.</p>
                     </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">📊</span>
-                        <span>Comprehensive Results</span>
+                    <div class="step-card reveal d1">
+                        <div class="step-num">2</div>
+                        <h3>Follow the guidance</h3>
+                        <p>Clear on-screen instructions and AI face-mapping guide you through each step for accurate, repeatable results.</p>
                     </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">📱</span>
-                        <span>Device Compatible</span>
-                    </div>
-                    <div class="feature-item">
-                        <span class="feature-icon">🔒</span>
-                        <span>Secure & Private</span>
+                    <div class="step-card reveal d2">
+                        <div class="step-num">3</div>
+                        <h3>Get instant results</h3>
+                        <p>See easy-to-read results with analytics, track changes over time, and find an eye-care specialist nearby if you need one.</p>
                     </div>
                 </div>
-                <a href="#tests" class="btn btn-primary">Start Testing</a>
             </div>
         </section>
 
         <!-- Tests Section -->
         <section id="tests" class="tests-section">
             <div class="container">
-                <h2>Vision Tests</h2>
-                <p class="section-subtitle">Comprehensive eye health assessment tools</p>
+                <div class="section-heading reveal">
+                    <span class="eyebrow">Vision tests</span>
+                    <h2>Ten professional eye assessments</h2>
+                    <p class="section-subtitle" style="margin-bottom:0;">Comprehensive, clinically-inspired tools — free to try, right in your browser.</p>
+                </div>
                 
                 <div class="tests-grid">
                     <!-- Prescription Test -->
-                    <div class="test-card" data-test="prescription">
+                    <div class="test-card reveal" data-test="prescription">
                         <div class="test-icon">🔍</div>
                         <h3>Prescription Measurement</h3>
                         <p>Estimate eyeglass prescription strength</p>
@@ -119,7 +158,7 @@
                     </div>
 
                     <!-- Color Blindness Test -->
-                    <div class="test-card" data-test="color-blindness">
+                    <div class="test-card reveal d1" data-test="color-blindness">
                         <div class="test-icon">🎨</div>
                         <h3>Color Blindness Test</h3>
                         <p>Detect color vision deficiencies (Ishihara plates)</p>
@@ -131,7 +170,7 @@
                     </div>
 
                     <!-- Astigmatism Test -->
-                    <div class="test-card" data-test="astigmatism">
+                    <div class="test-card reveal d2" data-test="astigmatism">
                         <div class="test-icon">⚫</div>
                         <h3>Astigmatism Test</h3>
                         <p>Check for corneal irregularities and astigmatism</p>
@@ -143,7 +182,7 @@
                     </div>
 
                     <!-- Contrast Sensitivity Test -->
-                    <div class="test-card" data-test="contrast">
+                    <div class="test-card reveal" data-test="contrast">
                         <div class="test-icon">🌓</div>
                         <h3>Contrast Sensitivity</h3>
                         <p>Evaluate vision in low-light conditions</p>
@@ -155,7 +194,7 @@
                     </div>
 
                     <!-- Visual Field Test -->
-                    <div class="test-card" data-test="visual-field">
+                    <div class="test-card reveal d1" data-test="visual-field">
                         <div class="test-icon">👁️</div>
                         <h3>Visual Field Test</h3>
                         <p>Check peripheral vision and blind spots</p>
@@ -167,7 +206,7 @@
                     </div>
 
                     <!-- Visual Acuity Test -->
-                    <div class="test-card" data-test="visual-acuity">
+                    <div class="test-card reveal d2" data-test="visual-acuity">
                         <div class="test-icon">📏</div>
                         <h3>Visual Acuity Test</h3>
                         <p>Measure distance vision using Snellen chart (WHO standard)</p>
@@ -179,7 +218,7 @@
                     </div>
 
                     <!-- Amsler Grid -->
-                    <div class="test-card" data-test="amsler-grid">
+                    <div class="test-card reveal d1" data-test="amsler-grid">
                         <div class="test-icon">⊞</div>
                         <h3>Amsler Grid</h3>
                         <p>Screen for macular health: waviness, blank spots, distortion</p>
@@ -191,7 +230,7 @@
                     </div>
 
                     <!-- Near Vision / Jaeger -->
-                    <div class="test-card" data-test="near-vision">
+                    <div class="test-card reveal d2" data-test="near-vision">
                         <div class="test-icon">📖</div>
                         <h3>Near Vision (Jaeger)</h3>
                         <p>Reading acuity at 35 cm – fine print, labels, screens</p>
@@ -203,7 +242,7 @@
                     </div>
 
                     <!-- Duochrome (Red-Green) -->
-                    <div class="test-card" data-test="duochrome">
+                    <div class="test-card reveal" data-test="duochrome">
                         <div class="test-icon">🔴🟢</div>
                         <h3>Duochrome (Red-Green)</h3>
                         <p>Refine sphere power – which side looks clearer?</p>
@@ -215,7 +254,7 @@
                     </div>
 
                     <!-- Stereo Acuity -->
-                    <div class="test-card" data-test="stereo-acuity">
+                    <div class="test-card reveal d1" data-test="stereo-acuity">
                         <div class="test-icon">👀</div>
                         <h3>Stereo Acuity</h3>
                         <p>Depth perception – which shape appears closer?</p>
@@ -236,6 +275,61 @@
                 <div id="test-container"></div>
             </div>
         </div>
+
+        <!-- Why Spect-IT -->
+        <section class="why-section">
+            <div class="container">
+                <div class="section-heading reveal">
+                    <span class="eyebrow">Why Spect-IT</span>
+                    <h2>Vision care that meets you where you are</h2>
+                    <p>Powerful technology, made simple — so looking after your eyes is finally effortless.</p>
+                </div>
+                <div class="why-grid">
+                    <div class="why-card reveal">
+                        <div class="why-icon">🧠</div>
+                        <h3>AI-guided accuracy</h3>
+                        <p>Face-mapping and eye-tracking help calibrate every test, so your results are consistent and meaningful.</p>
+                    </div>
+                    <div class="why-card reveal d1">
+                        <div class="why-icon">📊</div>
+                        <h3>Insightful analytics</h3>
+                        <p>Clear scores, trends over time and a premium dashboard that turns raw data into understanding.</p>
+                    </div>
+                    <div class="why-card reveal d2">
+                        <div class="why-icon">📍</div>
+                        <h3>Specialists nearby</h3>
+                        <p>Find optometrists, ophthalmologists and opticians across South Africa, sorted by distance.</p>
+                    </div>
+                    <div class="why-card reveal">
+                        <div class="why-icon">🛍️</div>
+                        <h3>Eyewear shop</h3>
+                        <p>Browse frames and lenses from trusted retailers — and try them on virtually before you buy.</p>
+                    </div>
+                    <div class="why-card reveal d1">
+                        <div class="why-icon">🔒</div>
+                        <h3>Private by design</h3>
+                        <p>Your tests run in your browser. We keep your data secure and never sell it — ever.</p>
+                    </div>
+                    <div class="why-card reveal d2">
+                        <div class="why-icon">📱</div>
+                        <h3>Works everywhere</h3>
+                        <p>Phone, tablet or desktop — install it as an app and take a test whenever you need to.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats band -->
+        <section class="stats-band">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="reveal"><div class="stat-big"><span data-count="10">10</span></div><div class="stat-caption">Professional tests</div></div>
+                    <div class="reveal d1"><div class="stat-big"><span data-count="3" data-suffix=" min">3 min</span></div><div class="stat-caption">Average test time</div></div>
+                    <div class="reveal d2"><div class="stat-big"><span data-count="100" data-suffix="%">100%</span></div><div class="stat-caption">Runs in your browser</div></div>
+                    <div class="reveal d3"><div class="stat-big"><span data-count="9">9</span></div><div class="stat-caption">SA provinces covered</div></div>
+                </div>
+            </div>
+        </section>
 
         <!-- Results Section -->
         <section id="results" class="results-section">
@@ -327,6 +421,50 @@
                 </div>
             </div>
         </section>
+
+        <!-- FAQ -->
+        <section id="faq" class="faq-section">
+            <div class="container">
+                <div class="section-heading reveal">
+                    <span class="eyebrow">FAQ</span>
+                    <h2>Questions, answered</h2>
+                    <p>Everything you need to know before your first Spect-IT test.</p>
+                </div>
+                <div class="faq-list">
+                    <details class="faq-item reveal" open>
+                        <summary>Is Spect-IT a replacement for an eye exam?</summary>
+                        <div class="faq-body">No. Spect-IT is a powerful screening and self-monitoring tool for informational use. It is not a diagnosis or a final prescription. For clinical decisions, always consult a licensed eye-care professional — and we help you find one nearby.</div>
+                    </details>
+                    <details class="faq-item reveal">
+                        <summary>How accurate are the tests?</summary>
+                        <div class="faq-body">Our tests are clinically-inspired and use AI face-mapping to calibrate distance and conditions for consistency. Accuracy depends on your device, lighting and following the on-screen guidance — each test shows an accuracy indicator.</div>
+                    </details>
+                    <details class="faq-item reveal">
+                        <summary>Do I need to create an account?</summary>
+                        <div class="faq-body">No sign-up is required to start testing. Creating an account lets you save results, track trends over time and unlock the premium analytics dashboard.</div>
+                    </details>
+                    <details class="faq-item reveal">
+                        <summary>What do I need to take a test?</summary>
+                        <div class="faq-body">Just a device with a screen — phone, tablet or computer. Some tests use your camera for AI eye-tracking and face-mapping; camera access is always requested up front and processed on your device.</div>
+                    </details>
+                    <details class="faq-item reveal">
+                        <summary>Is my data private?</summary>
+                        <div class="faq-body">Yes. Tests run in your browser and we treat your health data with care. We never sell your data. See our <a href="privacy.html">Privacy Policy</a> for details.</div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA -->
+        <section class="cta-band">
+            <div class="container">
+                <div class="cta-card reveal">
+                    <h2>Ready to check your vision?</h2>
+                    <p>Take your first professional-grade eye test now — free, private, and ready in minutes.</p>
+                    <a href="#tests" class="btn btn-primary">Start your free test</a>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer>
@@ -351,6 +489,7 @@
     <script src="specialists.js"></script>
     <script src="shop.js"></script>
     <script src="email-signup-modal.js"></script>
+    <script src="spectit-enhanced.js"></script>
     
     <!-- Initialize app with error handling -->
     <script>

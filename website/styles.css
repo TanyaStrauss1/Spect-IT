@@ -1511,7 +1511,7 @@ footer {
     }
 }
 
-y/* Email Notification Animation */
+/* Email Notification Animation */
 @keyframes slideIn {
     from {
         transform: translateX(400px);
