@@ -2883,6 +2883,9 @@ function displaySpecialists(specialists) {
                     const phoneEscaped = phoneClean ? phoneClean.replace(/'/g, "\\'") : '';
                     
                     return `
+                        <button class="btn" onclick="event.preventDefault(); event.stopPropagation(); bookAppointment('${specialist.place_id}'); return false;" style="flex: 1 1 100%; min-width: 100%; padding: 0.85rem; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; box-shadow: 0 6px 16px -6px rgba(99,102,241,.6);">
+                            📅 Book appointment
+                        </button>
                         <button class="btn btn-primary" onclick="event.preventDefault(); event.stopPropagation(); getDirections(${specialist.location.lat}, ${specialist.location.lng}); return false;" style="flex: 1; min-width: 120px; padding: 0.75rem; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
                             🗺️ Directions
                         </button>

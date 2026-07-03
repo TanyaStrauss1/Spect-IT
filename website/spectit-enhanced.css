@@ -452,3 +452,90 @@ a:focus-visible, button:focus-visible, summary:focus-visible, .btn:focus-visible
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
     border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,.12);
 }
+
+/* ==========================================================================
+   Appointment booking modal
+   ========================================================================== */
+.rx-modal {
+    display: none; position: fixed; inset: 0; z-index: 3000;
+    background: rgba(15,23,42,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; padding: 1rem;
+}
+.rx-modal.active { display: flex; }
+.rx-modal-card {
+    background: #fff; border-radius: var(--radius-lg); width: 100%; max-width: 560px;
+    max-height: 92vh; overflow-y: auto; position: relative; padding: 2rem 1.75rem;
+    box-shadow: var(--shadow-xl); animation: bkIn .28s var(--ease);
+}
+@keyframes bkIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.rx-modal-close {
+    position: absolute; top: 1rem; right: 1rem; width: 38px; height: 38px; border-radius: 50%;
+    border: none; background: var(--surface-3); color: var(--muted); font-size: 1.3rem; cursor: pointer;
+    transition: all .2s var(--ease);
+}
+.rx-modal-close:hover { background: var(--danger); color: #fff; transform: rotate(90deg); }
+
+.bk-practice { text-align: center; color: var(--muted); font-size: .92rem; }
+.bk-title { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.5rem; text-align: center; margin-bottom: 1.1rem; }
+.bk-sub { text-align: center; color: var(--muted); margin-bottom: 1.2rem; }
+
+.bk-list { display: flex; flex-direction: column; gap: .6rem; }
+.bk-choice {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: 1rem 1.1rem; border: 1.5px solid var(--line); border-radius: 14px; background: #fff;
+    font-weight: 600; cursor: pointer; transition: all .2s var(--ease); text-align: left; font-size: 1rem;
+}
+.bk-choice:hover { border-color: var(--primary); background: var(--brand-grad-soft); }
+.bk-choice.on { border-color: transparent; background: var(--brand-grad); color: #fff; box-shadow: var(--shadow-md); }
+.bk-mins { font-size: .82rem; opacity: .8; font-weight: 600; }
+
+.bk-actions { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.4rem; }
+.btn-ghost-dark { background: var(--surface-3); color: var(--ink-2); }
+.btn-ghost-dark:hover { background: var(--line); transform: translateY(-1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+.bk-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: .5rem; }
+.bk-day {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: .6rem .2rem;
+    border: 1.5px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; transition: all .2s var(--ease);
+}
+.bk-day:hover { border-color: var(--primary); }
+.bk-day.on { border-color: transparent; background: var(--brand-grad); color: #fff; }
+.bk-wd { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; opacity: .8; }
+.bk-dm { font-weight: 700; font-size: .9rem; }
+
+.bk-slots-title { font-weight: 700; margin: 1.1rem 0 .5rem; }
+.bk-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: .5rem; }
+.bk-slot { padding: .55rem; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; font-weight: 600; cursor: pointer; transition: all .2s var(--ease); }
+.bk-slot:hover:not(.taken) { border-color: var(--primary); }
+.bk-slot.on { border-color: transparent; background: var(--brand-grad); color: #fff; }
+.bk-slot.taken { opacity: .35; text-decoration: line-through; cursor: not-allowed; }
+.bk-note { font-size: .82rem; color: var(--muted-2); margin-top: .8rem; text-align: center; }
+
+.bk-form { display: flex; flex-direction: column; gap: .85rem; }
+.bk-form label { display: flex; flex-direction: column; gap: .3rem; font-weight: 600; font-size: .9rem; color: var(--ink-2); }
+.bk-form input, .bk-form textarea {
+    padding: .7rem .85rem; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; font-weight: 400;
+}
+.bk-form input:focus, .bk-form textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,.12); }
+.bk-check { flex-direction: row !important; align-items: center; gap: .5rem !important; font-weight: 500 !important; color: var(--muted) !important; }
+.bk-check input { width: 18px; height: 18px; }
+
+.bk-confirm { text-align: center; }
+.bk-check-badge { width: 68px; height: 68px; border-radius: 50%; background: var(--brand-grad); color: #fff; font-size: 2.2rem; display: grid; place-items: center; margin: 0 auto 1rem; box-shadow: var(--shadow-lg); }
+.bk-summary { text-align: left; border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; margin: 1.2rem 0; display: flex; flex-direction: column; gap: .6rem; }
+.bk-summary > div { display: flex; justify-content: space-between; gap: 1rem; font-size: .95rem; }
+.bk-summary span { color: var(--muted); } .bk-summary strong { text-align: right; }
+
+.bk-appt { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 14px; }
+.bk-appt.past { opacity: .55; }
+.bk-appt-main { display: flex; flex-direction: column; gap: 2px; }
+.bk-appt-main span { font-size: .85rem; color: var(--muted); }
+.bk-appt-side { display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
+.bk-status { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .2rem .6rem; border-radius: 999px; background: #fef3c7; color: #92400e; }
+.bk-status.confirmed { background: #dcfce7; color: #166534; }
+.bk-cancel { background: none; border: none; color: var(--danger); font-weight: 600; cursor: pointer; font-size: .85rem; }
+
+/* "My appointments" launcher */
+.bk-launch { display: inline-flex; align-items: center; gap: .5rem; margin-top: 1rem; }
+
