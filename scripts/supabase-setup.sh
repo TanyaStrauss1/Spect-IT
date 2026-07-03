@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PROJECT_REF="isebsxoofvbypjwbuymw"
+PROJECT_REF="vimcaqophontrgcxhuzn"
 
 echo "→ Linking project ${PROJECT_REF}..."
 supabase link --project-ref "$PROJECT_REF"

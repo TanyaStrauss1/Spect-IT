@@ -1,7 +1,7 @@
 # Spect-IT — Supabase setup checklist
 
-> **Project:** `isebsxoofvbypjwbuymw` (TanyaStrauss1's Project)  
-> The old `lecwenhoatzpnvmhoiua` project was permanently paused and replaced.
+> **Project:** `vimcaqophontrgcxhuzn` ([Spect-IT](https://supabase.com/dashboard/project/vimcaqophontrgcxhuzn) · org: Spect)  
+> Replaces paused `lecwenhoatzpnvmhoiua` and interim `isebsxoofvbypjwbuymw`.
 
 Run these steps in order to enable cloud bookings, notifications, and the practice console.
 
@@ -17,7 +17,7 @@ In [Supabase SQL Editor](https://supabase.com/dashboard), run:
 ```bash
 cd /path/to/Spect-IT
 supabase login
-supabase link --project-ref isebsxoofvbypjwbuymw
+supabase link --project-ref vimcaqophontrgcxhuzn
 
 supabase functions deploy send-email
 supabase functions deploy send-sms

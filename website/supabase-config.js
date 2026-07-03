@@ -4,8 +4,8 @@
 // Supabase Configuration
 // ✅ Fully configured and ready to use!
 const SUPABASE_CONFIG = {
-    url: 'https://isebsxoofvbypjwbuymw.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzZWJzeG9vZnZieXBqd2J1eW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MjM5MDcsImV4cCI6MjA4ODA5OTkwN30.zIFn9T-pyOLtFpHtbIPmsSTfgLiRNyDuxJlGQgVv1Os'
+    url: 'https://vimcaqophontrgcxhuzn.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpbWNhcW9waG9udHJnY3hodXpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwODU1OTEsImV4cCI6MjA5ODY2MTU5MX0.OLNzPqL5SMAVsNOtRPAoGuK1foeHUarqNFZtSAhXbGc'
 };
 
 // To set up Supabase:
