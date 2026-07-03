@@ -5,16 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Spect-IT - Advanced Professional Eye Testing Platform</title>
     <meta name="description" content="Professional-grade eye testing platform with comprehensive vision assessments. Visual acuity, color blindness, astigmatism, prescription measurement, and more.">
-    
+    <meta name="keywords" content="eye test, vision test, visual acuity, color blindness test, astigmatism test, prescription measurement, optometrist, ophthalmologist, eye health, South Africa">
+    <meta name="author" content="Spect-IT">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#667eea">
+    <link rel="canonical" href="https://www.spect-it.com/">
+
     <!-- PWA / App -->
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="logo-icon.svg">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Spect-IT">
-    
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.spect-it.com/">
+    <meta property="og:title" content="Spect-IT - Advanced Professional Eye Testing Platform">
+    <meta property="og:description" content="AI-powered professional-grade vision assessment with 3D face mapping, advanced eye tracking, and comprehensive analytics.">
+    <meta property="og:image" content="https://www.spect-it.com/icon-512.png">
+    <meta property="og:site_name" content="Spect-IT">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://www.spect-it.com/">
+    <meta name="twitter:title" content="Spect-IT - Advanced Professional Eye Testing Platform">
+    <meta name="twitter:description" content="AI-powered professional-grade vision assessment with 3D face mapping, advanced eye tracking, and comprehensive analytics.">
+    <meta name="twitter:image" content="https://www.spect-it.com/icon-512.png">
+
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="user-signed-in-styles.css">
@@ -46,7 +66,6 @@
                 <li><a href="#shop" class="nav-link">Shop</a></li>
                 <li><a href="#find-specialists" class="nav-link">Find Specialists</a></li>
                 <li><a href="#results" class="nav-link">Results</a></li>
-                <li><a href="#history" class="nav-link">History</a></li>
             </ul>
         </nav>
     </header>
@@ -312,7 +331,7 @@
 
     <footer>
         <div class="container">
-            <p>Spect-IT © 2025 | Professional Eye Testing Platform</p>
+            <p>Spect-IT © <span id="footer-year">2026</span> | Professional Eye Testing Platform</p>
             <p class="disclaimer">For screening and informational use only. This is not a diagnosis or final prescription. Consult a licensed eye care professional.</p>
             <p class="disclaimer"><a href="privacy.html">Privacy Policy</a> | <a href="terms.html">Terms of Use</a></p>
         </div>
@@ -344,6 +363,10 @@
         // Initialize app when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Spect-IT Platform Initialized');
+
+            // Keep footer copyright year current
+            var yearEl = document.getElementById('footer-year');
+            if (yearEl) { yearEl.textContent = new Date().getFullYear(); }
             
             try {
                 // Wait for all scripts to load

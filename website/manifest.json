@@ -1,15 +1,17 @@
 {
-  "name": "Spect-IT",
+  "name": "Spect-IT - Vision Testing App",
   "short_name": "Spect-IT",
-  "description": "Professional-grade eye testing platform with comprehensive vision assessments. Visual acuity, color blindness, astigmatism, prescription measurement, and more.",
+  "description": "AI-powered professional-grade vision assessment: visual acuity, color blindness, astigmatism, contrast sensitivity, visual field, and prescription measurement.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#667eea",
+  "background_color": "#ffffff",
   "theme_color": "#667eea",
-  "categories": ["health", "medical"],
+  "categories": ["health", "medical", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr",
   "icons": [
     {
       "src": "icon-192.png",
