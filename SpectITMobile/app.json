@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#667eea"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -48,12 +43,6 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Spect-IT uses your camera to perform professional eye tests and vision measurements. The camera analyzes your eyes to assess visual acuity, measure prescriptions, and detect vision issues. All processing is done securely on your device."
-        }
-      ],
       [
         "expo-splash-screen",
         {
