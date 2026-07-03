@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: 'Inter', sans-serif; color: #fff; position: relative;
+    background:
+      radial-gradient(900px 500px at 12% -10%, #a5b4fc 0%, transparent 55%),
+      radial-gradient(800px 600px at 100% 0%, #c4b5fd 0%, transparent 50%),
+      linear-gradient(160deg, #4338ca 0%, #6d28d9 48%, #7c3aed 100%);
+    padding: 72px 80px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .orb { position: absolute; border-radius: 50%; filter: blur(4px);
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.85), rgba(255,255,255,0) 60%); }
+  .orb.a { width: 360px; height: 360px; top: -90px; left: -80px; opacity: .5; }
+  .orb.b { width: 260px; height: 260px; bottom: -70px; right: 60px; opacity: .35; }
+  .top { display: flex; align-items: center; gap: 20px; position: relative; z-index: 2; }
+  .mark { width: 76px; height: 76px; border-radius: 20px; display: grid; place-items: center;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.3); font-size: 42px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+  .brand { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 40px; letter-spacing: -.02em; }
+  .badge { margin-left: auto; font-size: 20px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28); padding: 12px 22px; border-radius: 999px; }
+  .mid { position: relative; z-index: 2; }
+  h1 { font-family: 'Sora', sans-serif; font-weight: 900; font-size: 92px; line-height: 1.02; letter-spacing: -.03em; }
+  .grad { background: linear-gradient(90deg, #67e8f9, #a5f3fc, #e0e7ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  p.sub { margin-top: 26px; font-size: 32px; line-height: 1.4; max-width: 900px; color: rgba(255,255,255,.92); font-weight: 400; }
+  .pills { position: relative; z-index: 2; display: flex; gap: 16px; flex-wrap: wrap; }
+  .pill { font-size: 24px; font-weight: 600; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24);
+    padding: 14px 26px; border-radius: 999px; display: flex; align-items: center; gap: 12px; }
+  .url { position: absolute; bottom: 40px; right: 80px; font-size: 24px; font-weight: 600; opacity: .85; z-index: 2; }
+</style>
+</head>
+<body>
+  <span class="orb a"></span>
+  <span class="orb b"></span>
+  <div class="top">
+    <div class="mark">👁️</div>
+    <div class="brand">Spect-IT</div>
+    <div class="badge">AI Vision Assessment</div>
+  </div>
+  <div class="mid">
+    <h1>See clearly with<br><span class="grad">Spect-IT</span></h1>
+    <p class="sub">Professional-grade eye tests you can take from home in minutes — visual acuity, colour, astigmatism, contrast &amp; more.</p>
+  </div>
+  <div class="pills">
+    <div class="pill">🔬 Clinically-inspired</div>
+    <div class="pill">⚡ Results in minutes</div>
+    <div class="pill">🔒 Private &amp; secure</div>
+  </div>
+  <div class="url">www.spect-it.com</div>
+</body>
+</html>

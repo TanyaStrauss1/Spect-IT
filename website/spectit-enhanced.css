@@ -359,3 +359,96 @@ a:focus-visible, button:focus-visible, summary:focus-visible, .btn:focus-visible
     .how-section, .why-section, .faq-section { padding: 4rem 0; }
     .cta-card { padding: 3rem 1.25rem; }
 }
+
+/* ==========================================================================
+   Component polish — brings modals, tests, shop & specialists in line with
+   the new design system (loaded after styles.css, so these win by source order)
+   ========================================================================== */
+
+/* --- Modals (test + result) --- */
+.modal { background: rgba(15, 23, 42, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.modal-content, .result-modal-content, .result-modal .result-modal-content {
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-xl);
+    border: 1px solid rgba(255,255,255,.6);
+}
+.modal-close {
+    background: var(--surface-3); color: var(--muted); width: 40px; height: 40px;
+    border-radius: 50%; font-size: 1.4rem; transition: all .2s var(--ease);
+}
+.modal-close:hover { background: var(--danger); color: #fff; transform: rotate(90deg); }
+
+.test-title { font-family: 'Sora', sans-serif; font-weight: 800; }
+.test-instructions {
+    background: var(--brand-grad-soft); border: 1px solid var(--line);
+    border-radius: var(--radius); color: var(--ink-2);
+}
+.test-display { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); }
+
+.test-controls button, .btn-correct, .btn-incorrect, .btn-next {
+    border-radius: var(--radius-pill); padding: .8rem 1.6rem; font-weight: 700;
+    box-shadow: var(--shadow-sm); transition: transform .2s var(--ease), box-shadow .2s var(--ease), filter .2s var(--ease);
+}
+.test-controls button:hover, .btn-correct:hover, .btn-incorrect:hover, .btn-next:hover {
+    transform: translateY(-2px); box-shadow: var(--shadow-md); filter: brightness(1.03);
+}
+.btn-next { background: var(--brand-grad); }
+
+.result-modal { background: rgba(15,23,42,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.result-modal-close { border-radius: 50%; transition: all .2s var(--ease); }
+.result-modal-close:hover { background: var(--surface-3); }
+.result-score-large, .result-test-name { font-family: 'Sora', sans-serif; }
+
+/* --- Results / dashboard readability --- */
+.results-section .no-results, .result-card {
+    border-radius: var(--radius-lg); border: 1px solid var(--line);
+}
+#premium-dashboard, .premium-dashboard { color: var(--ink); }
+
+/* --- Shop --- */
+.category-tab {
+    border-radius: var(--radius-pill); border: 1.5px solid var(--line); font-weight: 600;
+    transition: all .2s var(--ease);
+}
+.category-tab:hover { border-color: var(--primary); color: var(--primary); background: var(--brand-grad-soft); }
+.category-tab.active { background: var(--brand-grad); border-color: transparent; color: #fff; box-shadow: var(--shadow-md); }
+
+.search-bar input {
+    border-radius: var(--radius-pill); border: 1.5px solid var(--line); padding: .8rem 1.25rem;
+    transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.search-bar input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,.12); }
+
+.products-grid { gap: 1.5rem; }
+.product-card { border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.product-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); border-color: transparent; }
+.product-image { background: var(--surface-3); }
+.product-name { font-weight: 700; }
+.price-amount { color: var(--primary-dark); font-family: 'Sora', sans-serif; }
+.stock-badge { border-radius: var(--radius-pill); font-weight: 700; box-shadow: var(--shadow-sm); }
+.btn-add-cart { background: var(--brand-grad); border-radius: var(--radius-pill); font-weight: 700; }
+.btn-add-cart:hover:not(:disabled) { background: var(--brand-grad); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* --- Shopping cart --- */
+.cart-sidebar { border-top-left-radius: var(--radius-lg); border-bottom-left-radius: var(--radius-lg); }
+.cart-button { background: var(--brand-grad); box-shadow: var(--shadow-lg); }
+.cart-button:hover { box-shadow: var(--shadow-xl); }
+.cart-total, .checkout-total, .cart-item-price { color: var(--primary-dark); }
+
+/* --- Specialists --- */
+.specialist-card { border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.specialist-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: transparent; }
+.specialist-header h3 { font-weight: 700; }
+.specialist-type { border-radius: var(--radius-pill); font-weight: 700; }
+.specialist-actions .btn { border-radius: var(--radius-pill); }
+.specialist-actions .btn-secondary { background: var(--surface-3); color: var(--ink-2); }
+.specialist-actions .btn-secondary:hover { background: var(--line); }
+.specialist-actions .btn-primary { background: var(--brand-grad); color: #fff; }
+.specialist-actions .btn-primary:hover { color: #fff; box-shadow: var(--shadow-md); }
+
+/* --- Forms --- */
+.form-group input, .form-group textarea, .form-group select {
+    border-radius: 12px; border: 1.5px solid var(--line); transition: border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,.12);
+}
