@@ -4,8 +4,8 @@
 // Supabase Configuration
 // ✅ Fully configured and ready to use!
 const SUPABASE_CONFIG = {
-    url: 'https://lecwenhoatzpnvmhoiua.supabase.co', // ✅ Project URL configured
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlY3dlbmhvYXR6cG52bWhvaXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ3ODk2MDAsImV4cCI6MjA1MDM2NTYwMH0.33ZKy0DgkrYWaV/n9JjQWdyP5ugV3vbydF5LdZx2Tefcu1sDiXggKsGYN32Dr/taUHo8RhxIhOGdR6GGo4ybDg==' // ✅ Anon key configured
+    url: 'https://isebsxoofvbypjwbuymw.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzZWJzeG9vZnZieXBqd2J1eW13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MjM5MDcsImV4cCI6MjA4ODA5OTkwN30.zIFn9T-pyOLtFpHtbIPmsSTfgLiRNyDuxJlGQgVv1Os'
 };
 
 // To set up Supabase:

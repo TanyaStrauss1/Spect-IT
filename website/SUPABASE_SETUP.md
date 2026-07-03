@@ -1,5 +1,8 @@
 # Spect-IT — Supabase setup checklist
 
+> **Project:** `isebsxoofvbypjwbuymw` (TanyaStrauss1's Project)  
+> The old `lecwenhoatzpnvmhoiua` project was permanently paused and replaced.
+
 Run these steps in order to enable cloud bookings, notifications, and the practice console.
 
 ## 1. Create tables
@@ -14,7 +17,7 @@ In [Supabase SQL Editor](https://supabase.com/dashboard), run:
 ```bash
 cd /path/to/Spect-IT
 supabase login
-supabase link --project-ref lecwenhoatzpnvmhoiua
+supabase link --project-ref isebsxoofvbypjwbuymw
 
 supabase functions deploy send-email
 supabase functions deploy send-sms
