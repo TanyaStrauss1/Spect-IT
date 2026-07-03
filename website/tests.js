@@ -90,7 +90,13 @@ async function startVisualAcuityTestInternal() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const screenDPI = 96;
-    const actualDPI = screenDPI * devicePixelRatio;
+    // Prefer the user's credit-card screen calibration (CSS px/mm) when available,
+    // so optotypes are shown at the correct physical/angular size. Falls back to the
+    // 96-DPI approximation otherwise. (Set by the Refractive Screening calibration.)
+    const calPxPerMm = parseFloat(localStorage.getItem('spectit_px_per_mm'));
+    const actualDPI = (Number.isFinite(calPxPerMm) && calPxPerMm > 0)
+        ? calPxPerMm * 25.4
+        : screenDPI * devicePixelRatio;
     
     // Calculate physical screen dimensions (approximate)
     const screenWidthInches = screenWidth / actualDPI;
