@@ -1,19 +1,21 @@
 // Spect-IT Location Services & Eye Specialist Finder
-// Add this script to your website
-// Requires: Google Places API key
+// Uses Supabase places-proxy edge function (API key stays server-side).
 
 (function() {
   'use strict';
-  
-  // Configuration - SET YOUR API KEY HERE
-  const CONFIG = {
-    googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08', // Google Maps API Key
-    googleMapsApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08' // Google Maps API Key
-  };
-  
+
   let userLocation = null;
   let specialists = [];
-  
+
+  async function placesApi(action, params) {
+    if (!window.SupabaseStorage || !window.SupabaseStorage.invoke) {
+      return { status: 'ERROR', error_message: 'Places proxy unavailable' };
+    }
+    const { data, error } = await window.SupabaseStorage.invoke('places-proxy', Object.assign({ action: action }, params || {}));
+    if (error) return { status: 'ERROR', error_message: error.message };
+    return data || { status: 'ERROR' };
+  }
+
   // Initialize location services
   async function initializeLocationServices() {
     if (navigator.geolocation) {
@@ -42,23 +44,23 @@
       throw new Error('Geolocation is not supported by this browser.');
     }
   }
-  
+
   // Find nearest eye specialists
   window.findSpecialists = async function() {
     try {
       if (!userLocation) {
         await initializeLocationServices();
       }
-      
+
       const statusText = document.getElementById('location-text');
       if (statusText) {
         statusText.textContent = 'Finding specialists near you...';
       }
-      
+
       const foundSpecialists = await searchSpecialists(userLocation);
       specialists = foundSpecialists;
       displaySpecialists(foundSpecialists);
-      
+
       if (statusText) {
         statusText.textContent = `Found ${foundSpecialists.length} specialists near you`;
       }
@@ -67,32 +69,28 @@
       alert('Please enable location services to find specialists near you.');
     }
   };
-  
+
   // Search for specialists
   async function searchSpecialists(location) {
     const types = ['optometrist', 'ophthalmologist', 'optician', 'eye doctor'];
     const allSpecialists = [];
-    
+
     for (const type of types) {
       try {
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/place/nearbysearch/json?` +
-          `location=${location.lat},${location.lng}` +
-          `&radius=10000` +
-          `&type=doctor` +
-          `&keyword=${encodeURIComponent(type)}` +
-          `&key=${CONFIG.googlePlacesApiKey}`
-        );
-        
-        const data = await response.json();
-        
+        const data = await placesApi('nearbysearch', {
+          lat: location.lat,
+          lng: location.lng,
+          radius: 10000,
+          keyword: type
+        });
+
         if (data.results) {
           for (const place of data.results) {
             const distance = calculateDistance(location, {
               lat: place.geometry.location.lat,
               lng: place.geometry.location.lng
             });
-            
+
             allSpecialists.push({
               id: place.place_id,
               name: place.name,
@@ -112,29 +110,28 @@
         console.error(`Error searching for ${type}:`, error);
       }
     }
-    
-    // Remove duplicates and sort by distance
+
     return deduplicateAndSort(allSpecialists);
   }
-  
+
   // Display specialists
   function displaySpecialists(specialistsList) {
     const container = document.getElementById('specialists-container');
-    
+
     if (!container) return;
-    
+
     if (specialistsList.length === 0) {
       container.innerHTML = '<p>No eye specialists found near you. Please try expanding your search radius.</p>';
       return;
     }
-    
+
     container.innerHTML = specialistsList.map(specialist => `
       <div class="specialist-card" data-specialist-id="${specialist.id}">
         <div class="specialist-info">
           <h3>${specialist.name}</h3>
           <p class="specialist-type">${specialist.type.charAt(0).toUpperCase() + specialist.type.slice(1)}</p>
           <div class="specialist-rating">
-            ${generateStars(specialist.rating)} 
+            ${generateStars(specialist.rating)}
             <span>${specialist.rating}</span>
             <span class="rating-count">(${specialist.totalRatings} reviews)</span>
           </div>
@@ -152,10 +149,9 @@
       </div>
     `).join('');
   }
-  
-  // Calculate distance
+
   function calculateDistance(loc1, loc2) {
-    const R = 6371; // Earth's radius in km
+    const R = 6371;
     const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
     const dLng = (loc2.lng - loc1.lng) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -164,8 +160,7 @@
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
-  
-  // Determine specialist type
+
   function determineSpecialistType(name, searchType) {
     const nameLower = name.toLowerCase();
     if (nameLower.includes('ophthalmologist') || nameLower.includes('eye surgeon')) {
@@ -177,62 +172,53 @@
     }
     return searchType;
   }
-  
-  // Generate stars
+
   function generateStars(rating) {
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
     return '★'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
   }
-  
-  // Deduplicate and sort
+
   function deduplicateAndSort(specialistsList) {
     const seen = new Set();
     const unique = [];
-    
+
     specialistsList.forEach(specialist => {
       if (!seen.has(specialist.id)) {
         seen.add(specialist.id);
         unique.push(specialist);
       }
     });
-    
+
     return unique.sort((a, b) => (a.distance || 0) - (b.distance || 0));
   }
-  
-  // Get directions
+
   window.getDirections = function(lat, lng) {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     window.open(url, '_blank');
   };
-  
-  // Book appointment
+
   window.bookAppointment = function(specialistId) {
     const specialist = specialists.find(s => s.id === specialistId);
     if (specialist) {
       alert(`Booking appointment with ${specialist.name}\n\nThis will open the booking system.`);
-      // Implement booking logic here
     }
   };
-  
-  // Find retailer stores
+
   window.findRetailerStores = async function(retailerName) {
     try {
       if (!userLocation) {
         await initializeLocationServices();
       }
-      
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?` +
-        `location=${userLocation.lat},${userLocation.lng}` +
-        `&radius=10000` +
-        `&keyword=${encodeURIComponent(retailerName)}` +
-        `&key=${CONFIG.googlePlacesApiKey}`
-      );
-      
-      const data = await response.json();
-      
+
+      const data = await placesApi('nearbysearch', {
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        radius: 10000,
+        keyword: retailerName
+      });
+
       if (data.results && data.results.length > 0) {
         displayStores(data.results, retailerName);
       } else {
@@ -243,8 +229,7 @@
       alert('Error finding stores. Please check your location settings.');
     }
   };
-  
-  // Display stores
+
   function displayStores(stores, retailerName) {
     const modal = document.createElement('div');
     modal.className = 'store-modal';
@@ -275,19 +260,7 @@
     `;
     document.body.appendChild(modal);
   }
-  
-  // Auto-initialize location on page load
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      // Auto-find specialists if button exists
-      const findButton = document.querySelector('[onclick*="findSpecialists"], button:contains("Find")');
-      if (findButton) {
-        // Don't auto-find, wait for user click
-      }
-    });
-  }
-  
-  // Export
+
   window.SpectITLocation = {
     initializeLocationServices,
     findSpecialists: window.findSpecialists,
@@ -295,4 +268,3 @@
     getUserLocation: () => userLocation
   };
 })();
-

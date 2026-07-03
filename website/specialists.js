@@ -6,6 +6,20 @@ let specialistsList = [];
 let filteredSpecialists = [];
 let maxDistance = 50; // Default max distance in km
 
+// Google Places / Geocoding via Supabase edge function (key stays server-side).
+async function spectitPlacesApi(action, params) {
+    if (!window.SupabaseStorage || !window.SupabaseStorage.invoke) {
+        return { status: 'ERROR', error_message: 'Places proxy unavailable' };
+    }
+    try {
+        const { data, error } = await window.SupabaseStorage.invoke('places-proxy', Object.assign({ action: action }, params || {}));
+        if (error) return { status: 'ERROR', error_message: error.message };
+        return data || { status: 'ERROR' };
+    } catch (e) {
+        return { status: 'ERROR', error_message: e.message };
+    }
+}
+
 // Update distance filter 
 function updateDistanceFilter(value) {
     maxDistance = parseInt(value);
@@ -99,10 +113,6 @@ async function scrapeCapeTownOptometrists() {
         console.log(`✅ Found ${capeTownRetailers.length} known Cape Town retailers`);
         
         // 3. Use Google Places API for Cape Town-specific searches
-        const CONFIG = {
-            googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
-        };
-        
         const capeTownQueries = [
             'optometrist Cape Town',
             'optician Cape Town',
@@ -158,9 +168,7 @@ async function scrapeCapeTownOptometrists() {
         const googleResults = [];
         for (const query of capeTownQueries) {
             try {
-                const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${CONFIG.googlePlacesApiKey}`;
-                const response = await fetch(url);
-                const data = await response.json();
+                const data = await spectitPlacesApi('textsearch', { query: query });
                 
                 if (data.status === 'OK' && data.results) {
                     data.results.slice(0, 20).forEach(place => {
@@ -628,23 +636,15 @@ async function searchByAddress() {
         }
         
         // Geocode address to get coordinates
-        const CONFIG = {
-            googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
-        };
-        
         // Try Geocoding API first
-        let geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchAddress)}&key=${CONFIG.googlePlacesApiKey}`;
-        let response = await fetch(geocodeUrl);
-        let data = await response.json();
+        let data = await spectitPlacesApi('geocode', { address: searchAddress, region: 'za' });
         
         // If Geocoding API is denied, try Places API Text Search as fallback
         if (data.status === 'REQUEST_DENIED' || data.status === 'OVER_QUERY_LIMIT') {
             console.warn('Geocoding API denied, trying Places API Text Search fallback');
             
             // Use Places API Text Search as fallback
-            const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchAddress)}&key=${CONFIG.googlePlacesApiKey}`;
-            response = await fetch(placesUrl);
-            data = await response.json();
+            data = await spectitPlacesApi('textsearch', { query: searchAddress });
             
             if (data.status === 'OK' && data.results && data.results.length > 0) {
                 const place = data.results[0];
@@ -1710,10 +1710,6 @@ function extractCityFromAddress(address) {
 // AI-Enhanced Geocode address to coordinates with validation
 async function geocodeAddress(address) {
     try {
-        const CONFIG = {
-            googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
-        };
-        
         // Add "South Africa" if not present
         let searchAddress = address;
         if (!address.toLowerCase().includes('south africa') && !address.toLowerCase().includes('sa')) {
@@ -1734,9 +1730,7 @@ async function geocodeAddress(address) {
         
         for (const strategy of geocodeStrategies) {
             try {
-                const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(strategy)}&key=${CONFIG.googlePlacesApiKey}&region=za`;
-                const response = await fetch(url);
-                const data = await response.json();
+                const data = await spectitPlacesApi('geocode', { address: strategy, region: 'za' });
                 
                 if (data.status === 'OK' && data.results && data.results.length > 0) {
                     const result = data.results[0];
@@ -1793,11 +1787,6 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // AI-Enhanced Search for Eye Specialists using Google Places API
 async function searchEyeSpecialists(location, radius = 500000) { // 500km to cover all of South Africa
-    const CONFIG = {
-        googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08',
-        googleMapsApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
-    };
-    
     // AI-Enhanced: Use AI Vision Engine for location validation if available
     if (window.aiVisionEngine && window.aiVisionEngine.estimateDistanceAI) {
         try {
@@ -1865,19 +1854,7 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
                 ? ['optometrist', 'optician', 'eye doctor', 'eye care', 'optometrist cape town', 'optician cape town', 'eye care cape town']
                 : ['optometrist', 'optician', 'eye doctor', 'eye care'];
             const nearbyPromises = nearbyQueries.map(keyword => {
-                const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${Math.min(radius, 50000)}&keyword=${encodeURIComponent(keyword)}&key=${CONFIG.googlePlacesApiKey}`;
-                return fetch(url)
-                    .then(r => {
-                        if (!r.ok) {
-                            console.warn(`API request failed for "${keyword}":`, r.status, r.statusText);
-                            return { status: 'ERROR', results: [] };
-                        }
-                        return r.json();
-                    })
-                    .catch(error => {
-                        console.error(`Error fetching nearby search for "${keyword}":`, error);
-                        return { status: 'ERROR', results: [] };
-                    });
+                return spectitPlacesApi('nearbysearch', { lat: location.lat, lng: location.lng, radius: Math.min(radius, 50000), keyword: keyword }).catch(error => { console.error(`Error fetching nearby search for "${keyword}":`, error); return { status: 'ERROR', results: [] }; });
             });
             
             const nearbyResults = await Promise.all(nearbyPromises);
@@ -2040,16 +2017,7 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
             const searchPromise = (async () => {
                 try {
                     // Text search with city name for better results
-                    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query.query + ' in ' + city.name + ', South Africa')}&key=${CONFIG.googlePlacesApiKey}`;
-                    
-                    const response = await fetch(url);
-                    
-                    if (!response.ok) {
-                        console.warn(`API request failed for ${query.query} in ${city.name}:`, response.status, response.statusText);
-                        return [];
-                    }
-                    
-                    const data = await response.json();
+                    const data = await spectitPlacesApi('textsearch', { query: query.query + ' in ' + city.name + ', South Africa' });
                     
                     // Handle API errors
                     if (data.status === 'REQUEST_DENIED') {
@@ -2163,9 +2131,7 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
         // Fetch phone numbers in parallel (limit to 20 to avoid rate limits)
         const phoneFetchPromises = specialistsWithoutPhone.slice(0, 20).map(async (specialist) => {
             try {
-                const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${specialist.place_id}&fields=formatted_phone_number,international_phone_number,website&key=${CONFIG.googlePlacesApiKey}`;
-                const response = await fetch(detailsUrl);
-                const data = await response.json();
+                const data = await spectitPlacesApi('details', { placeId: specialist.place_id, fields: 'formatted_phone_number,international_phone_number,website' });
                 
                 if (data.status === 'OK' && data.result) {
                     specialist.phone = data.result.formatted_phone_number || data.result.international_phone_number || '';
@@ -2979,15 +2945,8 @@ async function viewSpecialistDetails(placeId) {
     }
     
     // If not found, try Google Places API for additional details
-    const CONFIG = {
-        googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
-    };
-    
     try {
-        const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,formatted_phone_number,international_phone_number,website,opening_hours,rating,user_ratings_total,reviews,photos&key=${CONFIG.googlePlacesApiKey}`;
-        
-        const response = await fetch(url);
-        const data = await response.json();
+        const data = await spectitPlacesApi('details', { placeId: placeId, fields: 'name,formatted_address,formatted_phone_number,international_phone_number,website,opening_hours,rating,user_ratings_total,reviews,photos' });
         
         if (data.status === 'OK' && data.result) {
             const place = data.result;
@@ -3356,11 +3315,8 @@ window.testSpecialistFinder = function() {
     console.log('specialists-loading:', loadingEl ? '✓ Found' : '✗ Missing');
     console.log('specialists-container:', containerEl ? '✓ Found' : '✗ Missing');
     
-    console.log('2. Checking API key...');
-    const CONFIG = {
-        googlePlacesApiKey: 'AIzaSyCCEQr9H_OwLccYjDNoTTH_u9cFymPXa08'
-    };
-    console.log('API Key:', CONFIG.googlePlacesApiKey ? '✓ Present' : '✗ Missing');
+    console.log('2. Checking Places proxy...');
+    console.log('Places proxy:', (window.SupabaseStorage && window.SupabaseStorage.invoke) ? '✓ Supabase connected' : '✗ Supabase unavailable');
     
     console.log('3. Testing location services...');
     if (navigator.geolocation) {

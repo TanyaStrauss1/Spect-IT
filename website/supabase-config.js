@@ -372,7 +372,7 @@ const AppointmentsStorage = {
         try {
             const { data, error } = await supabaseClient
                 .from('appointments')
-                .upsert(this._row(appt), { onConflict: 'appt_id' });
+                .insert(this._row(appt));
             if (error) throw error;
             return { success: true, method: 'supabase', data };
         } catch (error) {

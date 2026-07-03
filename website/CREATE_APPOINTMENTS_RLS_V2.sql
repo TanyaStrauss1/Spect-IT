@@ -58,4 +58,7 @@ create policy appointments_update_mvp_console
   using (true)
   with check (status in ('confirmed','declined','cancelled','completed'));
 
--- To fully lock down: drop the two _mvp_console policies above after provider-auth is live.
+-- To fully lock down: provider console uses provider-api edge function (service role).
+-- Drop any legacy MVP console policies if they exist:
+drop policy if exists appointments_select_mvp_console on public.appointments;
+drop policy if exists appointments_update_mvp_console on public.appointments;
