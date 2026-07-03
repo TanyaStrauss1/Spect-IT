@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spect-IT — Practice Console</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="logo-icon.svg">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; color: #0f172a; }
+  header { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: .75rem; }
+  header .mark { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,.18); display: grid; place-items: center; font-size: 1.3rem; }
+  header h1 { font-family: 'Sora', sans-serif; font-size: 1.2rem; }
+  header .env { margin-left: auto; font-size: .8rem; opacity: .9; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+  .bar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.25rem; }
+  .bar input, .bar select { padding: .6rem .8rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font: inherit; background: #fff; }
+  .bar input { flex: 1; min-width: 200px; }
+  .btn { padding: .6rem 1.1rem; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font: inherit; }
+  .btn.primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
+  .btn.ghost { background: #fff; border: 1.5px solid #e2e8f0; color: #334155; }
+  .status-line { font-size: .85rem; color: #64748b; margin-bottom: 1rem; }
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.1rem 1.25rem; margin-bottom: .9rem; box-shadow: 0 1px 2px rgba(15,23,42,.05); }
+  .card .top { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
+  .card h3 { font-size: 1.05rem; }
+  .muted { color: #64748b; font-size: .9rem; }
+  .badge { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: .25rem .6rem; border-radius: 999px; }
+  .b-requested { background: #fef3c7; color: #92400e; }
+  .b-confirmed { background: #dcfce7; color: #166534; }
+  .b-declined, .b-cancelled { background: #fee2e2; color: #991b1b; }
+  .b-completed { background: #dbeafe; color: #1e40af; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: .5rem 1.5rem; margin: .8rem 0; }
+  .grid div span { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; }
+  .grid div strong { font-size: .95rem; }
+  .actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+  .actions button { font-size: .85rem; padding: .45rem .9rem; }
+  .results { margin-top: .6rem; font-size: .85rem; }
+  details summary { cursor: pointer; color: #4f46e5; font-weight: 600; }
+  pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: .75rem; overflow: auto; font-size: .78rem; margin-top: .5rem; }
+  .empty { text-align: center; color: #64748b; padding: 3rem 1rem; }
+  .note { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 12px; padding: .8rem 1rem; font-size: .85rem; margin-bottom: 1.25rem; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="mark">👁️</div>
+    <h1>Spect-IT — Practice Console</h1>
+    <span class="env" id="env">connecting…</span>
+  </header>
+  <div class="wrap">
+    <div class="note">Internal MVP console. There is no provider login yet — anyone with this link can view/manage requests. Before real use, add provider authentication and per-practice access. Bookings appear here once the Supabase <code>appointments</code> table exists (see <code>CREATE_APPOINTMENTS_TABLE.sql</code>).</div>
+    <div class="bar">
+      <input id="q" type="text" placeholder="Filter by practice or patient name…" oninput="render()">
+      <select id="statusFilter" onchange="render()">
+        <option value="">All statuses</option>
+        <option value="requested">Requested</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="declined">Declined</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="completed">Completed</option>
+      </select>
+      <button class="btn primary" onclick="load()">Refresh</button>
+    </div>
+    <div class="status-line" id="statusLine"></div>
+    <div id="list"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    let ALL = [];
+
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+    function fmtWhen(d,t){ try { return new Date(d+'T'+(t||'09:00')).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})+' · '+t; } catch(e){ return d+' '+t; } }
+
+    async function load() {
+      const sl = document.getElementById('statusLine');
+      if (!(window.SupabaseStorage && window.SupabaseStorage.isAvailable())) {
+        document.getElementById('env').textContent = 'offline (no Supabase)';
+        sl.textContent = 'Supabase is not connected in this browser. Deploy the appointments table and confirm credentials.';
+        ALL = []; render(); return;
+      }
+      document.getElementById('env').textContent = 'connected';
+      sl.textContent = 'Loading appointments…';
+      try {
+        ALL = await window.SupabaseStorage.appointments.listAll();
+        sl.textContent = ALL.length + ' appointment(s) in the database.';
+      } catch (e) {
+        sl.textContent = 'Could not load appointments (has the SQL table been created?).';
+        ALL = [];
+      }
+      render();
+    }
+
+    function resultsSummary(r) {
+      if (!r) return '';
+      const keys = Object.keys(r);
+      if (!keys.length) return '';
+      let rx = r.prescription;
+      let head = rx ? ('Rx: ' + (rx.summary || (rx.sphere||'') )) : (keys.length + ' test result(s)');
+      return '<div class="results"><details><summary>Attached Spect-IT results — ' + esc(head) + '</summary><pre>' + esc(JSON.stringify(r, null, 2)) + '</pre></details></div>';
+    }
+
+    function render() {
+      const q = (document.getElementById('q').value || '').toLowerCase();
+      const sf = document.getElementById('statusFilter').value;
+      const list = document.getElementById('list');
+      let rows = ALL.filter(function (a) {
+        const hay = ((a.practice_name||'') + ' ' + (a.patient_name||'') + ' ' + (a.user_email||'')).toLowerCase();
+        return (!q || hay.indexOf(q) !== -1) && (!sf || a.status === sf);
+      });
+      if (!rows.length) { list.innerHTML = '<div class="empty">No appointments to show.</div>'; return; }
+      list.innerHTML = rows.map(function (a) {
+        const st = a.status || 'requested';
+        return '<div class="card">' +
+          '<div class="top"><div><h3>' + esc(a.patient_name || 'Patient') + '</h3>' +
+          '<div class="muted">' + esc(a.service_label || a.service || '') + ' · ' + esc(fmtWhen(a.appt_date, a.appt_time)) + '</div></div>' +
+          '<span class="badge b-' + esc(st) + '">' + esc(st) + '</span></div>' +
+          '<div class="grid">' +
+            '<div><span>Practice</span><strong>' + esc(a.practice_name || '—') + '</strong></div>' +
+            '<div><span>Patient email</span><strong>' + esc(a.user_email || '—') + '</strong></div>' +
+            '<div><span>Patient phone</span><strong>' + esc(a.patient_phone || '—') + '</strong></div>' +
+            '<div><span>Practice address</span><strong>' + esc(a.practice_address || '—') + '</strong></div>' +
+          '</div>' +
+          (a.patient_notes ? '<div class="muted">📝 ' + esc(a.patient_notes) + '</div>' : '') +
+          resultsSummary(a.results) +
+          '<div class="actions">' +
+            (st !== 'confirmed' ? '<button class="btn primary" onclick="setStatus(\'' + esc(a.appt_id) + '\',\'confirmed\')">Confirm</button>' : '') +
+            (st !== 'declined' ? '<button class="btn ghost" onclick="setStatus(\'' + esc(a.appt_id) + '\',\'declined\')">Decline</button>' : '') +
+            (st !== 'completed' ? '<button class="btn ghost" onclick="setStatus(\'' + esc(a.appt_id) + '\',\'completed\')">Mark completed</button>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    async function setStatus(apptId, status) {
+      try {
+        await window.SupabaseStorage.appointments.setStatus(apptId, status);
+        // reflect locally
+        ALL = ALL.map(function (a) { return a.appt_id === apptId ? Object.assign({}, a, { status: status }) : a; });
+        render();
+      } catch (e) { alert('Could not update status.'); }
+    }
+
+    // Give supabase-config.js a tick to initialize on DOMContentLoaded.
+    window.addEventListener('load', function () { setTimeout(load, 400); });
+  </script>
+</body>
+</html>

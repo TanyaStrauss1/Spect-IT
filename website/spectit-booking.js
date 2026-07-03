@@ -210,12 +210,41 @@
     list.push(appt);
     writeAppointments(list);
 
-    // Best-effort: persist email/notify via existing infra (non-blocking).
     try {
       if (booking.patient.email) localStorage.setItem('spectit_user_email', booking.patient.email);
     } catch (e) {}
 
+    // Cloud sync (local-first is already done above); non-blocking.
+    try {
+      if (window.SupabaseStorage && window.SupabaseStorage.appointments) {
+        window.SupabaseStorage.appointments.save(appt).then(function (res) {
+          appt._synced = !!(res && res.method && res.method.indexOf('supabase') === 0);
+        }).catch(function () {});
+      }
+    } catch (e) {}
+
+    notifyBooking(appt);
     renderConfirmation(appt);
+  }
+
+  // Best-effort notification via the existing Supabase Edge Function ("send-email").
+  // Works once that function is deployed; silently no-ops otherwise.
+  function notifyBooking(appt) {
+    try {
+      if (typeof supabase === 'undefined' || !supabase.functions) return;
+      var when = fmtDatePretty(appt.date, appt.time);
+      supabase.functions.invoke('send-email', {
+        body: {
+          to: appt.patient.email,
+          subject: 'Your Spect-IT appointment request \u2013 ' + appt.specialist.name,
+          text: 'Hi ' + appt.patient.name + ',\n\nYour appointment request has been sent to ' +
+            appt.specialist.name + ' for ' + when + ' (' + appt.serviceLabel + ').\n' +
+            'The practice will confirm the time with you. Address: ' + (appt.specialist.address || '') + '.\n\n' +
+            (appt.results ? 'Your latest Spect-IT results were attached for the optometrist.\n\n' : '') +
+            'This is an appointment request via Spect-IT, not medical advice.'
+        }
+      }).catch(function () {});
+    } catch (e) {}
   }
 
   function fmtDatePretty(dateStr, time) {
@@ -282,7 +311,20 @@
   /* ------------------------------------------------------- my appointments */
   function mine() {
     openModal();
-    var list = readAppointments().sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; });
+    renderAppointmentsList(readAppointments()); // instant from local
+    // Refresh from cloud (merged) if available.
+    try {
+      var email = userEmail();
+      if (email && window.SupabaseStorage && window.SupabaseStorage.appointments) {
+        window.SupabaseStorage.appointments.list(email).then(function (list) {
+          if (Array.isArray(list)) { writeAppointments(list); renderAppointmentsList(list); }
+        }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+
+  function renderAppointmentsList(raw) {
+    var list = (raw || []).slice().sort(function (a, b) { return (a.date + a.time) < (b.date + b.time) ? -1 : 1; });
     var now = new Date();
     var content;
     if (!list.length) {
@@ -290,13 +332,15 @@
     } else {
       content = '<div class="bk-list">' + list.map(function (a) {
         var past = new Date(a.date + 'T' + a.time) < now;
-        return '<div class="bk-appt' + (past ? ' past' : '') + '">' +
+        var inactive = (a.status === 'cancelled' || a.status === 'declined');
+        var dim = past || inactive;
+        return '<div class="bk-appt' + (dim ? ' past' : '') + '">' +
           '<div class="bk-appt-main"><strong>' + esc(a.specialist.name) + '</strong>' +
           '<span>' + esc(a.serviceLabel) + '</span>' +
           '<span>' + esc(fmtDatePretty(a.date, a.time)) + '</span></div>' +
           '<div class="bk-appt-side">' +
             '<span class="bk-status ' + esc(a.status) + '">' + esc(a.status) + '</span>' +
-            (past ? '' : '<button class="bk-cancel" onclick="SpectitBooking.cancel(\'' + a.id + '\')">Cancel</button>') +
+            (past || inactive ? '' : '<button class="bk-cancel" onclick="SpectitBooking.cancel(\'' + a.id + '\')">Cancel</button>') +
           '</div></div>';
       }).join('') + '</div>';
     }
@@ -306,9 +350,15 @@
   }
   function cancel(id) {
     if (!window.confirm('Cancel this appointment request?')) return;
-    var list = readAppointments().filter(function (a) { return a.id !== id; });
+    // Sync cancellation so the practice sees it; keep the record as "cancelled".
+    try {
+      if (window.SupabaseStorage && window.SupabaseStorage.appointments) {
+        window.SupabaseStorage.appointments.setStatus(id, 'cancelled');
+      }
+    } catch (e) {}
+    var list = readAppointments().map(function (a) { return a.id === id ? Object.assign({}, a, { status: 'cancelled' }) : a; });
     writeAppointments(list);
-    mine();
+    renderAppointmentsList(list);
   }
 
   /* --------------------------------------------------------------- exports */

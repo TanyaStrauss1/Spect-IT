@@ -534,6 +534,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible, .btn:focus-visible
 .bk-appt-side { display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; }
 .bk-status { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .2rem .6rem; border-radius: 999px; background: #fef3c7; color: #92400e; }
 .bk-status.confirmed { background: #dcfce7; color: #166534; }
+.bk-status.completed { background: #dbeafe; color: #1e40af; }
+.bk-status.cancelled, .bk-status.declined { background: #fee2e2; color: #991b1b; }
 .bk-cancel { background: none; border: none; color: var(--danger); font-weight: 600; cursor: pointer; font-size: .85rem; }
 
 /* "My appointments" launcher */
