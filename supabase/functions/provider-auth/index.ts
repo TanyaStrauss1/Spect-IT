@@ -3,6 +3,7 @@
 // Deploy: supabase functions deploy provider-auth
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { signToken } from "../_shared/provider-token.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,21 +31,6 @@ serve(async (req) => {
     return json({ success: false, error: error.message }, 400)
   }
 })
-
-async function signToken(payload: Record<string, unknown>) {
-  const secret = Deno.env.get("SPECTIT_PROVIDER_PIN") || "dev"
-  const data = btoa(JSON.stringify(payload))
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  )
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data))
-  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig)))
-  return `${data}.${sigB64}`
-}
 
 function json(payload: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(payload), {

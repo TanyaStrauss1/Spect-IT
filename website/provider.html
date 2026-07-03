@@ -105,24 +105,35 @@
       err.textContent = '';
       if (!pin) { err.textContent = 'Enter your access code.'; return; }
       try {
-        if (window.SupabaseStorage && window.SupabaseStorage.invoke) {
-          const { data, error } = await window.SupabaseStorage.invoke('provider-auth', { pin, practiceId });
-          if (error || !data || !data.success) {
-            err.textContent = (data && data.error) || 'Invalid access code.';
-            return;
-          }
-          sessionStorage.setItem(AUTH_KEY, data.token || 'ok');
-          if (practiceId) sessionStorage.setItem('spectit_practice_filter', practiceId);
-        } else {
-          // Offline dev fallback — remove in production
-          if (pin.length < 4) { err.textContent = 'Invalid access code.'; return; }
-          sessionStorage.setItem(AUTH_KEY, 'dev');
+        if (!window.SupabaseStorage || !window.SupabaseStorage.invoke) {
+          err.textContent = 'Practice console requires a live Supabase connection.';
+          return;
         }
+        const { data, error } = await window.SupabaseStorage.invoke('provider-auth', { pin, practiceId });
+        if (error || !data || !data.success) {
+          err.textContent = (data && data.error) || 'Invalid access code.';
+          return;
+        }
+        if (!data.token) {
+          err.textContent = 'Could not establish a secure session.';
+          return;
+        }
+        sessionStorage.setItem(AUTH_KEY, data.token);
+        if (practiceId) sessionStorage.setItem('spectit_practice_filter', practiceId);
         showConsole();
         load();
       } catch (e) {
         err.textContent = 'Could not verify access code.';
       }
+    }
+
+    async function providerCall(body) {
+      const token = sessionStorage.getItem(AUTH_KEY);
+      if (!token) throw new Error('Not signed in');
+      const { data, error } = await window.SupabaseStorage.invoke('provider-api', Object.assign({ token: token }, body));
+      if (error) throw error;
+      if (!data || data.error) throw new Error(data.error || 'Provider API error');
+      return data;
     }
 
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
@@ -139,7 +150,8 @@
       sl.textContent = 'Loading appointments…';
       try {
         const placeId = sessionStorage.getItem('spectit_practice_filter') || '';
-        ALL = await window.SupabaseStorage.appointments.listAll(placeId || undefined);
+        const result = await providerCall({ action: 'list', practicePlaceId: placeId || undefined });
+        ALL = result.appointments || [];
         sl.textContent = ALL.length + ' appointment(s) in the database.';
       } catch (e) {
         sl.textContent = 'Could not load appointments (has the SQL table been created?).';
@@ -191,7 +203,7 @@
 
     async function setStatus(apptId, status) {
       try {
-        await window.SupabaseStorage.appointments.setStatus(apptId, status);
+        await providerCall({ action: 'setStatus', apptId: apptId, status: status });
         ALL = ALL.map(function (a) { return a.appt_id === apptId ? Object.assign({}, a, { status: status }) : a; });
         var row = ALL.find(function (a) { return a.appt_id === apptId; });
         if (row && window.SupabaseStorage.invoke) {
