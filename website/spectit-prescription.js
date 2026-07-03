@@ -47,6 +47,21 @@
   }
   function setDistanceCm(v) { if (Number.isFinite(v) && v > 0) localStorage.setItem(DISTANCE_KEY, String(v)); }
 
+  var FARPOINT_KEY = 'spectit_farpoint';
+  function readFarPoints() {
+    try { return JSON.parse(localStorage.getItem(FARPOINT_KEY) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function getFarPoint(eye) {
+    var fp = readFarPoints();
+    return fp[eye || 'both'] || null;
+  }
+  function setFarPoint(eye, obj) {
+    var fp = readFarPoints();
+    fp[eye || 'both'] = obj;
+    localStorage.setItem(FARPOINT_KEY, JSON.stringify(fp));
+  }
+
   function liveLidarDistanceCm() {
     try {
       if (window.lidarEngine) {
@@ -125,16 +140,34 @@
     return s;
   }
 
+  // Far point (cm) -> myopic spherical equivalent (D). 1/farpoint(m) = myopia.
+  function seFromFarPoint(cm) {
+    if (!Number.isFinite(cm) || cm <= 0) return null;
+    return round25(-100 / cm); // negative diopters
+  }
+
   // Compose an estimate for one eye (or binocular) from available results.
   function estimateForEye(eye) {
     var va = latestOfType('visual-acuity', eye);
     var duo = latestOfType('duochrome');
     var ast = latestOfType('astigmatism');
+    var fp = getFarPoint(eye) || getFarPoint('both');
+    var fpValid = fp && Number.isFinite(fp.cm) && fp.cm > 0 && !fp.beyondReach;
 
-    if (!va) return null;
+    if (!va && !fpValid) return null;
 
-    var logMAR = logMARFromDecimal(va.decimalAcuity);
-    var se = seFromLogMAR(logMAR);
+    var logMAR = va ? logMARFromDecimal(va.decimalAcuity) : null;
+
+    // Sphere source: prefer the objective far-point measurement when present.
+    var method = 'acuity';
+    var se;
+    if (fpValid) {
+      se = seFromFarPoint(fp.cm);
+      method = 'far-point';
+    } else {
+      se = seFromLogMAR(logMAR);
+    }
+
     var duoAdj = applyDuochrome(se, duo && duo.result, logMAR);
     se = duoAdj.se;
     se = Math.max(-8, Math.min(4, se));
@@ -158,21 +191,24 @@
     if (duo) conf += 0.1;
     if (ast) conf += 0.05;
     if (logMAR != null && logMAR <= 0.7) conf += 0.05; // model more reliable for mild-moderate
-    conf = Math.min(0.9, conf);
+    if (method === 'far-point') conf += 0.1; // objective far-point is more reliable than VA table
+    conf = Math.min(0.95, conf);
 
     return {
-      eye: eye || (va.eye || 'both'),
+      eye: eye || (va && va.eye) || 'both',
       sphere: round25(sphere),
       cylinder: cylinderSigned,
       axis: (cyl >= 0.25 && axis != null) ? axis : null,
       sphericalEquivalent: round25(se),
-      va: va.usNotation || (va.decimalAcuity ? ('~' + va.decimalAcuity) : 'n/a'),
+      method: method,
+      farPointCm: fpValid ? fp.cm : null,
+      va: va ? (va.usNotation || (va.decimalAcuity ? ('~' + va.decimalAcuity) : 'n/a')) : 'n/a',
       logMAR: logMAR != null ? logMAR.toFixed(2) : 'n/a',
       duochrome: duoAdj.note,
       confidence: conf,
       sources: {
-        acuity: !!va, duochrome: !!duo, astigmatism: !!ast,
-        acuityEye: va.eye || 'both', acuityDate: va.date
+        acuity: !!va, duochrome: !!duo, astigmatism: !!ast, farPoint: fpValid,
+        acuityEye: (va && va.eye) || 'both', acuityDate: va && va.date
       }
     };
   }
@@ -319,7 +355,9 @@
         '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Cylinder \u00d7 Axis</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#4f46e5;">' + cylStr + '</div></div>' +
         '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Sph. equiv.</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#0f172a;">' + fmtD(est.sphericalEquivalent) + '</div></div>' +
       '</div>' +
-      '<div style="margin-top:.75rem;font-size:.82rem;color:#64748b;">VA ' + est.va + ' (logMAR ' + est.logMAR + ') · duochrome: ' + est.duochrome + ' · confidence ' + Math.round(est.confidence * 100) + '%</div>' +
+      '<div style="margin-top:.75rem;font-size:.82rem;color:#64748b;">' +
+        'Sphere from: <strong style="color:#4f46e5;">' + (est.method === 'far-point' ? 'far-point ' + (est.farPointCm ? '(' + est.farPointCm + ' cm)' : '') : 'acuity chart') + '</strong>' +
+        ' · VA ' + est.va + ' (logMAR ' + est.logMAR + ') · duochrome: ' + est.duochrome + ' · confidence ' + Math.round(est.confidence * 100) + '%</div>' +
     '</div>';
   }
 
@@ -357,6 +395,7 @@
         body +
         '<div class="test-controls">' +
           '<button class="btn btn-incorrect" onclick="SpectitRx.dataCheck()">Back</button>' +
+          '<button class="btn btn-secondary" onclick="SpectitRx.farPoint()">\uD83C\uDFAF Refine with far-point</button>' +
           '<button class="btn btn-next" onclick="SpectitRx.saveAndClose()">Save result</button>' +
         '</div>' +
       '</div>';
@@ -388,6 +427,8 @@
       cylinder: primary.cylinder < 0 ? fmtD(primary.cylinder) : '0.00',
       axis: primary.axis,
       sphericalEquivalent: fmtD(primary.sphericalEquivalent),
+      sphereMethod: primary.method,
+      farPointCm: primary.farPointCm,
       confidence: primary.confidence,
       calibration: { pxPerMm: getPxPerMm(), distanceCm: getDistanceCm() || liveLidarDistanceCm() },
       note: 'Screening estimate from subjective tests (acuity + duochrome + astigmatism). Not a dispensable prescription; confirm with a licensed eye-care professional.',
@@ -401,6 +442,145 @@
     if (typeof closeTest === 'function') closeTest();
   }
 
+  /* ------------------------------------------------------- far-point method */
+  var fpState = { eye: 'both', interval: null, lastCm: null, live: false };
+
+  function fpAngleArcmin() { return 15; } // ~20/60 optotype: easily resolved in focus, blurs on defocus
+
+  function fpOptotypePx(distanceCm) {
+    var pxmm = getPxPerMm();
+    if (!pxmm || !Number.isFinite(distanceCm) || distanceCm <= 0) return null;
+    var distMm = distanceCm * 10;
+    var rad = (fpAngleArcmin() / 60) * (Math.PI / 180);
+    var heightMm = 2 * distMm * Math.tan(rad / 2);
+    return Math.max(8, heightMm * pxmm);
+  }
+
+  function renderFarPointIntro() {
+    var c = el(); if (!c) return;
+    var pxmm = getPxPerMm();
+    c.innerHTML =
+      '<div class="test-interface">' +
+        '<h2 class="test-title">Far-point refinement (objective sphere)</h2>' +
+        '<div class="test-instructions">' +
+          '<p>This measures the farthest distance you can still see a symbol sharply. For a short-sighted (myopic) eye, <strong>1 ÷ far-point (m) = the myopia in dioptres</strong> — a more objective sphere than the acuity chart.</p>' +
+          '<p><strong>You will:</strong> cover one eye, hold the phone close so the symbol is sharp, then slowly move it away and tap the moment it blurs. The camera tracks the distance and keeps the symbol a constant size.</p>' +
+          (!pxmm ? '<p style="color:#b45309;"><strong>Calibrate your screen first</strong> so the symbol size stays constant.</p>' : '') +
+        '</div>' +
+        '<div class="test-display" style="flex-direction:column;gap:.8rem;min-height:auto;padding:1.5rem;">' +
+          '<p style="font-weight:700;">Which eye?</p>' +
+          '<div style="display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;">' +
+            '<button class="btn btn-test" style="width:auto;" onclick="SpectitRx.fpStart(\'left\')">Left eye</button>' +
+            '<button class="btn btn-test" style="width:auto;" onclick="SpectitRx.fpStart(\'right\')">Right eye</button>' +
+            '<button class="btn btn-test" style="width:auto;" onclick="SpectitRx.fpStart(\'both\')">Both eyes</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="test-controls">' +
+          (pxmm ? '' : '<button class="btn btn-primary" onclick="SpectitRx.calibrate()">Calibrate screen</button>') +
+          '<button class="btn btn-incorrect" onclick="SpectitRx.results()">Back to estimate</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  async function fpStart(eye) {
+    fpState.eye = eye || 'both';
+    fpState.lastCm = null;
+    var other = eye === 'left' ? 'right' : (eye === 'right' ? 'left' : 'other');
+    var c = el(); if (!c) return;
+    c.innerHTML =
+      '<div class="test-interface">' +
+        '<h2 class="test-title">Far-point — ' + (eye === 'both' ? 'both eyes' : eye + ' eye') + '</h2>' +
+        '<div class="test-instructions">' +
+          '<p>' + (eye === 'both' ? 'Keep both eyes open.' : 'Cover your <strong>' + other + '</strong> eye.') + ' Start close so the symbol is sharp, then move the phone away slowly. Tap <strong>Blurred</strong> the instant it turns fuzzy.</p>' +
+          '<p id="fp-distance" style="font-weight:700;color:#4f46e5;margin-top:.5rem;">Distance: starting camera…</p>' +
+        '</div>' +
+        '<div class="test-display" id="fp-display" style="min-height:260px;background:#fff;">' +
+          '<span id="fp-optotype" style="font-family:\'Courier New\',monospace;font-weight:800;color:#0f172a;line-height:1;">E</span>' +
+        '</div>' +
+        '<div id="fp-manual" style="display:none;text-align:center;margin-top:.5rem;">' +
+          '<p style="color:#64748b;font-size:.9rem;">Camera distance unavailable — measure the blur distance with a ruler and enter it:</p>' +
+          '<input type="number" id="fp-manual-cm" placeholder="cm" min="10" max="300" style="width:120px;padding:.4rem .6rem;border:1.5px solid #e6e8f0;border-radius:8px;">' +
+          '<button class="btn btn-next" style="width:auto;margin-left:.5rem;" onclick="SpectitRx.fpManual()">Save</button>' +
+        '</div>' +
+        '<div class="test-controls">' +
+          '<button class="btn btn-next" onclick="SpectitRx.fpBlur()">It just blurred</button>' +
+          '<button class="btn btn-secondary" onclick="SpectitRx.fpBeyond()">Still sharp at arm\u2019s length</button>' +
+          '<button class="btn btn-incorrect" onclick="SpectitRx.fpCancel()">Cancel</button>' +
+        '</div>' +
+      '</div>';
+
+    // Try to start live distance tracking.
+    fpState.live = false;
+    try {
+      if (window.lidarEngine && typeof window.lidarEngine.initialize === 'function') {
+        var setup = await window.lidarEngine.initialize(0.4, 0.5);
+        if (setup && setup.available) fpState.live = true;
+      }
+    } catch (e) { fpState.live = false; }
+
+    if (!fpState.live) {
+      var man = document.getElementById('fp-manual');
+      if (man) man.style.display = 'block';
+      var dEl = document.getElementById('fp-distance');
+      if (dEl) dEl.textContent = 'Distance: enter manually below';
+    }
+
+    if (fpState.interval) clearInterval(fpState.interval);
+    fpState.interval = setInterval(fpTick, 150);
+    fpTick();
+  }
+
+  function fpTick() {
+    var distEl = document.getElementById('fp-distance');
+    var opto = document.getElementById('fp-optotype');
+    var cm = null;
+    if (fpState.live) {
+      var m = liveLidarDistanceCm();
+      if (Number.isFinite(m)) cm = m;
+    }
+    if (cm) {
+      fpState.lastCm = cm;
+      if (distEl) distEl.textContent = 'Distance: ' + Math.round(cm) + ' cm  (\u2248 ' + fmtD(seFromFarPoint(cm)) + ' if it blurs here)';
+      var px = fpOptotypePx(cm);
+      if (opto && px) opto.style.fontSize = px + 'px';
+    }
+  }
+
+  function fpStop() {
+    if (fpState.interval) { clearInterval(fpState.interval); fpState.interval = null; }
+    try { if (window.lidarEngine && window.lidarEngine.stop) window.lidarEngine.stop(); } catch (e) {}
+  }
+
+  function fpBlur() {
+    var cm = fpState.lastCm;
+    if (!Number.isFinite(cm) || cm <= 0) {
+      var man = document.getElementById('fp-manual');
+      if (man) man.style.display = 'block';
+      return;
+    }
+    setFarPoint(fpState.eye, { cm: Math.round(cm), beyondReach: false, method: 'live', date: new Date().toISOString() });
+    fpStop();
+    renderResults();
+  }
+
+  function fpManual() {
+    var input = document.getElementById('fp-manual-cm');
+    var cm = input ? parseFloat(input.value) : NaN;
+    if (!Number.isFinite(cm) || cm <= 0) return;
+    setFarPoint(fpState.eye, { cm: Math.round(cm), beyondReach: false, method: 'manual', date: new Date().toISOString() });
+    fpStop();
+    renderResults();
+  }
+
+  function fpBeyond() {
+    var maxCm = Number.isFinite(fpState.lastCm) ? Math.round(fpState.lastCm) : null;
+    setFarPoint(fpState.eye, { cm: null, beyondReach: true, maxCm: maxCm, date: new Date().toISOString() });
+    fpStop();
+    renderResults();
+  }
+
+  function fpCancel() { fpStop(); renderResults(); }
+
   /* --------------------------------------------------------------- exports */
   window.SpectitRx = {
     start: start,
@@ -411,7 +591,13 @@
     dataCheck: renderDataCheck,
     results: renderResults,
     saveAndClose: saveAndClose,
-    estimateForEye: estimateForEye
+    estimateForEye: estimateForEye,
+    farPoint: renderFarPointIntro,
+    fpStart: fpStart,
+    fpBlur: fpBlur,
+    fpManual: fpManual,
+    fpBeyond: fpBeyond,
+    fpCancel: fpCancel
   };
 
   // Override the legacy face-geometry prescription entry point.
