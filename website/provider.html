@@ -14,17 +14,17 @@
   header .mark { width: 40px; height: 40px; border-radius: 10px; background: rgba(201,169,98,.15); border: 1px solid rgba(201,169,98,.35); display: grid; place-items: center; font-size: 1.3rem; }
   header h1 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 600; }
   header .env { margin-left: auto; font-size: .8rem; opacity: .85; letter-spacing: .04em; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
-  .bar { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.25rem; }
-  .bar input, .bar select { padding: .6rem .8rem; border: 1px solid #e5e0d8; border-radius: 10px; font: inherit; background: #fff; }
-  .bar input { flex: 1; min-width: 200px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 1.5rem; }
+  .bar, .account-bar, .invite-form { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
+  .bar input, .bar select, .account-bar select, .invite-form input, .invite-form select, .login-panel input { padding: .65rem .8rem; border: 1px solid #e5e0d8; border-radius: 10px; font: inherit; background: #fff; }
+  .bar input, .login-panel input, .invite-form input { flex: 1; min-width: 200px; }
   .btn { padding: .6rem 1.1rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font: inherit; letter-spacing: .02em; }
   .btn.primary { background: linear-gradient(135deg,#a8864a,#c9a962); color: #152a45; border: 1px solid rgba(168,134,74,.25); }
   .btn.ghost { background: #fff; border: 1px solid #e5e0d8; color: #1e2936; }
   .status-line { font-size: .85rem; color: #5c6570; margin-bottom: 1rem; }
   .card { background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 1.1rem 1.25rem; margin-bottom: .9rem; box-shadow: 0 1px 2px rgba(15,20,25,.05); }
   .card .top { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
-  .card h3 { font-size: 1.1rem; font-family: 'Cormorant Garamond', serif; font-weight: 600; }
+  .card h3, .panel-title { font-size: 1.1rem; font-family: 'Cormorant Garamond', serif; font-weight: 600; }
   .muted { color: #5c6570; font-size: .9rem; }
   .badge { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: .25rem .6rem; border-radius: 999px; }
   .b-requested { background: #faf6ee; color: #8a6d2f; border: 1px solid rgba(201,169,98,.3); }
@@ -41,9 +41,20 @@
   pre { background: #faf9f7; border: 1px solid #e5e0d8; border-radius: 10px; padding: .75rem; overflow: auto; font-size: .78rem; margin-top: .5rem; }
   .empty { text-align: center; color: #5c6570; padding: 3rem 1rem; }
   .note { background: #faf6ee; border: 1px solid rgba(201,169,98,.35); color: #8a6d2f; border-radius: 12px; padding: .8rem 1rem; font-size: .85rem; margin-bottom: 1.25rem; }
-  .login-panel { max-width: 400px; margin: 3rem auto; background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 2rem; box-shadow: 0 8px 28px rgba(15,20,25,.08); }
+  .login-panel { max-width: 480px; margin: 3rem auto; background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 2rem; box-shadow: 0 8px 28px rgba(15,20,25,.08); }
   .login-panel h2 { font-family: 'Cormorant Garamond', serif; margin-bottom: .5rem; }
-  .login-panel input { width: 100%; padding: .65rem .8rem; border: 1px solid #e5e0d8; border-radius: 10px; margin: .5rem 0 1rem; font: inherit; }
+  .login-group + .login-group { margin-top: 1.4rem; }
+  .section-label { display: block; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: #8a6d2f; margin-bottom: .55rem; }
+  .divider { display: flex; align-items: center; gap: .75rem; margin: 1rem 0; color: #94a3b8; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+  .divider:before, .divider:after { content: ""; flex: 1; border-top: 1px solid #ece5d8; }
+  .account-card, .invite-card { margin-bottom: 1rem; }
+  .account-bar { justify-content: space-between; align-items: flex-start; }
+  .account-copy { display: flex; flex-direction: column; gap: .25rem; }
+  .invite-form { margin-top: .85rem; }
+  .staff-list { margin-top: 1rem; display: grid; gap: .7rem; }
+  .staff-item { border: 1px solid #ece5d8; border-radius: 12px; padding: .8rem .95rem; background: #fcfbf9; }
+  .staff-item strong { display: block; margin-bottom: .2rem; }
+  .helper { margin-top: .65rem; font-size: .84rem; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -56,30 +67,76 @@
   <div class="wrap">
     <div id="login-panel" class="login-panel">
       <h2>Practice access</h2>
-      <p class="muted" style="margin-bottom:1rem">Enter your practice access code to view appointment requests.</p>
-      <label class="muted" for="pin">Access code</label>
-      <input id="pin" type="password" placeholder="Provided by Spect-IT" autocomplete="current-password">
-      <label class="muted" for="practiceId">Practice ID (optional)</label>
-      <input id="practiceId" type="text" placeholder="Google place_id filter">
-      <button class="btn primary" style="width:100%" onclick="login()">Sign in</button>
-      <p class="muted" id="login-err" style="margin-top:.75rem;color:#8b4040"></p>
+      <p class="muted" style="margin-bottom:1rem">Sign in with a secure magic link, or use the shared access code as a temporary bootstrap path.</p>
+
+      <div class="login-group">
+        <span class="section-label">Magic link sign-in</span>
+        <label class="muted" for="loginEmail">Work email</label>
+        <input id="loginEmail" type="email" placeholder="name@practice.com" autocomplete="email">
+        <button class="btn primary" style="width:100%" onclick="requestMagicLink()">Email me a sign-in link</button>
+        <p class="muted helper" id="magic-link-msg"></p>
+      </div>
+
+      <div class="divider">or</div>
+
+      <div class="login-group">
+        <span class="section-label">Temporary access code</span>
+        <label class="muted" for="pin">Access code</label>
+        <input id="pin" type="password" placeholder="Provided by Spect-IT" autocomplete="current-password">
+        <label class="muted" for="practiceId">Practice ID (optional)</label>
+        <input id="practiceId" type="text" placeholder="Google place_id filter">
+        <button class="btn ghost" style="width:100%" onclick="loginWithPin()">Sign in with access code</button>
+        <p class="muted helper" id="login-err" style="color:#8b4040"></p>
+      </div>
     </div>
+
     <div id="console-panel" class="hidden">
-    <div class="note">Protected by access code. Set <code>SPECTIT_PROVIDER_PIN</code> in Supabase secrets. For production, add per-practice Supabase Auth accounts.</div>
-    <div class="bar">
-      <input id="q" type="text" placeholder="Filter by practice or patient name…" oninput="render()">
-      <select id="statusFilter" onchange="render()">
-        <option value="">All statuses</option>
-        <option value="requested">Requested</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="declined">Declined</option>
-        <option value="cancelled">Cancelled</option>
-        <option value="completed">Completed</option>
-      </select>
-      <button class="btn primary" onclick="load()">Refresh</button>
-    </div>
-    <div class="status-line" id="statusLine"></div>
-    <div id="list"></div>
+      <div class="note">Staff accounts are now supported. Practice admins can invite teammates from inside this console. The shared access code remains available as a temporary bootstrap/fallback path.</div>
+
+      <div class="card account-card">
+        <div class="account-bar">
+          <div class="account-copy">
+            <div class="panel-title">Provider account</div>
+            <div class="muted" id="accountSummary">Loading account…</div>
+          </div>
+          <div class="bar">
+            <select id="practiceSelect" class="hidden" onchange="changePractice(this.value)"></select>
+            <button class="btn ghost" onclick="signOutProvider()">Sign out</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="invite-card" class="card invite-card hidden">
+        <div class="panel-title">Invite staff</div>
+        <p class="muted" style="margin-top:.35rem">Admins can invite teammates to receive a secure email sign-in link. If SMS is configured, they will also get a text notification.</p>
+        <div class="invite-form">
+          <input id="inviteName" type="text" placeholder="Full name (optional)">
+          <input id="inviteEmail" type="email" placeholder="teammate@practice.com">
+          <input id="invitePhone" type="text" placeholder="Phone for SMS (optional)">
+          <select id="inviteRole">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button class="btn primary" onclick="inviteStaff()">Send invite</button>
+        </div>
+        <p class="muted helper" id="invite-msg"></p>
+        <div id="staff-list" class="staff-list"></div>
+      </div>
+
+      <div class="bar">
+        <input id="q" type="text" placeholder="Filter by practice or patient name…" oninput="render()">
+        <select id="statusFilter" onchange="render()">
+          <option value="">All statuses</option>
+          <option value="requested">Requested</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="declined">Declined</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="completed">Completed</option>
+        </select>
+        <button class="btn primary" onclick="load()">Refresh</button>
+      </div>
+      <div class="status-line" id="statusLine"></div>
+      <div id="list"></div>
     </div>
   </div>
 
@@ -87,10 +144,30 @@
   <script src="supabase-config.js"></script>
   <script>
     let ALL = [];
-    const AUTH_KEY = 'spectit_provider_token';
+    let SESSION = null;
+    const LEGACY_AUTH_KEY = 'spectit_provider_token';
+    const PRACTICE_FILTER_KEY = 'spectit_practice_filter';
 
-    function isAuthed() {
-      return !!sessionStorage.getItem(AUTH_KEY);
+    function getClient() {
+      return window.SupabaseStorage && window.SupabaseStorage.getClient ? window.SupabaseStorage.getClient() : null;
+    }
+
+    function getLegacyToken() {
+      return sessionStorage.getItem(LEGACY_AUTH_KEY);
+    }
+
+    function setLegacyToken(token) {
+      if (token) sessionStorage.setItem(LEGACY_AUTH_KEY, token);
+      else sessionStorage.removeItem(LEGACY_AUTH_KEY);
+    }
+
+    function getSelectedPractice() {
+      return sessionStorage.getItem(PRACTICE_FILTER_KEY) || '';
+    }
+
+    function setSelectedPractice(practiceId) {
+      if (practiceId) sessionStorage.setItem(PRACTICE_FILTER_KEY, practiceId);
+      else sessionStorage.removeItem(PRACTICE_FILTER_KEY);
     }
 
     function showConsole() {
@@ -98,7 +175,42 @@
       document.getElementById('console-panel').classList.remove('hidden');
     }
 
-    async function login() {
+    function showLogin() {
+      document.getElementById('console-panel').classList.add('hidden');
+      document.getElementById('login-panel').classList.remove('hidden');
+    }
+
+    async function getAuthSession() {
+      const client = getClient();
+      if (!client) return null;
+      const result = await client.auth.getSession();
+      return result && result.data ? result.data.session : null;
+    }
+
+    async function requestMagicLink() {
+      const msg = document.getElementById('magic-link-msg');
+      const email = (document.getElementById('loginEmail').value || '').trim();
+      msg.textContent = '';
+      if (!email) {
+        msg.textContent = 'Enter your work email first.';
+        return;
+      }
+      try {
+        const { data, error } = await window.SupabaseStorage.invoke('provider-auth', {
+          action: 'request_magic_link',
+          email: email
+        });
+        if (error || !data || !data.success) {
+          msg.textContent = (data && data.error) || 'Could not send a sign-in link.';
+          return;
+        }
+        msg.textContent = 'Check ' + data.email + ' for your sign-in link.' + (data.smsSent ? ' We also sent an SMS notification.' : '');
+      } catch (e) {
+        msg.textContent = 'Could not send a sign-in link.';
+      }
+    }
+
+    async function loginWithPin() {
       const pin = document.getElementById('pin').value;
       const practiceId = document.getElementById('practiceId').value.trim();
       const err = document.getElementById('login-err');
@@ -118,43 +230,186 @@
           err.textContent = 'Could not establish a secure session.';
           return;
         }
-        sessionStorage.setItem(AUTH_KEY, data.token);
-        if (practiceId) sessionStorage.setItem('spectit_practice_filter', practiceId);
+        setLegacyToken(data.token);
+        if (practiceId) setSelectedPractice(practiceId);
         showConsole();
-        load();
+        await refreshSessionContext();
+        await load();
       } catch (e) {
         err.textContent = 'Could not verify access code.';
       }
     }
 
     async function providerCall(body) {
-      const token = sessionStorage.getItem(AUTH_KEY);
-      if (!token) throw new Error('Not signed in');
-      const { data, error } = await window.SupabaseStorage.invoke('provider-api', Object.assign({ token: token }, body));
+      const client = getClient();
+      if (!client) throw new Error('Supabase unavailable');
+
+      const session = await getAuthSession();
+      const options = { body: Object.assign({}, body || {}) };
+
+      if (session && session.access_token) {
+        options.headers = { Authorization: 'Bearer ' + session.access_token };
+      } else if (getLegacyToken()) {
+        options.body.token = getLegacyToken();
+      } else {
+        throw new Error('Not signed in');
+      }
+
+      const { data, error } = await client.functions.invoke('provider-api', options);
       if (error) throw error;
-      if (!data || data.error) throw new Error(data.error || 'Provider API error');
+      if (!data || data.error) throw new Error(data && data.error ? data.error : 'Provider API error');
       return data;
     }
 
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
     function fmtWhen(d,t){ try { return new Date(d+'T'+(t||'09:00')).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})+' · '+t; } catch(e){ return d+' '+t; } }
 
+    function practiceLabel(practiceId) {
+      if (!practiceId) return 'All accessible practices';
+      if (!SESSION || !SESSION.memberships) return practiceId;
+      const row = SESSION.memberships.find(function (m) { return m.practice_place_id === practiceId; });
+      return row ? (row.practice_place_id + ' · ' + row.role) : practiceId;
+    }
+
+    function renderStaffList(staff) {
+      const container = document.getElementById('staff-list');
+      const rows = Array.isArray(staff) ? staff : [];
+      if (!rows.length) {
+        container.innerHTML = '<div class="muted">No staff have been invited for this practice yet.</div>';
+        return;
+      }
+      container.innerHTML = rows.map(function (person) {
+        return '<div class="staff-item">' +
+          '<strong>' + esc(person.full_name || person.email) + '</strong>' +
+          '<div class="muted">' + esc(person.email) + (person.phone ? ' · ' + esc(person.phone) : '') + '</div>' +
+          '<div class="muted">' + esc(person.role || 'staff') + ' · ' + esc(person.status || 'invited') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderSessionContext() {
+      const summary = document.getElementById('accountSummary');
+      const inviteCard = document.getElementById('invite-card');
+      const practiceSelect = document.getElementById('practiceSelect');
+      const inviteMsg = document.getElementById('invite-msg');
+
+      if (!SESSION) {
+        summary.textContent = 'Not signed in.';
+        inviteCard.classList.add('hidden');
+        practiceSelect.classList.add('hidden');
+        practiceSelect.innerHTML = '';
+        return;
+      }
+
+      const practiceId = getSelectedPractice() || SESSION.selectedPracticeId || '';
+      const modeLabel = SESSION.mode === 'legacy' ? 'Shared access code session' : 'Magic-link staff session';
+      const roleLabel = SESSION.selectedRole ? (' · ' + SESSION.selectedRole) : '';
+      summary.textContent = modeLabel + (SESSION.email ? ' · ' + SESSION.email : '') + roleLabel;
+      if (SESSION.mode === 'legacy' && !practiceId) {
+        summary.textContent += ' · add a Practice ID to invite staff for a specific practice';
+      }
+
+      if (SESSION.memberships && SESSION.memberships.length > 1) {
+        const options = ['<option value="">All accessible practices</option>']
+          .concat(SESSION.memberships.map(function (m) {
+            return '<option value="' + esc(m.practice_place_id) + '"' + (m.practice_place_id === practiceId ? ' selected' : '') + '>' + esc(practiceLabel(m.practice_place_id)) + '</option>';
+          }));
+        practiceSelect.innerHTML = options.join('');
+        practiceSelect.classList.remove('hidden');
+      } else if (practiceId) {
+        practiceSelect.innerHTML = '<option value="' + esc(practiceId) + '">' + esc(practiceLabel(practiceId)) + '</option>';
+        practiceSelect.classList.remove('hidden');
+      } else {
+        practiceSelect.classList.add('hidden');
+        practiceSelect.innerHTML = '';
+      }
+
+      if (SESSION.canInvite) {
+        inviteCard.classList.remove('hidden');
+        inviteMsg.textContent = (SESSION.mode === 'legacy' && !practiceId)
+          ? 'To invite staff, sign in with the practice\'s Google place_id in the Practice ID field first.'
+          : '';
+        renderStaffList(SESSION.staff || []);
+      } else {
+        inviteCard.classList.add('hidden');
+      }
+    }
+
+    async function refreshSessionContext() {
+      const sl = document.getElementById('statusLine');
+      document.getElementById('env').textContent = 'connected';
+      try {
+        SESSION = await providerCall({ action: 'session', practicePlaceId: getSelectedPractice() || undefined });
+        if (!getSelectedPractice() && SESSION.selectedPracticeId) setSelectedPractice(SESSION.selectedPracticeId);
+        renderSessionContext();
+      } catch (e) {
+        SESSION = null;
+        setLegacyToken('');
+        sl.textContent = '';
+        showLogin();
+        document.getElementById('env').textContent = 'sign in required';
+        document.getElementById('login-err').textContent = e.message || 'Could not load provider session.';
+        throw e;
+      }
+    }
+
+    async function changePractice(practiceId) {
+      setSelectedPractice(practiceId);
+      await refreshSessionContext();
+      await load();
+    }
+
+    async function inviteStaff() {
+      const msg = document.getElementById('invite-msg');
+      const practiceId = getSelectedPractice() || (SESSION && SESSION.selectedPracticeId) || '';
+      msg.textContent = '';
+      if (!practiceId) {
+        msg.textContent = 'Select a practice first so we know who the invite belongs to.';
+        return;
+      }
+      const email = (document.getElementById('inviteEmail').value || '').trim();
+      if (!email) {
+        msg.textContent = 'Invite email is required.';
+        return;
+      }
+      try {
+        const result = await providerCall({
+          action: 'invite_staff',
+          practicePlaceId: practiceId,
+          email: email,
+          fullName: (document.getElementById('inviteName').value || '').trim(),
+          phone: (document.getElementById('invitePhone').value || '').trim(),
+          role: document.getElementById('inviteRole').value
+        });
+        msg.textContent = 'Invite sent to ' + result.invited + '.' + (result.smsSent ? ' SMS sent too.' : (result.smsConfigured ? '' : ' SMS is not configured yet.'));
+        document.getElementById('inviteName').value = '';
+        document.getElementById('inviteEmail').value = '';
+        document.getElementById('invitePhone').value = '';
+        renderStaffList(result.staff || []);
+        await refreshSessionContext();
+      } catch (e) {
+        msg.textContent = e.message || 'Could not send invite.';
+      }
+    }
+
     async function load() {
       const sl = document.getElementById('statusLine');
       if (!(window.SupabaseStorage && window.SupabaseStorage.isAvailable())) {
         document.getElementById('env').textContent = 'offline (no Supabase)';
         sl.textContent = 'Supabase is not connected in this browser. Deploy the appointments table and confirm credentials.';
-        ALL = []; render(); return;
+        ALL = [];
+        render();
+        return;
       }
-      document.getElementById('env').textContent = 'connected';
+
       sl.textContent = 'Loading appointments…';
       try {
-        const placeId = sessionStorage.getItem('spectit_practice_filter') || '';
+        const placeId = getSelectedPractice();
         const result = await providerCall({ action: 'list', practicePlaceId: placeId || undefined });
         ALL = result.appointments || [];
         sl.textContent = ALL.length + ' appointment(s) in the database.';
       } catch (e) {
-        sl.textContent = 'Could not load appointments (has the SQL table been created?).';
+        sl.textContent = 'Could not load appointments.';
         ALL = [];
       }
       render();
@@ -164,8 +419,8 @@
       if (!r) return '';
       const keys = Object.keys(r);
       if (!keys.length) return '';
-      let rx = r.prescription;
-      let head = rx ? ('Rx: ' + (rx.summary || (rx.sphere||'') )) : (keys.length + ' test result(s)');
+      var rx = r.prescription;
+      var head = rx ? ('Rx: ' + (rx.summary || (rx.sphere || ''))) : (keys.length + ' test result(s)');
       return '<div class="results"><details><summary>Attached Spect-IT results — ' + esc(head) + '</summary><pre>' + esc(JSON.stringify(r, null, 2)) + '</pre></details></div>';
     }
 
@@ -173,11 +428,14 @@
       const q = (document.getElementById('q').value || '').toLowerCase();
       const sf = document.getElementById('statusFilter').value;
       const list = document.getElementById('list');
-      let rows = ALL.filter(function (a) {
-        const hay = ((a.practice_name||'') + ' ' + (a.patient_name||'') + ' ' + (a.user_email||'')).toLowerCase();
+      const rows = ALL.filter(function (a) {
+        const hay = ((a.practice_name || '') + ' ' + (a.patient_name || '') + ' ' + (a.user_email || '')).toLowerCase();
         return (!q || hay.indexOf(q) !== -1) && (!sf || a.status === sf);
       });
-      if (!rows.length) { list.innerHTML = '<div class="empty">No appointments to show.</div>'; return; }
+      if (!rows.length) {
+        list.innerHTML = '<div class="empty">No appointments to show.</div>';
+        return;
+      }
       list.innerHTML = rows.map(function (a) {
         const st = a.status || 'requested';
         return '<div class="card">' +
@@ -197,7 +455,7 @@
             (st !== 'declined' ? '<button class="btn ghost" onclick="setStatus(\'' + esc(a.appt_id) + '\',\'declined\')">Decline</button>' : '') +
             (st !== 'completed' ? '<button class="btn ghost" onclick="setStatus(\'' + esc(a.appt_id) + '\',\'completed\')">Mark completed</button>' : '') +
           '</div>' +
-        '</div>';
+          '</div>';
       }).join('');
     }
 
@@ -218,14 +476,66 @@
           }
         }
         render();
-      } catch (e) { alert('Could not update status.'); }
+      } catch (e) {
+        alert('Could not update status.');
+      }
+    }
+
+    async function signOutProvider() {
+      const client = getClient();
+      SESSION = null;
+      ALL = [];
+      setLegacyToken('');
+      setSelectedPractice('');
+      if (client) {
+        try { await client.auth.signOut(); } catch (e) {}
+      }
+      document.getElementById('magic-link-msg').textContent = '';
+      document.getElementById('login-err').textContent = '';
+      document.getElementById('statusLine').textContent = '';
+      render();
+      showLogin();
+      document.getElementById('env').textContent = 'sign in required';
+    }
+
+    async function boot() {
+      if (!(window.SupabaseStorage && window.SupabaseStorage.isAvailable())) {
+        document.getElementById('env').textContent = 'offline (no Supabase)';
+        return;
+      }
+
+      const client = getClient();
+      if (client) {
+        client.auth.onAuthStateChange(async function (event, session) {
+          if (session) {
+            showConsole();
+            try {
+              await refreshSessionContext();
+              await load();
+            } catch (e) {}
+          } else if (!getLegacyToken()) {
+            SESSION = null;
+            showLogin();
+            document.getElementById('env').textContent = 'sign in required';
+          }
+        });
+      }
+
+      const session = await getAuthSession();
+      if (session || getLegacyToken()) {
+        showConsole();
+        try {
+          await refreshSessionContext();
+          await load();
+        } catch (e) {}
+      } else {
+        showLogin();
+        document.getElementById('env').textContent = 'sign in required';
+      }
     }
 
     window.addEventListener('load', function () {
-      setTimeout(function () {
-        if (isAuthed()) { showConsole(); load(); }
-        else { document.getElementById('env').textContent = 'sign in required'; }
-      }, 400);
+      setTimeout(function () { boot(); }, 300);
     });
   </script>
 </body>
