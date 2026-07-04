@@ -9,6 +9,7 @@ import {
   getAuthUser,
   getPracticeName,
   getProviderUrl,
+  listPracticeSummaries,
   listMemberships,
   normalizeEmail,
   sendProviderMagicLink,
@@ -38,7 +39,8 @@ serve(async (req) => {
     }
 
     if (action === "session") {
-      const selectedPracticeId = resolveSelectedPractice(actor, practicePlaceId)
+      const availablePractices = await listAccessiblePractices(supabase, actor)
+      const selectedPracticeId = resolveSelectedPractice(actor, practicePlaceId, availablePractices)
       const selectedRole = selectedPracticeId ? getRoleForPractice(actor, selectedPracticeId) : null
       const staff = selectedPracticeId && canInvite(actor, selectedPracticeId)
         ? await listStaffForPractice(supabase, selectedPracticeId)
@@ -48,6 +50,7 @@ serve(async (req) => {
         mode: actor.mode,
         email: actor.email,
         memberships: actor.memberships,
+        availablePractices,
         selectedPracticeId,
         selectedRole,
         canInvite: selectedPracticeId ? canInvite(actor, selectedPracticeId) : actor.mode === "legacy",
@@ -99,7 +102,11 @@ serve(async (req) => {
     }
 
     if (action === "invite_staff") {
-      const selectedPracticeId = resolveSelectedPractice(actor, practicePlaceId)
+      const selectedPracticeId = resolveSelectedPractice(
+        actor,
+        practicePlaceId,
+        actor.mode === "legacy" ? await listAccessiblePractices(supabase, actor) : [],
+      )
       if (!selectedPracticeId) {
         throw new Error("Select a practice before inviting staff.")
       }
@@ -200,12 +207,16 @@ async function getActor(
 function resolveSelectedPractice(
   actor: { mode: "legacy" | "staff"; practiceId: string | null; memberships: Array<{ practice_place_id: string }> },
   requestedPracticeId: string | null | undefined,
+  availablePractices: Array<{ practice_place_id: string }> = [],
 ) {
   const requested = String(requestedPracticeId || "").trim()
   if (requested) return requested
   if (actor.mode === "legacy") {
-    return actor.practiceId && actor.practiceId !== "*" ? actor.practiceId : ""
+    if (actor.practiceId && actor.practiceId !== "*") return actor.practiceId
+    if (availablePractices.length === 1) return availablePractices[0].practice_place_id
+    return ""
   }
+  if (availablePractices.length === 1) return availablePractices[0].practice_place_id
   if (actor.memberships.length === 1) return actor.memberships[0].practice_place_id
   return ""
 }
@@ -250,4 +261,19 @@ async function listStaffForPractice(
 
   if (error) throw error
   return data || []
+}
+
+async function listAccessiblePractices(
+  supabase: ReturnType<typeof createAdminClient>,
+  actor: { mode: "legacy" | "staff"; practiceId: string | null; memberships: Array<{ practice_place_id: string }> },
+) {
+  if (actor.mode === "legacy") {
+    if (actor.practiceId && actor.practiceId !== "*") {
+      return await listPracticeSummaries(supabase, [actor.practiceId])
+    }
+    return await listPracticeSummaries(supabase)
+  }
+
+  const practiceIds = actor.memberships.map((membership) => membership.practice_place_id)
+  return await listPracticeSummaries(supabase, practiceIds)
 }
