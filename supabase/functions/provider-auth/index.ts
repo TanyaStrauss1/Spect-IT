@@ -1,8 +1,18 @@
 // Spect-IT Edge Function: provider-auth
-// Validates practice console PIN. Set secret: SPECTIT_PROVIDER_PIN
+// Handles temporary shared-PIN access plus provider magic-link requests.
 // Deploy: supabase functions deploy provider-auth
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import {
+  createAdminClient,
+  getPracticeName,
+  getProviderUrl,
+  listMemberships,
+  maskEmail,
+  normalizeEmail,
+  sendProviderMagicLink,
+  sendProviderSms,
+} from "../_shared/provider-helpers.ts"
 import { signToken } from "../_shared/provider-token.ts"
 
 const corsHeaders = {
@@ -16,7 +26,47 @@ serve(async (req) => {
   }
 
   try {
-    const { pin, practiceId } = await req.json()
+    const body = await req.json()
+    const { action, pin, practiceId, email } = body
+
+    if (action === "request_magic_link") {
+      const normalizedEmail = normalizeEmail(email)
+      if (!normalizedEmail) {
+        return json({ success: false, error: "Email is required." }, 400)
+      }
+
+      const admin = createAdminClient()
+      const memberships = await listMemberships(admin, normalizedEmail)
+      if (!memberships.length) {
+        return json(
+          {
+            success: false,
+            error: "No provider access found for this email. Ask a practice admin to invite you first.",
+          },
+          404,
+        )
+      }
+
+      await sendProviderMagicLink(normalizedEmail)
+
+      const practiceName = await getPracticeName(
+        admin,
+        memberships[0]?.practice_place_id || "",
+      )
+      const sms = await sendProviderSms(
+        memberships.find((m: { phone?: string }) => !!m.phone)?.phone,
+        `Your Spect-IT sign-in link has been emailed for ${practiceName}. Open ${getProviderUrl()} after checking your inbox.`,
+      )
+
+      return json({
+        success: true,
+        email: maskEmail(normalizedEmail),
+        memberships: memberships.length,
+        smsSent: sms.sent,
+        smsConfigured: sms.configured,
+      })
+    }
+
     const expected = Deno.env.get("SPECTIT_PROVIDER_PIN")
     if (!expected) {
       return json({ success: false, configured: false, message: "Provider PIN not configured on server." })
