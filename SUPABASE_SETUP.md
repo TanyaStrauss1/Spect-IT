@@ -103,6 +103,30 @@ Set these in Supabase → **Project Settings** → **Edge Functions** → **Secr
 
 Never commit these values to git.
 
+### Smoke tests (curl)
+
+Replace `PROJECT_REF` and `ANON_KEY`, and optionally `ACCESS_TOKEN` (from a logged-in provider admin session).
+
+- **Create practice + invite first admin** (Spect-IT internal):
+
+```bash
+curl -sS "https://PROJECT_REF.functions.supabase.co/provider-admin" \
+  -H "Content-Type: application/json" \
+  -H "apikey: ANON_KEY" \
+  -H "x-spectit-admin-secret: $SPECTIT_ADMIN_SECRET" \
+  -d '{"action":"create_practice","practicePlaceId":"place_123","name":"Demo Practice","adminEmail":"admin@example.com","adminPhone":"+27..."}'
+```
+
+- **Resend invite** (practice admin; requires `ACCESS_TOKEN`):
+
+```bash
+curl -sS "https://PROJECT_REF.functions.supabase.co/provider-admin" \
+  -H "Content-Type: application/json" \
+  -H "apikey: ANON_KEY" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -d '{"action":"resend_invite","practicePlaceId":"place_123","email":"staff@example.com"}'
+```
+
 ## ✅ Step 6: Test Authentication
 
 1. Open your app
