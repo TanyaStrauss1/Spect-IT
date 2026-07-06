@@ -50,6 +50,62 @@ export async function listMemberships(admin: ReturnType<typeof createAdminClient
   return data || []
 }
 
+export async function listPracticeSummaries(
+  admin: ReturnType<typeof createAdminClient>,
+  practiceIds?: string[] | null,
+) {
+  const uniqueIds = Array.from(new Set((practiceIds || []).map((id) => String(id || "").trim()).filter(Boolean)))
+
+  if (practiceIds && !uniqueIds.length) {
+    return []
+  }
+
+  let query = admin
+    .from("appointments")
+    .select("practice_place_id,practice_name,practice_address")
+    .not("practice_place_id", "is", null)
+    .neq("practice_place_id", "")
+    .order("practice_name", { ascending: true })
+    .order("practice_place_id", { ascending: true })
+
+  if (uniqueIds.length) {
+    query = query.in("practice_place_id", uniqueIds)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+
+  const deduped = new Map<string, { practice_place_id: string; practice_name: string | null; practice_address: string | null }>()
+
+  for (const row of data || []) {
+    const placeId = String(row.practice_place_id || "").trim()
+    if (!placeId) continue
+
+    const current = deduped.get(placeId)
+    if (!current) {
+      deduped.set(placeId, {
+        practice_place_id: placeId,
+        practice_name: row.practice_name || null,
+        practice_address: row.practice_address || null,
+      })
+      continue
+    }
+
+    if (!current.practice_name && row.practice_name) {
+      current.practice_name = row.practice_name
+    }
+    if (!current.practice_address && row.practice_address) {
+      current.practice_address = row.practice_address
+    }
+  }
+
+  return Array.from(deduped.values()).sort((a, b) => {
+    const left = (a.practice_name || a.practice_place_id).toLowerCase()
+    const right = (b.practice_name || b.practice_place_id).toLowerCase()
+    return left.localeCompare(right)
+  })
+}
+
 export async function activateMemberships(
   admin: ReturnType<typeof createAdminClient>,
   email: string,

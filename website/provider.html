@@ -83,15 +83,16 @@
         <span class="section-label">Temporary access code</span>
         <label class="muted" for="pin">Access code</label>
         <input id="pin" type="password" placeholder="Provided by Spect-IT" autocomplete="current-password">
-        <label class="muted" for="practiceId">Practice ID (optional)</label>
-        <input id="practiceId" type="text" placeholder="Google place_id filter">
+        <label class="muted" for="practiceId">Practice ID (advanced, optional)</label>
+        <input id="practiceId" type="text" placeholder="Manual place_id override">
+        <p class="muted helper">Usually you can leave this blank and choose your practice after signing in.</p>
         <button class="btn ghost" style="width:100%" onclick="loginWithPin()">Sign in with access code</button>
         <p class="muted helper" id="login-err" style="color:#8b4040"></p>
       </div>
     </div>
 
     <div id="console-panel" class="hidden">
-      <div class="note">Staff accounts are now supported. Practice admins can invite teammates from inside this console. The shared access code remains available as a temporary bootstrap/fallback path.</div>
+      <div class="note">Staff accounts are now supported. Practice admins can invite teammates from inside this console. If you use the shared access code, choose your practice, send the first real admin invite, then switch to magic-link sign-in.</div>
 
       <div class="card account-card">
         <div class="account-bar">
@@ -264,11 +265,61 @@
     function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
     function fmtWhen(d,t){ try { return new Date(d+'T'+(t||'09:00')).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})+' · '+t; } catch(e){ return d+' '+t; } }
 
+    function getPracticeOptions() {
+      if (!SESSION) return [];
+      const byId = {};
+      const ordered = [];
+
+      function remember(practice) {
+        const placeId = String(practice && practice.practice_place_id ? practice.practice_place_id : '').trim();
+        if (!placeId) return;
+        if (!byId[placeId]) {
+          byId[placeId] = {
+            practice_place_id: placeId,
+            practice_name: practice.practice_name || '',
+            practice_address: practice.practice_address || ''
+          };
+          ordered.push(byId[placeId]);
+          return;
+        }
+        if (!byId[placeId].practice_name && practice.practice_name) byId[placeId].practice_name = practice.practice_name;
+        if (!byId[placeId].practice_address && practice.practice_address) byId[placeId].practice_address = practice.practice_address;
+      }
+
+      (SESSION.availablePractices || []).forEach(remember);
+      (SESSION.memberships || []).forEach(function (membership) {
+        remember({ practice_place_id: membership.practice_place_id });
+      });
+      if (SESSION.selectedPracticeId) remember({ practice_place_id: SESSION.selectedPracticeId });
+      if (getSelectedPractice()) remember({ practice_place_id: getSelectedPractice() });
+      return ordered;
+    }
+
+    function getPracticeMeta(practiceId) {
+      const target = String(practiceId || '').trim();
+      if (!target) return null;
+      return getPracticeOptions().find(function (practice) {
+        return practice.practice_place_id === target;
+      }) || null;
+    }
+
+    function practiceName(practiceId) {
+      const meta = getPracticeMeta(practiceId);
+      if (!meta) return practiceId;
+      return meta.practice_name || meta.practice_place_id;
+    }
+
     function practiceLabel(practiceId) {
       if (!practiceId) return 'All accessible practices';
-      if (!SESSION || !SESSION.memberships) return practiceId;
-      const row = SESSION.memberships.find(function (m) { return m.practice_place_id === practiceId; });
-      return row ? (row.practice_place_id + ' · ' + row.role) : practiceId;
+      const meta = getPracticeMeta(practiceId);
+      const row = SESSION && SESSION.memberships
+        ? SESSION.memberships.find(function (m) { return m.practice_place_id === practiceId; })
+        : null;
+      const parts = [meta && meta.practice_name ? meta.practice_name : practiceId];
+      if (meta && meta.practice_address) parts.push(meta.practice_address);
+      if (row && row.role) parts.push(row.role);
+      else if (SESSION && SESSION.selectedPracticeId === practiceId && SESSION.selectedRole && SESSION.mode !== 'legacy') parts.push(SESSION.selectedRole);
+      return parts.join(' · ');
     }
 
     function renderStaffList(staff) {
@@ -302,22 +353,33 @@
       }
 
       const practiceId = getSelectedPractice() || SESSION.selectedPracticeId || '';
+      const practiceOptions = getPracticeOptions();
       const modeLabel = SESSION.mode === 'legacy' ? 'Shared access code session' : 'Magic-link staff session';
       const roleLabel = SESSION.selectedRole ? (' · ' + SESSION.selectedRole) : '';
       summary.textContent = modeLabel + (SESSION.email ? ' · ' + SESSION.email : '') + roleLabel;
+      if (practiceId) {
+        summary.textContent += ' · ' + practiceName(practiceId);
+      }
       if (SESSION.mode === 'legacy' && !practiceId) {
-        summary.textContent += ' · add a Practice ID to invite staff for a specific practice';
+        summary.textContent += practiceOptions.length
+          ? ' · choose your practice below before inviting the first admin'
+          : ' · no practice match found yet; use the advanced Practice ID field if needed';
       }
 
-      if (SESSION.memberships && SESSION.memberships.length > 1) {
-        const options = ['<option value="">All accessible practices</option>']
-          .concat(SESSION.memberships.map(function (m) {
-            return '<option value="' + esc(m.practice_place_id) + '"' + (m.practice_place_id === practiceId ? ' selected' : '') + '>' + esc(practiceLabel(m.practice_place_id)) + '</option>';
-          }));
+      if (practiceOptions.length > 1) {
+        const prompt = SESSION.mode === 'legacy' ? 'Choose your practice for invites' : 'All accessible practices';
+        const options = ['<option value="">' + esc(prompt) + '</option>'];
+        if (practiceId && !practiceOptions.some(function (practice) { return practice.practice_place_id === practiceId; })) {
+          options.push('<option value="' + esc(practiceId) + '" selected>' + esc('Manual practice ID · ' + practiceId) + '</option>');
+        }
+        practiceOptions.forEach(function (practice) {
+          options.push('<option value="' + esc(practice.practice_place_id) + '"' + (practice.practice_place_id === practiceId ? ' selected' : '') + '>' + esc(practiceLabel(practice.practice_place_id)) + '</option>');
+        });
         practiceSelect.innerHTML = options.join('');
         practiceSelect.classList.remove('hidden');
-      } else if (practiceId) {
-        practiceSelect.innerHTML = '<option value="' + esc(practiceId) + '">' + esc(practiceLabel(practiceId)) + '</option>';
+      } else if (practiceId || practiceOptions.length === 1) {
+        const singlePracticeId = practiceId || practiceOptions[0].practice_place_id;
+        practiceSelect.innerHTML = '<option value="' + esc(singlePracticeId) + '">' + esc(practiceLabel(singlePracticeId)) + '</option>';
         practiceSelect.classList.remove('hidden');
       } else {
         practiceSelect.classList.add('hidden');
@@ -326,9 +388,15 @@
 
       if (SESSION.canInvite) {
         inviteCard.classList.remove('hidden');
-        inviteMsg.textContent = (SESSION.mode === 'legacy' && !practiceId)
-          ? 'To invite staff, sign in with the practice\'s Google place_id in the Practice ID field first.'
-          : '';
+        if (SESSION.mode === 'legacy' && !practiceId) {
+          inviteMsg.textContent = practiceOptions.length
+            ? 'Choose your practice above before sending the first admin invite.'
+            : 'We could not match a practice automatically yet. Use the advanced Practice ID field on the sign-in form to target your practice.';
+        } else if (SESSION.mode === 'legacy') {
+          inviteMsg.textContent = 'Use this shared-code session only to bootstrap the first admin. After that, rely on magic-link sign-in.';
+        } else {
+          inviteMsg.textContent = '';
+        }
         renderStaffList(SESSION.staff || []);
       } else {
         inviteCard.classList.add('hidden');
@@ -364,7 +432,10 @@
       const practiceId = getSelectedPractice() || (SESSION && SESSION.selectedPracticeId) || '';
       msg.textContent = '';
       if (!practiceId) {
-        msg.textContent = 'Select a practice first so we know who the invite belongs to.';
+        const practiceOptions = getPracticeOptions();
+        msg.textContent = (SESSION && SESSION.mode === 'legacy' && !practiceOptions.length)
+          ? 'We could not match a practice automatically yet. Sign out and use the advanced Practice ID field to target your practice.'
+          : 'Select a practice first so we know who the invite belongs to.';
         return;
       }
       const email = (document.getElementById('inviteEmail').value || '').trim();
@@ -381,12 +452,12 @@
           phone: (document.getElementById('invitePhone').value || '').trim(),
           role: document.getElementById('inviteRole').value
         });
-        msg.textContent = 'Invite sent to ' + result.invited + '.' + (result.smsSent ? ' SMS sent too.' : (result.smsConfigured ? '' : ' SMS is not configured yet.'));
+        const successMessage = 'Invite sent to ' + result.invited + '.' + (result.smsSent ? ' SMS sent too.' : (result.smsConfigured ? '' : ' SMS is not configured yet.'));
         document.getElementById('inviteName').value = '';
         document.getElementById('inviteEmail').value = '';
         document.getElementById('invitePhone').value = '';
-        renderStaffList(result.staff || []);
         await refreshSessionContext();
+        msg.textContent = successMessage;
       } catch (e) {
         msg.textContent = e.message || 'Could not send invite.';
       }
