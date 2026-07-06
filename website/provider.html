@@ -69,6 +69,27 @@
       <h2>Practice access</h2>
       <p class="muted" style="margin-bottom:1rem">Sign in with a secure magic link, or use the shared access code as a temporary bootstrap path.</p>
 
+      <div class="login-group" style="margin-bottom:1.25rem">
+        <details>
+          <summary>Spect-IT internal onboarding</summary>
+          <div style="margin-top:.75rem">
+            <span class="section-label">Create a practice + invite first admin</span>
+            <label class="muted" for="spectitSecret">Admin setup key</label>
+            <input id="spectitSecret" type="password" placeholder="SPECTIT_ADMIN_SECRET">
+            <label class="muted" for="newPracticePlaceId" style="margin-top:.6rem; display:block">Practice place_id</label>
+            <input id="newPracticePlaceId" type="text" placeholder="Google Place ID (or internal id)">
+            <label class="muted" for="newPracticeName" style="margin-top:.6rem; display:block">Practice name</label>
+            <input id="newPracticeName" type="text" placeholder="Practice name">
+            <label class="muted" for="newAdminEmail" style="margin-top:.6rem; display:block">First admin email</label>
+            <input id="newAdminEmail" type="email" placeholder="admin@practice.com" autocomplete="email">
+            <label class="muted" for="newAdminPhone" style="margin-top:.6rem; display:block">First admin phone (optional)</label>
+            <input id="newAdminPhone" type="text" placeholder="+27…" autocomplete="tel">
+            <button class="btn primary" style="width:100%; margin-top:.75rem" onclick="createPractice()">Create practice + send invite</button>
+            <p class="muted helper" id="create-practice-msg"></p>
+          </div>
+        </details>
+      </div>
+
       <div class="login-group">
         <span class="section-label">Magic link sign-in</span>
         <label class="muted" for="loginEmail">Work email</label>
@@ -322,6 +343,10 @@
       return parts.join(' · ');
     }
 
+    function canManageStaff() {
+      return !!(SESSION && SESSION.mode !== 'legacy' && SESSION.selectedRole === 'admin' && SESSION.selectedPracticeId);
+    }
+
     function renderStaffList(staff) {
       const container = document.getElementById('staff-list');
       const rows = Array.isArray(staff) ? staff : [];
@@ -330,10 +355,27 @@
         return;
       }
       container.innerHTML = rows.map(function (person) {
+        const manage = canManageStaff();
+        const rawEmail = String(person.email || '').trim();
+        const email = esc(rawEmail);
+        const emailArg = encodeURIComponent(rawEmail);
+        const role = esc(person.role || 'staff');
+        const status = esc(person.status || 'invited');
         return '<div class="staff-item">' +
           '<strong>' + esc(person.full_name || person.email) + '</strong>' +
-          '<div class="muted">' + esc(person.email) + (person.phone ? ' · ' + esc(person.phone) : '') + '</div>' +
-          '<div class="muted">' + esc(person.role || 'staff') + ' · ' + esc(person.status || 'invited') + '</div>' +
+          '<div class="muted">' + email + (person.phone ? ' · ' + esc(person.phone) : '') + '</div>' +
+          '<div class="muted">' + role + ' · ' + status + '</div>' +
+          (manage ? (
+            '<div class="actions" style="margin-top:.55rem">' +
+              '<button class="btn ghost" onclick="resendInvite(\\'' + emailArg + '\\')">Resend invite</button>' +
+              (status !== 'disabled'
+                ? '<button class="btn ghost" onclick="setStaffRole(\\'' + emailArg + '\\',\\'' + (person.role === 'admin' ? 'staff' : 'admin') + '\\')">' +
+                    (person.role === 'admin' ? 'Demote to staff' : 'Promote to admin') +
+                  '</button>'
+                : '') +
+              (status !== 'disabled' ? '<button class="btn ghost" onclick="disableStaff(\\'' + emailArg + '\\')">Disable</button>' : '') +
+            '</div>'
+          ) : '') +
           '</div>';
       }).join('');
     }
@@ -388,7 +430,9 @@
 
       if (SESSION.canInvite) {
         inviteCard.classList.remove('hidden');
-        if (SESSION.mode === 'legacy' && !practiceId) {
+        if (SESSION.mode === 'legacy' && SESSION.legacyPinDisabled) {
+          inviteMsg.textContent = 'Shared access code is disabled for this practice. Sign out and use magic-link sign-in.';
+        } else if (SESSION.mode === 'legacy' && !practiceId) {
           inviteMsg.textContent = practiceOptions.length
             ? 'Choose your practice above before sending the first admin invite.'
             : 'We could not match a practice automatically yet. Use the advanced Practice ID field on the sign-in form to target your practice.';
@@ -460,6 +504,85 @@
         msg.textContent = successMessage;
       } catch (e) {
         msg.textContent = e.message || 'Could not send invite.';
+      }
+    }
+
+    async function resendInvite(emailArg) {
+      const msg = document.getElementById('invite-msg');
+      msg.textContent = '';
+      try {
+        const email = decodeURIComponent(emailArg || '');
+        const practiceId = getSelectedPractice() || (SESSION && SESSION.selectedPracticeId) || '';
+        const result = await providerAdminCall({ action: 'resend_invite', practicePlaceId: practiceId, email: email });
+        msg.textContent = 'Invite re-sent to ' + result.email + '.' + (result.smsSent ? ' SMS sent too.' : (result.smsConfigured ? '' : ' SMS is not configured yet.'));
+      } catch (e) {
+        msg.textContent = (e && e.message) ? e.message : 'Could not resend invite.';
+      }
+    }
+
+    async function setStaffRole(emailArg, role) {
+      const msg = document.getElementById('invite-msg');
+      msg.textContent = '';
+      try {
+        const email = decodeURIComponent(emailArg || '');
+        const practiceId = getSelectedPractice() || (SESSION && SESSION.selectedPracticeId) || '';
+        await providerAdminCall({ action: 'set_staff_role', practicePlaceId: practiceId, email: email, role: role });
+        await refreshSessionContext();
+        msg.textContent = 'Updated role for ' + email + ' to ' + role + '.';
+      } catch (e) {
+        msg.textContent = (e && e.message) ? e.message : 'Could not update role.';
+      }
+    }
+
+    async function disableStaff(emailArg) {
+      const msg = document.getElementById('invite-msg');
+      msg.textContent = '';
+      try {
+        const email = decodeURIComponent(emailArg || '');
+        const practiceId = getSelectedPractice() || (SESSION && SESSION.selectedPracticeId) || '';
+        await providerAdminCall({ action: 'disable_staff', practicePlaceId: practiceId, email: email });
+        await refreshSessionContext();
+        msg.textContent = 'Disabled ' + email + '.';
+      } catch (e) {
+        msg.textContent = (e && e.message) ? e.message : 'Could not disable staff member.';
+      }
+    }
+
+    async function providerAdminCall(body, extraHeaders) {
+      const client = getClient();
+      if (!client) throw new Error('Supabase unavailable');
+      const session = await getAuthSession();
+
+      const headers = Object.assign({}, extraHeaders || {});
+      if (session && session.access_token) {
+        headers.Authorization = 'Bearer ' + session.access_token;
+      }
+
+      const { data, error } = await client.functions.invoke('provider-admin', { body: Object.assign({}, body || {}), headers });
+      if (error) throw error;
+      if (!data || data.error) throw new Error(data && data.error ? data.error : 'Provider admin error');
+      return data;
+    }
+
+    async function createPractice() {
+      const msg = document.getElementById('create-practice-msg');
+      msg.textContent = '';
+      try {
+        const secret = (document.getElementById('spectitSecret').value || '').trim();
+        const practicePlaceId = (document.getElementById('newPracticePlaceId').value || '').trim();
+        const name = (document.getElementById('newPracticeName').value || '').trim();
+        const adminEmail = (document.getElementById('newAdminEmail').value || '').trim();
+        const adminPhone = (document.getElementById('newAdminPhone').value || '').trim();
+        if (!secret) { msg.textContent = 'Admin setup key is required.'; return; }
+        if (!practicePlaceId || !name || !adminEmail) { msg.textContent = 'Practice place_id, name, and admin email are required.'; return; }
+
+        const result = await providerAdminCall(
+          { action: 'create_practice', practicePlaceId, name, adminEmail, adminPhone: adminPhone || null },
+          { 'x-spectit-admin-secret': secret }
+        );
+        msg.textContent = 'Practice created and invite sent to ' + result.invited + '.' + (result.smsSent ? ' SMS sent too.' : (result.smsConfigured ? '' : ' SMS is not configured yet.'));
+      } catch (e) {
+        msg.textContent = (e && e.message) ? e.message : 'Could not create practice.';
       }
     }
 

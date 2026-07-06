@@ -69,6 +69,40 @@ Complete guide to set up Supabase for your Spect-IT application.
 3. Enable **Email** provider (already enabled by default)
 4. (Optional) Configure other providers (Google, GitHub, etc.)
 
+### Practice console (provider) redirect URL
+
+The provider console uses **Supabase magic links**. You must allow redirects to the provider console URL.
+
+- Add **Redirect URL**: `https://www.spect-it.com/provider` (or your deployed provider URL)
+- Set Edge Function secret **`SPECTIT_PROVIDER_URL`** to the same URL (used when generating OTP links)
+
+## ✉️ Step 5B: Configure messaging providers (Resend + Twilio)
+
+Some notifications are sent via Edge Functions:
+
+- **Email (`send-email`)**:
+  - `RESEND_API_KEY`
+  - `EMAIL_FROM` (example: `Spect-IT <noreply@spect-it.com>`)
+- **SMS (`send-sms`)**:
+  - `TWILIO_ACCOUNT_SID`
+  - `TWILIO_AUTH_TOKEN`
+  - `TWILIO_FROM_NUMBER`
+
+Magic-link sign-in emails are sent by Supabase Auth. (If you want Resend for auth emails, configure Supabase Auth SMTP to use Resend.)
+
+## 🧩 Step 5C: Provider console/admin Edge Function secrets
+
+Set these in Supabase → **Project Settings** → **Edge Functions** → **Secrets** (or CLI).
+
+- **Provider console**
+  - `SPECTIT_PROVIDER_URL`: `https://www.spect-it.com/provider`
+  - `SPECTIT_PROVIDER_PIN`: legacy shared PIN (bootstrap only)
+- **Spect-IT internal onboarding**
+  - `SPECTIT_ADMIN_SECRET`: used by `provider-admin` to authorize `create_practice`
+  - (Optional) `SPECTIT_ADMIN_EMAILS`: comma-separated allowlist for Spect-IT staff who can create practices via logged-in Supabase auth
+
+Never commit these values to git.
+
 ## ✅ Step 6: Test Authentication
 
 1. Open your app
