@@ -42,6 +42,9 @@ serve(async (req) => {
       const availablePractices = await listAccessiblePractices(supabase, actor)
       const selectedPracticeId = resolveSelectedPractice(actor, practicePlaceId, availablePractices)
       const selectedRole = selectedPracticeId ? getRoleForPractice(actor, selectedPracticeId) : null
+      const legacyPinDisabled = actor.mode === "legacy" && selectedPracticeId
+        ? await hasActiveAdmin(supabase, selectedPracticeId)
+        : false
       const staff = selectedPracticeId && canInvite(actor, selectedPracticeId)
         ? await listStaffForPractice(supabase, selectedPracticeId)
         : []
@@ -53,7 +56,10 @@ serve(async (req) => {
         availablePractices,
         selectedPracticeId,
         selectedRole,
-        canInvite: selectedPracticeId ? canInvite(actor, selectedPracticeId) : actor.mode === "legacy",
+        canInvite: selectedPracticeId
+          ? (actor.mode === "legacy" ? !legacyPinDisabled : canInvite(actor, selectedPracticeId))
+          : actor.mode === "legacy",
+        legacyPinDisabled,
         staff,
       })
     }
@@ -110,6 +116,12 @@ serve(async (req) => {
       if (!selectedPracticeId) {
         throw new Error("Select a practice before inviting staff.")
       }
+      if (actor.mode === "legacy" && await hasActiveAdmin(supabase, selectedPracticeId)) {
+        return json(
+          { error: "Shared access code is disabled for this practice. Ask the admin to invite staff." },
+          403,
+        )
+      }
       if (!canInvite(actor, selectedPracticeId)) {
         return json({ error: "Only practice admins can invite staff." }, 403)
       }
@@ -152,6 +164,13 @@ serve(async (req) => {
       )
 
       const staff = await listStaffForPractice(supabase, selectedPracticeId)
+      await writeAudit(supabase, {
+        practice_place_id: selectedPracticeId,
+        actorEmail: actor.email || inviter,
+        actorUserId: null,
+        action: "invite_staff",
+        metadata: { invited: normalizedEmail, role: nextRole, smsSent: sms.sent, smsConfigured: sms.configured },
+      })
       return json({
         success: true,
         invited: normalizedEmail,
@@ -261,6 +280,41 @@ async function listStaffForPractice(
 
   if (error) throw error
   return data || []
+}
+
+async function hasActiveAdmin(
+  supabase: ReturnType<typeof createAdminClient>,
+  practicePlaceId: string,
+) {
+  const { data, error } = await supabase
+    .from("practice_staff")
+    .select("email")
+    .eq("practice_place_id", practicePlaceId)
+    .eq("role", "admin")
+    .neq("status", "disabled")
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return !!data?.email
+}
+
+async function writeAudit(
+  supabase: ReturnType<typeof createAdminClient>,
+  args: {
+    practice_place_id: string | null
+    actorEmail: string | null
+    actorUserId: string | null
+    action: string
+    metadata: Record<string, unknown>
+  },
+) {
+  await supabase.from("audit_log").insert({
+    practice_place_id: args.practice_place_id,
+    actor_email: args.actorEmail,
+    actor_user_id: args.actorUserId,
+    action: args.action,
+    metadata: args.metadata,
+  })
 }
 
 async function listAccessiblePractices(

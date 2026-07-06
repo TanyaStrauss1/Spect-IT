@@ -7,9 +7,9 @@ import {
   createAdminClient,
   getPracticeName,
   getProviderUrl,
+  normalizeEmail,
   listMemberships,
   maskEmail,
-  normalizeEmail,
   sendProviderMagicLink,
   sendProviderSms,
 } from "../_shared/provider-helpers.ts"
@@ -73,6 +73,32 @@ serve(async (req) => {
     }
     if (!pin || pin !== expected) {
       return json({ success: false, error: "Invalid access code" }, 401)
+    }
+
+    // Roadmap #1: Once a real admin exists for a practice, shared PIN access should be disabled.
+    // We can only enforce this when the caller provides a practiceId.
+    const resolvedPracticeId = String(practiceId || "").trim()
+    if (resolvedPracticeId) {
+      const admin = createAdminClient()
+      const { data: existingAdmin, error: adminError } = await admin
+        .from("practice_staff")
+        .select("email")
+        .eq("practice_place_id", resolvedPracticeId)
+        .eq("role", "admin")
+        .neq("status", "disabled")
+        .limit(1)
+        .maybeSingle()
+      if (adminError) throw adminError
+      if (existingAdmin?.email) {
+        return json(
+          {
+            success: false,
+            error: "Shared access code is disabled for this practice. Please sign in using a magic link.",
+            pinDisabled: true,
+          },
+          403,
+        )
+      }
     }
 
     const token = await signToken({ practiceId: practiceId || "*", exp: Date.now() + 8 * 3600 * 1000 })
