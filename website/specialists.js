@@ -47,8 +47,11 @@ function loadDirectorySpecialists(location, statusMessage) {
     specialistsList = retailers;
     filteredSpecialists = retailers;
     displaySpecialists(retailers);
-    const loadingEl = document.getElementById('specialists-loading');
-    if (loadingEl) loadingEl.style.display = 'none';
+    if (loadingEl) {
+        loadingEl.style.display = 'none';
+        loadingEl.hidden = true;
+        loadingEl.setAttribute('aria-hidden', 'true');
+    }
     if (statusMessage) setLocationStatus(statusMessage);
     return retailers;
 }
@@ -300,6 +303,8 @@ async function findNearestSpecialists() {
     try {
         // Show loading
         if (loadingEl) {
+            loadingEl.hidden = false;
+            loadingEl.setAttribute('aria-hidden', 'false');
             loadingEl.style.display = 'block';
         }
         if (containerEl) {
@@ -1540,7 +1545,7 @@ function getKnownSouthAfricanOpticalRetailers(location) {
     return retailers.map((retailer, index) => {
         const hasLoc = location && typeof location.lat === 'number' && typeof location.lng === 'number';
         const distance = hasLoc ? calculateDistance(location, { lat: retailer.lat, lng: retailer.lng }) : null;
-        const province = getProvinceFromLocation({ lat: retailer.lat, lng: retailer.lng });
+            const province = getProvinceFromLocation({ lat: retailer.lat, lng: retailer.lng }, retailer.address);
         const city = extractCityFromAddress(retailer.address);
         
         return {
@@ -2077,63 +2082,67 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
 
 // Determine South African province from location or address
 function getProvinceFromLocation(location, address) {
-    const lat = location.lat;
-    const lng = location.lng;
+    const lat = location && location.lat;
+    const lng = location && location.lng;
     const addressLower = (address || '').toLowerCase();
-    
-    // Province boundaries (approximate)
-    // Gauteng
-    if ((lat >= -26.5 && lat <= -25.0 && lng >= 27.0 && lng <= 29.0) || 
-        addressLower.includes('johannesburg') || addressLower.includes('pretoria') || 
-        addressLower.includes('sandton') || addressLower.includes('gauteng')) {
+
+    if (addressLower.includes('gauteng') || addressLower.includes('johannesburg') || addressLower.includes('pretoria') ||
+        addressLower.includes('sandton') || addressLower.includes('soweto') || addressLower.includes('centurion') ||
+        addressLower.includes('randburg') || addressLower.includes('roodepoort') || addressLower.includes('midrand') ||
+        addressLower.includes('benoni') || addressLower.includes('boksburg') || addressLower.includes('germiston') ||
+        addressLower.includes('krugersdorp') || addressLower.includes('alberton') || addressLower.includes('vereeniging')) {
         return 'Gauteng';
     }
-    // Western Cape
-    if ((lat >= -35.0 && lat <= -32.0 && lng >= 17.0 && lng <= 20.0) || 
-        addressLower.includes('cape town') || addressLower.includes('western cape') ||
-        addressLower.includes('claremont') || addressLower.includes('green point') ||
-        addressLower.includes('sea point')) {
+    if (addressLower.includes('western cape') || addressLower.includes('cape town') || addressLower.includes('stellenbosch') ||
+        addressLower.includes('paarl') || addressLower.includes('george') || addressLower.includes('knysna') ||
+        addressLower.includes('worcester') || addressLower.includes('somerset west') || addressLower.includes('hermanus') ||
+        addressLower.includes('mossel bay') || addressLower.includes('oudtshoorn') || addressLower.includes('plettenberg') ||
+        addressLower.includes('claremont') || addressLower.includes('sea point') || addressLower.includes('green point') ||
+        addressLower.includes('durbanville') || addressLower.includes('fish hoek') || addressLower.includes('muizenberg')) {
         return 'Western Cape';
     }
-    // KwaZulu-Natal
-    if ((lat >= -30.5 && lat <= -28.0 && lng >= 29.0 && lng <= 32.0) || 
-        addressLower.includes('durban') || addressLower.includes('kwazulu-natal') ||
-        addressLower.includes('umhlanga') || addressLower.includes('bere') ||
-        addressLower.includes('pietermaritzburg')) {
+    if (addressLower.includes('kwazulu') || addressLower.includes('durban') || addressLower.includes('umhlanga') ||
+        addressLower.includes('pietermaritzburg') || addressLower.includes('ballito') || addressLower.includes('pinetown') ||
+        addressLower.includes('westville') || addressLower.includes('richards bay') || addressLower.includes('newcastle')) {
         return 'KwaZulu-Natal';
     }
-    // Eastern Cape
-    if ((lat >= -34.0 && lat <= -31.0 && lng >= 23.0 && lng <= 28.0) || 
-        addressLower.includes('port elizabeth') || addressLower.includes('east london') ||
-        addressLower.includes('eastern cape') || addressLower.includes('gqeberha')) {
+    if (addressLower.includes('eastern cape') || addressLower.includes('port elizabeth') || addressLower.includes('gqeberha') ||
+        addressLower.includes('east london') || addressLower.includes('jeffreys bay') || addressLower.includes('grahamstown') ||
+        addressLower.includes('makhanda') || addressLower.includes('uitenhage') || addressLower.includes('kariega')) {
         return 'Eastern Cape';
     }
-    // Free State
-    if ((lat >= -30.0 && lat <= -27.0 && lng >= 24.0 && lng <= 29.0) || 
-        addressLower.includes('bloemfontein') || addressLower.includes('free state')) {
+    if (addressLower.includes('free state') || addressLower.includes('bloemfontein') || addressLower.includes('welkom')) {
         return 'Free State';
     }
-    // Mpumalanga
-    if ((lat >= -26.0 && lat <= -24.0 && lng >= 29.0 && lng <= 32.0) || 
-        addressLower.includes('nelspruit') || addressLower.includes('mpumalanga')) {
+    if (addressLower.includes('mpumalanga') || addressLower.includes('nelspruit') || addressLower.includes('mbombela')) {
         return 'Mpumalanga';
     }
-    // Limpopo
-    if ((lat >= -25.0 && lat <= -22.0 && lng >= 27.0 && lng <= 31.0) || 
-        addressLower.includes('polokwane') || addressLower.includes('limpopo')) {
+    if (addressLower.includes('limpopo') || addressLower.includes('polokwane')) {
         return 'Limpopo';
     }
-    // Northern Cape
-    if ((lat >= -30.0 && lat <= -26.0 && lng >= 20.0 && lng <= 25.0) || 
-        addressLower.includes('kimberley') || addressLower.includes('northern cape')) {
+    if (addressLower.includes('northern cape') || addressLower.includes('kimberley') || addressLower.includes('upington') ||
+        addressLower.includes('springbok')) {
         return 'Northern Cape';
     }
-    // North West
-    if ((lat >= -27.5 && lat <= -25.0 && lng >= 24.0 && lng <= 28.0) || 
-        addressLower.includes('north west') || addressLower.includes('rustenburg')) {
+    if (addressLower.includes('north west') || addressLower.includes('northwest') || addressLower.includes('rustenburg') ||
+        addressLower.includes('potchefstroom') || addressLower.includes('klerksdorp') || addressLower.includes('mafikeng') ||
+        addressLower.includes('mahikeng')) {
         return 'North West';
     }
-    
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') return 'Unknown';
+
+    // Approximate boxes; Garden Route sits east of Cape Town.
+    if (lat >= -35.0 && lat <= -31.2 && lng >= 17.0 && lng <= 24.2) return 'Western Cape';
+    if (lat >= -26.7 && lat <= -25.0 && lng >= 27.0 && lng <= 29.3) return 'Gauteng';
+    if (lat >= -31.2 && lat <= -26.8 && lng >= 28.7 && lng <= 32.9) return 'KwaZulu-Natal';
+    if (lat >= -34.5 && lat <= -30.5 && lng >= 23.5 && lng <= 30.0) return 'Eastern Cape';
+    if (lat >= -30.5 && lat <= -26.5 && lng >= 24.2 && lng <= 29.3) return 'Free State';
+    if (lat >= -27.2 && lat <= -24.0 && lng >= 29.2 && lng <= 32.2) return 'Mpumalanga';
+    if (lat >= -25.2 && lat <= -22.0 && lng >= 26.5 && lng <= 31.8) return 'Limpopo';
+    if (lat >= -32.8 && lat <= -26.0 && lng >= 16.4 && lng <= 25.5) return 'Northern Cape';
+    if (lat >= -28.2 && lat <= -24.8 && lng >= 22.5 && lng <= 28.2) return 'North West';
+
     return 'Unknown';
 }
 
