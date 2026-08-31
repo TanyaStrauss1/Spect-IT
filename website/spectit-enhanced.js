@@ -30,13 +30,16 @@
             });
         }
         // Close the mobile menu after tapping a link or the backdrop
-        document.querySelectorAll('.nav-links a').forEach(function (a) {
+        document.querySelectorAll('.nav-links a, .nav-links button').forEach(function (a) {
             a.addEventListener('click', function () { body.classList.remove('nav-open'); });
         });
         document.addEventListener('click', function (e) {
-            if (body.classList.contains('nav-open') && e.target === body) {
-                body.classList.remove('nav-open');
-            }
+            if (!body.classList.contains('nav-open')) return;
+            var links = document.querySelector('.nav-links');
+            if (toggle && toggle.contains(e.target)) return;
+            if (links && links.contains(e.target)) return;
+            body.classList.remove('nav-open');
+            if (toggle) toggle.setAttribute('aria-expanded', 'false');
         });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') body.classList.remove('nav-open');

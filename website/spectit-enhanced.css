@@ -589,6 +589,32 @@ a:focus-visible, button:focus-visible, summary:focus-visible, .btn:focus-visible
 .bk-status.cancelled, .bk-status.declined { background: #faf0f0; color: #8b4040; border-color: rgba(139, 64, 64, .2); }
 .bk-cancel { background: none; border: none; color: var(--danger); font-weight: 600; cursor: pointer; font-size: .85rem; }
 
+.city-presets {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+    margin-top: 1rem;
+}
+.city-presets-label { font-weight: 600; font-size: .9rem; color: var(--muted, #5b6570); margin-right: .25rem; }
+.city-chip {
+    background: var(--surface, #fff); color: var(--ink, #152a45);
+    border: 1px solid var(--line, #e6e8f0); border-radius: 999px;
+    padding: .45rem .9rem; font-weight: 600; font-size: .88rem; cursor: pointer;
+}
+.city-chip:hover { border-color: var(--line-gold, #c9a962); }
+.manual-location-panel {
+    margin-top: 1rem; padding: 1rem 1.15rem; background: var(--surface-2, #f7f8fb);
+    border: 1px solid var(--line, #e6e8f0); border-radius: 12px;
+}
+.manual-location-panel label { display: block; font-weight: 600; margin-bottom: .5rem; }
+.manual-location-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.manual-location-row input { flex: 1; min-width: 220px; padding: .7rem .9rem; border: 1px solid var(--line, #e6e8f0); border-radius: 10px; }
+.directory-hint { margin: .85rem 0 0; font-size: .88rem; color: var(--muted, #5b6570); }
+.directory-overview {
+    padding: 1.5rem; background: var(--surface-2, #f7f8fb);
+    border: 1px solid var(--line, #e6e8f0); border-radius: 14px;
+}
+.directory-overview ul { margin: 1rem 0 0; padding-left: 1.2rem; }
+.results-disclaimer { font-size: .9rem; opacity: .75; margin: .5rem 0 1.25rem; }
+
 /* "My appointments" launcher */
 .bk-launch { display: inline-flex; align-items: center; gap: .5rem; margin-top: 1rem; }
 

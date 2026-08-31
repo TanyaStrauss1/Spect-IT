@@ -5,9 +5,9 @@
  * optionally attaching their latest Spect-IT vision results for context.
  *
  * MVP notes:
- *  - Availability is simulated (deterministic per practice+day) until real
- *    provider accounts/schedules exist. Bookings are stored locally and, when
- *    a backend is available, can be forwarded. A confirmation + .ics is given.
+ *  - Times offered here are requested times, not a live practice diary.
+ *    The practice confirms. Bookings are stored locally and, when a backend
+ *    is available, can be forwarded. A confirmation + .ics is given.
  * ========================================================================== */
 (function () {
   'use strict';
@@ -36,7 +36,15 @@
   function findSpecialist(placeId) {
     try {
       if (typeof specialistsList !== 'undefined' && Array.isArray(specialistsList)) {
-        return specialistsList.find(function (s) { return s.place_id === placeId; }) || null;
+        var found = specialistsList.find(function (s) { return s.place_id === placeId; });
+        if (found) return found;
+      }
+    } catch (e) {}
+    try {
+      if (typeof getKnownSouthAfricanOpticalRetailers === 'function') {
+        var loc = (typeof userLocation !== 'undefined' && userLocation) ? userLocation : { lat: -26.2041, lng: 28.0473 };
+        var dir = getKnownSouthAfricanOpticalRetailers(loc);
+        return dir.find(function (s) { return s.place_id === placeId; }) || null;
       }
     } catch (e) {}
     return null;
@@ -69,13 +77,19 @@
   }
   function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function slotsFor(placeId, dateStr) {
+    var taken = {};
+    readAppointments().forEach(function (a) {
+      if (!a || a.status === 'cancelled' || a.status === 'declined') return;
+      if (a.specialist && a.specialist.place_id === placeId && a.date === dateStr && a.time) {
+        taken[a.time] = true;
+      }
+    });
     var slots = [];
     for (var h = 9; h <= 16; h++) {
       ['00', '30'].forEach(function (m) {
         if (h === 16 && m === '30') return;
         var time = String(h).padStart(2, '0') + ':' + m;
-        var taken = (hashStr(placeId + dateStr + time) % 3 === 0);
-        slots.push({ time: time, taken: taken });
+        slots.push({ time: time, taken: !!taken[time] });
       });
     }
     return slots;
@@ -149,13 +163,13 @@
     var slotHtml = '';
     if (booking.date) {
       var slots = slotsFor(booking.specialist.place_id, booking.date);
-      slotHtml = '<div class="bk-slots-title">Available times</div><div class="bk-slots">' +
+      slotHtml = '<div class="bk-slots-title">Request a time</div><div class="bk-slots">' +
         slots.map(function (s) {
           if (s.taken) return '<button class="bk-slot taken" disabled>' + s.time + '</button>';
           var on = booking.time === s.time;
           return '<button class="bk-slot' + (on ? ' on' : '') + '" onclick="SpectitBooking.setTime(\'' + s.time + '\')">' + s.time + '</button>';
         }).join('') + '</div>' +
-        '<p class="bk-note">Live availability is confirmed with the practice after you request the booking.</p>';
+        '<p class="bk-note">These are requested times, not a live diary. The practice confirms availability after you send the request.</p>';
     }
     body().innerHTML = stepHeader(2, 'Pick a date &amp; time') +
       '<div class="bk-days">' + btns + '</div>' + slotHtml +

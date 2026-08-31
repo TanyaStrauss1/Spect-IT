@@ -204,9 +204,15 @@ class PremiumDashboard {
 
         dashboardContainer.innerHTML = `
             <div class="premium-dashboard">
-                <h2>📊 Premium Analytics Dashboard</h2>
-                <p style="text-align: center; padding: 3rem; opacity: 0.7;">
-                    Complete your first test to see premium analytics and insights!
+                <h2>Screening insights</h2>
+                <p style="text-align: center; padding: 2rem 1rem 0.5rem; opacity: 0.8;">
+                    Complete your first screening test to see analytics here.
+                </p>
+                <p style="text-align: center; padding: 0 1rem 1.5rem; font-size: 0.9rem; opacity: 0.7;">
+                    Results are a screening, not a diagnosis or a dispensable prescription.
+                </p>
+                <p style="text-align: center; padding-bottom: 2rem;">
+                    <a href="#tests" class="btn btn-gradient">Start a screening test</a>
                 </p>
             </div>
         `;

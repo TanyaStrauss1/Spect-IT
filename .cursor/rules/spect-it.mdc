@@ -1,0 +1,12 @@
+---
+description: Spect-IT product conventions for every session
+alwaysApply: true
+---
+
+# Spect-IT
+
+- The live product is `website/` (static HTML/CSS/JS). `apps/web` is not what spect-it.com serves.
+- Frame every patient result as **screening**, not a diagnosis or final prescription.
+- Never add fake checkout, fake payment redirects, or retailer web scraping.
+- Deploy the live site with `vercel --prod` from `website/` (project `spect-it-app1`).
+- Do not commit `supabase/.temp/*` or secrets (`.env`, API keys).
