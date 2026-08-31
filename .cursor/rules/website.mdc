@@ -1,0 +1,14 @@
+---
+description: Conventions when editing the live Spect-IT website
+globs: website/**
+alwaysApply: false
+---
+
+# website/
+
+- Keep `index.html` as the shell. Add behavior in existing modules (`tests.js`, `shop.js`, `specialists.js`, `spectit-booking.js`).
+- Shop checkout must be an enquiry form. Button copy: "Request this order", never "Complete Purchase".
+- Product images use `SpectitProductImages` (SVG data URIs). Do not use via.placeholder.com.
+- Provider UI lives in `provider.html`. Patient booking lives in `spectit-booking.js`.
+- Specialist search must work without GPS or Google Places via the curated SA directory. Booking times are requests, not a live diary.
+- After UI changes, verify the flow in the browser (not a single screenshot).

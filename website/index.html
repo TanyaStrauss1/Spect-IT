@@ -63,6 +63,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header>
         <nav class="container">
             <div class="logo">
@@ -77,6 +78,11 @@
                 <li><a href="#find-specialists" class="nav-link">Find Specialists</a></li>
                 <li><a href="#results" class="nav-link">Results</a></li>
                 <li><a href="#tests" class="nav-link nav-cta">Start free test</a></li>
+                <li>
+                    <button type="button" class="cart-toggle" onclick="toggleCart()" aria-label="Open order list">
+                        Order list <span id="cart-count" class="cart-count">0</span>
+                    </button>
+                </li>
             </ul>
             <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -84,7 +90,7 @@
         </nav>
     </header>
 
-    <main>
+    <main id="main-content">
         <!-- Hero Section -->
         <section id="home" class="hero">
             <span class="hero-orb o1" aria-hidden="true"></span>
@@ -345,7 +351,9 @@
                 <div id="premium-dashboard"></div>
                 <div id="results-container">
                     <div class="no-results">
-                        <p>No test results yet. Complete a test to see your results here.</p>
+                        <p>No screening results yet. Complete a test to see your results here.</p>
+                        <p class="results-disclaimer">Spect-IT results are a screening, not a diagnosis or a dispensable prescription.</p>
+                        <a href="#tests" class="btn btn-gradient">Start a screening test</a>
                     </div>
                 </div>
             </div>
@@ -356,8 +364,8 @@
             <div class="container">
                 <h2 class="section-heading" style="text-align:center;margin-bottom:.5rem">Find Eye Care Specialists</h2>
                 <p class="section-subtitle" style="margin-bottom: 1.5rem;">
-                    Search <strong>optometrists</strong>, <strong>ophthalmologists</strong>, and <strong>opticians</strong> across South Africa<br>
-                    <span style="color: var(--accent-dark, #a8864a); font-weight: 500;">By province and proximity • Distance calculation • Book appointments online</span>
+                    Browse the Spect-IT directory of <strong>optometrists</strong>, <strong>ophthalmologists</strong>, and <strong>opticians</strong> across South Africa.<br>
+                    <span style="color: var(--accent-dark, #a8864a); font-weight: 500;">Pick a city or share your location • Request a time • The practice confirms</span>
                 </p>
                 <div style="margin-bottom: 1.25rem;">
                     <button class="btn btn-secondary" onclick="myAppointments()" style="border-radius: 999px; font-weight: 600;">📅 My appointments</button>
@@ -367,8 +375,8 @@
                 <div class="location-controls">
                     <div class="location-status" id="location-status" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: linear-gradient(135deg, #0c1524 0%, #1e3a5f 100%); border-radius: 14px; color: white; border: 1px solid rgba(201,169,98,.25); flex-wrap: wrap; gap: 1rem;">
                         <div style="flex: 1; min-width: 200px;">
-                            <span id="location-text" style="font-size: 1.1rem; font-weight: 500; display: block; margin-bottom: 0.5rem;">📍 Click to find specialists near you</span>
-                            <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">Uses your current location or enter an address manually</p>
+                            <span id="location-text" style="font-size: 1.1rem; font-weight: 500; display: block; margin-bottom: 0.5rem;">Browse the directory, or find specialists near you</span>
+                            <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">Location is optional. Times you request are confirmed by the practice.</p>
                         </div>
                         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                             <button class="btn btn-primary" id="find-specialists-btn" onclick="findNearestSpecialists()" 
@@ -383,6 +391,25 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <div id="manual-location-panel" class="manual-location-panel" hidden>
+                        <label for="location-address">City or address</label>
+                        <div class="manual-location-row">
+                            <input type="text" id="location-address" placeholder="e.g. Johannesburg, South Africa" onkeypress="if(event.key === 'Enter') searchByAddress()">
+                            <button class="btn btn-primary" type="button" onclick="searchByAddress()">Search</button>
+                            <button class="btn btn-secondary" type="button" onclick="resetLocationSearch()">Clear</button>
+                        </div>
+                    </div>
+                    <div class="city-presets" id="city-presets">
+                        <span class="city-presets-label">Quick city</span>
+                        <button type="button" class="city-chip" onclick="searchByCity('Johannesburg')">Johannesburg</button>
+                        <button type="button" class="city-chip" onclick="searchByCity('Cape Town')">Cape Town</button>
+                        <button type="button" class="city-chip" onclick="searchByCity('Durban')">Durban</button>
+                        <button type="button" class="city-chip" onclick="searchByCity('Pretoria')">Pretoria</button>
+                        <button type="button" class="city-chip" onclick="searchByCity('Port Elizabeth')">Gqeberha</button>
+                        <button type="button" class="city-chip" onclick="searchByCity('Bloemfontein')">Bloemfontein</button>
+                    </div>
+                    <p class="directory-hint">This directory works without sharing your location. Spect-IT does not show live practice diaries.</p>
                     
                     <div class="distance-filter" style="margin-top: 1rem; padding: 1.25rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                         <label for="distance-slider" style="font-weight: 600; color: #333; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
@@ -418,17 +445,51 @@
         <section id="shop" class="shop-section">
             <div class="container">
                 <h2>Shop</h2>
-                <p class="section-subtitle">Browse eyewear products from trusted retailers</p>
-                
-                <div id="products-loading" style="display: none; text-align: center; padding: 2rem;">
-                    <p>🛍️ Loading products...</p>
+                <p class="section-subtitle">A curated list of frames, lenses, and sunglasses from South African retailers. Prices are indicative. Request an order — we do not take payment on this site.</p>
+
+                <div class="shop-toolbar">
+                    <div class="category-tabs" role="tablist" aria-label="Product categories">
+                        <button type="button" class="category-tab active" data-category="all" onclick="filterProducts('all')">All</button>
+                        <button type="button" class="category-tab" data-category="frames" onclick="filterProducts('frames')">Frames</button>
+                        <button type="button" class="category-tab" data-category="sunglasses" onclick="filterProducts('sunglasses')">Sunglasses</button>
+                        <button type="button" class="category-tab" data-category="contact-lenses" onclick="filterProducts('contact-lenses')">Contact lenses</button>
+                        <button type="button" class="category-tab" data-category="reading-glasses" onclick="filterProducts('reading-glasses')">Reading</button>
+                    </div>
+                    <label class="shop-search">
+                        <span class="sr-only">Search products</span>
+                        <input type="search" id="product-search" placeholder="Search brand or product" oninput="searchProducts(this.value)">
+                    </label>
+                    <p id="search-results-count" class="search-results-count"></p>
                 </div>
-                
+
+                <div id="products-loading" style="display: none; text-align: center; padding: 2rem;">
+                    <p>Loading products…</p>
+                </div>
+
                 <div id="products-container" class="products-grid">
                     <!-- Products will be loaded here -->
                 </div>
             </div>
         </section>
+
+        <aside id="cart-sidebar" class="cart-sidebar" aria-hidden="true" aria-label="Order list">
+            <div class="cart-header">
+                <h3>Your order list</h3>
+                <button type="button" class="cart-close" onclick="toggleCart()" aria-label="Close order list">&times;</button>
+            </div>
+            <div id="cart-items" class="cart-items">
+                <p class="cart-empty">Your order list is empty</p>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-totals">
+                    <div class="checkout-row"><span>Indicative subtotal</span><span id="cart-subtotal">R0.00</span></div>
+                    <div class="checkout-row"><span>VAT (15%)</span><span id="cart-vat">R0.00</span></div>
+                    <div class="checkout-row checkout-total"><span>Indicative total</span><span id="cart-total">R0.00</span></div>
+                </div>
+                <p class="enquiry-note">No payment is taken here. We pass your list to the retailer to confirm stock and price.</p>
+                <button type="button" id="checkout-btn" class="btn btn-primary" onclick="proceedToCheckout()" disabled>Request this order</button>
+            </div>
+        </aside>
 
         <!-- FAQ -->
         <section id="faq" class="faq-section">
@@ -493,17 +554,17 @@
     <script src="lidar-engine.js"></script>
     <script src="premium-features.js"></script>
     <script src="spectit-location.js"></script>
-    <script src="premium-dashboard.js"></script>
-    <script src="tests.js?v=6.7"></script>
+    <script src="premium-dashboard.js?v=6.8"></script>
+    <script src="tests.js?v=6.8"></script>
     <script src="app.js"></script>
-    <script src="specialists.js"></script>
+    <script src="specialists.js?v=6.9"></script>
     <script src="shop.js"></script>
     <script src="email-signup-modal.js"></script>
     <script src="spectit-prescription.js"></script>
     <script src="spectit-calibration.js"></script>
-    <script src="spectit-booking.js"></script>
+    <script src="spectit-booking.js?v=6.8"></script>
     <script src="spectit-export.js"></script>
-    <script src="spectit-enhanced.js"></script>
+    <script src="spectit-enhanced.js?v=6.8"></script>
     
     <!-- Initialize app with error handling -->
     <script>

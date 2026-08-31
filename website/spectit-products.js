@@ -15,7 +15,7 @@
         price: 450.00,
         currency: 'ZAR',
         retailer: 'Spec-Savers',
-        image: 'https://via.placeholder.com/300x300?text=Contact+Lenses',
+        image: (window.SpectitProductImages && window.SpectitProductImages.product('Contact Lenses', 'contact-lenses')) || '',
         description: 'Premium daily disposable contact lenses with UV protection',
         available: true,
         rating: 4.5,
@@ -29,7 +29,7 @@
         price: 380.00,
         currency: 'ZAR',
         retailer: 'OPSM',
-        image: 'https://via.placeholder.com/300x300?text=Contact+Lenses',
+        image: (window.SpectitProductImages && window.SpectitProductImages.product('Contact Lenses', 'contact-lenses')) || '',
         description: 'Comfortable monthly lenses with high oxygen permeability',
         available: true,
         rating: 4.3,
@@ -43,7 +43,7 @@
         price: 520.00,
         currency: 'ZAR',
         retailer: 'Vision Express',
-        image: 'https://via.placeholder.com/300x300?text=Contact+Lenses',
+        image: (window.SpectitProductImages && window.SpectitProductImages.product('Contact Lenses', 'contact-lenses')) || '',
         description: 'Monthly toric lenses for astigmatism correction',
         available: true,
         rating: 4.6,
@@ -59,7 +59,7 @@
         price: 1890.00,
         currency: 'ZAR',
         retailer: 'OPSM',
-        image: 'https://via.placeholder.com/300x300?text=Ray-Ban+Wayfarer',
+        image: (window.SpectitProductImages && window.SpectitProductImages.product('Ray-Ban Wayfarer', 'frames')) || '',
         description: 'Classic wayfarer frame in black',
         available: true,
         sizes: ['Small', 'Medium', 'Large'],
@@ -75,7 +75,7 @@
         price: 2450.00,
         currency: 'ZAR',
         retailer: 'Vision Express',
-        image: 'https://via.placeholder.com/300x300?text=Oakley+Holbrook',
+        image: (window.SpectitProductImages && window.SpectitProductImages.product('Oakley Holbrook', 'frames')) || '',
         description: 'Modern rectangular frame with metal accents',
         available: true,
         sizes: ['Medium', 'Large'],
@@ -93,7 +93,7 @@
         price: 120.00,
         currency: 'ZAR',
         retailer: 'Clicks',
-        image: 'https://via.placeholder.com/300x300?text=Reading+Glasses',
+        image: (window.SpectitProductImages && window.SpectitProductImages.product('Reading Glasses', 'reading-glasses')) || '',
         description: 'Basic reading glasses, strength +1.00',
         available: true,
         strengths: ['+1.00', '+1.50', '+2.00', '+2.50', '+3.00'],
@@ -110,7 +110,7 @@
         price: 1650.00,
         currency: 'ZAR',
         retailer: 'OPSM',
-        image: 'https://via.placeholder.com/300x300?text=Ray-Ban+Aviator',
+        image: (window.SpectitProductImages && window.SpectitProductImages.product('Ray-Ban Aviator', 'sunglasses')) || '',
         description: 'Classic aviator sunglasses with green lenses',
         available: true,
         rating: 4.8,
@@ -138,7 +138,7 @@
         <div class="product-card" data-product-id="${product.id}">
           <div class="product-image">
             <img src="${product.image}" alt="${product.name}" 
-                 onerror="this.src='https://via.placeholder.com/300x300?text=${encodeURIComponent(product.name.substring(0, 20))}'">
+                 onerror="this.src=(window.SpectitProductImages && window.SpectitProductImages.product('${product.name.replace(/'/g, "\\'")}')) || this.src">
             <span class="stock-badge in-stock">In Stock</span>
           </div>
           <div class="product-info">

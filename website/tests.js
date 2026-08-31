@@ -3655,7 +3655,7 @@ function updateResultsDisplay() {
     const recentResults = testHistory.slice(-5).reverse();
     
     if (recentResults.length === 0) {
-        container.innerHTML = '<div class="no-results"><p>No test results yet. Complete a test to see your results here.</p></div>';
+        container.innerHTML = '<div class="no-results"><p>No screening results yet. Complete a test to see your results here.</p><p class="results-disclaimer">Spect-IT results are a screening, not a diagnosis or a dispensable prescription.</p><p><a href="#tests" class="btn btn-gradient">Start a screening test</a></p></div>';
         return;
     }
     

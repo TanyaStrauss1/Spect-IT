@@ -29,13 +29,37 @@ function updateDistanceFilter(value) {
     }
 }
 
+function hasUserLocation() {
+    return !!(userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lng === 'number');
+}
+
+function setLocationStatus(message, color) {
+    const locationText = document.getElementById('location-text');
+    if (!locationText) return;
+    locationText.textContent = message;
+    locationText.style.color = color || '';
+}
+
+// Curated SA directory — works without GPS or Google Places.
+function loadDirectorySpecialists(location, statusMessage) {
+    const loc = location && typeof location.lat === 'number' ? location : null;
+    const retailers = getKnownSouthAfricanOpticalRetailers(loc);
+    specialistsList = retailers;
+    filteredSpecialists = retailers;
+    displaySpecialists(retailers);
+    const loadingEl = document.getElementById('specialists-loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (statusMessage) setLocationStatus(statusMessage);
+    return retailers;
+}
+
 // Apply distance filter
 function applyDistanceFilter() {
     if (specialistsList.length > 0) {
         displaySpecialists(specialistsList);
-    } else {
-        alert('Please search for specialists first.');
+        return;
     }
+    loadDirectorySpecialists(userLocation, 'Browse the Spect-IT directory, or pick a city to sort by distance.');
 }
 
 // Background sync system for optometrist database
@@ -63,16 +87,10 @@ async function syncOptometristDatabase(location = null) {
         // Use user location if available, otherwise use a central South Africa location
         const syncLocation = location || userLocation || { lat: -29.0, lng: 24.0 }; // Central SA
         
-        // 1. Scrape from web sources
-        const scrapedOptometrists = await scrapeOptometristsFromWeb(syncLocation);
-        console.log(`✅ Scraped ${scrapedOptometrists.length} optometrists from web`);
-        
-        // 2. Get known retailers
         const knownRetailers = getKnownSouthAfricanOpticalRetailers(syncLocation);
         console.log(`✅ Loaded ${knownRetailers.length} known retailers`);
         
-        // 3. Combine and save to database
-        const allOptometrists = [...scrapedOptometrists, ...knownRetailers];
+        const allOptometrists = knownRetailers;
         
         if (window.saveOptometristsBatchToSupabase && allOptometrists.length > 0) {
             const result = await window.saveOptometristsBatchToSupabase(allOptometrists);
@@ -181,24 +199,6 @@ async function scrapeCapeTownOptometrists() {
                         
                         // Only include if within Western Cape (roughly 200km from Cape Town)
                         if (distance <= 200) {
-                            // AI-Enhanced: Validate location using AI Vision Engine
-                            let validatedLocation = placeLocation;
-                            let aiConfidence = 0.5;
-                            
-                            if (window.aiVisionEngine && window.aiVisionEngine.estimateDistanceAI) {
-                                try {
-                                    const aiValidation = await window.aiVisionEngine.estimateDistanceAI(placeLocation);
-                                    if (aiValidation && aiValidation.confidence > 0.7) {
-                                        validatedLocation = aiValidation.location || placeLocation;
-                                        aiConfidence = aiValidation.confidence;
-                                        console.log('[AI] Location validated for', place.name, 'with confidence', aiConfidence);
-                                    }
-                                } catch (aiError) {
-                                    console.warn('[AI] Location validation failed (non-critical):', aiError);
-                                }
-                            }
-                            
-                            // Extract city and province from address components
                             const addressComponents = place.address_components || [];
                             let city = 'Cape Town';
                             let province = 'Western Cape';
@@ -217,7 +217,7 @@ async function scrapeCapeTownOptometrists() {
                                 name: place.name,
                                 type: determineSpecialistType(place, ''),
                                 address: place.formatted_address || place.vicinity || 'Address not available',
-                                location: validatedLocation,
+                                location: placeLocation,
                                 rating: place.rating || 0,
                                 rating_count: place.user_ratings_total || 0,
                                 distance: distance,
@@ -226,8 +226,6 @@ async function scrapeCapeTownOptometrists() {
                                 source: 'Google Places API (Cape Town Search)',
                                 city: city,
                                 province: province,
-                                aiValidated: aiConfidence > 0.7,
-                                aiConfidence: aiConfidence,
                                 open_now: place.opening_hours?.open_now,
                                 price_level: place.price_level
                             });
@@ -272,24 +270,7 @@ async function scrapeCapeTownOptometrists() {
 
 // Initialize background sync on page load
 function initializeOptometristDatabaseSync() {
-    // Check if we need to sync on page load
-    const lastSync = localStorage.getItem('optometrist_db_last_sync');
-    if (lastSync) {
-        lastSyncTime = parseInt(lastSync);
-    }
-    
-    // Sync if needed (older than 24 hours or never synced)
-    if (!lastSyncTime || (Date.now() - lastSyncTime > SYNC_INTERVAL)) {
-        // Start sync in background (non-blocking)
-        setTimeout(() => {
-            syncOptometristDatabase();
-        }, 5000); // Wait 5 seconds after page load
-    }
-    
-    // Set up periodic sync (every 24 hours)
-    setInterval(() => {
-        syncOptometristDatabase();
-    }, SYNC_INTERVAL);
+    loadDirectorySpecialists(null, 'Browse the Spect-IT directory, or pick a city to sort by distance.');
 }
 
 // Initialize location services
@@ -340,21 +321,17 @@ async function findNearestSpecialists() {
                 console.log('User location obtained:', userLocation);
             } catch (locError) {
                 console.error('Location error:', locError);
-                // Show manual location input option
                 showManualLocationInput();
+                loadDirectorySpecialists(null, 'Location not shared. Browse the directory or pick a city.');
                 if (loadingEl) loadingEl.style.display = 'none';
-                if (locationText) {
-                    locationText.textContent = 'Location access denied. Please enter your location manually.';
-                    locationText.style.color = '#f44336';
-                }
                 return;
             }
         }
         
         if (!userLocation) {
-            console.log('No user location, showing manual input');
-            // Show manual location input option
+            console.log('No user location, showing directory');
             showManualLocationInput();
+            loadDirectorySpecialists(null, 'Location not shared. Browse the directory or pick a city.');
             if (loadingEl) loadingEl.style.display = 'none';
             return;
         }
@@ -381,19 +358,7 @@ async function findNearestSpecialists() {
         if (!specialists || specialists.length === 0) {
             console.log('No specialists found');
             if (loadingEl) loadingEl.style.display = 'none';
-            if (locationText) {
-                locationText.textContent = 'No specialists found nearby. Try increasing the search distance or enter a different location.';
-                locationText.style.color = '#f44336';
-            }
-            if (containerEl) {
-                containerEl.innerHTML = `
-                    <div style="text-align: center; padding: 2rem;">
-                        <p style="color: #666; margin-bottom: 1rem;">No specialists found in this area.</p>
-                        <button class="btn btn-primary" onclick="showManualLocationInput()">Try Different Location</button>
-                        <button class="btn btn-secondary" onclick="findNearestSpecialists()" style="margin-left: 0.5rem;">Try Again</button>
-                    </div>
-                `;
-            }
+            loadDirectorySpecialists(userLocation, 'No live search results nearby. Showing the Spect-IT directory instead.');
             return;
         }
         
@@ -443,15 +408,8 @@ async function findNearestSpecialists() {
             statusText.style.color = '#f44336';
         }
         
-        if (containerEl) {
-            containerEl.innerHTML = `
-                <div style="text-align: center; padding: 2rem; color: #f44336;">
-                    <p style="margin-bottom: 1rem;"><strong>Error:</strong> ${errorMsg}</p>
-                    <button class="btn btn-primary" onclick="findNearestSpecialists()">Try Again</button>
-                    <button class="btn btn-secondary" onclick="showManualLocationInput()" style="margin-left: 0.5rem;">Enter Location Manually</button>
-                </div>
-            `;
-        }
+        showManualLocationInput();
+        loadDirectorySpecialists(userLocation, 'Search hit a problem. Showing the Spect-IT directory instead.');
     }
 }
 
@@ -536,57 +494,28 @@ async function getLocationByIP() {
 
 // Show location error with options
 function showLocationError(errorMessage) {
-    const statusEl = document.getElementById('location-status');
-    const containerEl = document.getElementById('specialists-container');
-    
-    statusEl.innerHTML = `
-        <div style="flex: 1;">
-            <p style="color: #ef4444; margin-bottom: 0.5rem;">⚠️ ${errorMessage}</p>
-            <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">You can still search by entering your location manually or using quick city buttons.</p>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="showManualLocationInput()">Enter Location Manually</button>
-                <button class="btn btn-secondary" onclick="findNearestSpecialists()">Try Again</button>
-            </div>
-        </div>
-    `;
-    
-    containerEl.innerHTML = '';
+    setLocationStatus(errorMessage || 'Location not available.', '#ef4444');
+    showManualLocationInput();
+    loadDirectorySpecialists(userLocation, 'Browse the Spect-IT directory, or pick a city.');
 }
 
-// Show manual location input
 function showManualLocationInput() {
-    const statusEl = document.getElementById('location-status');
-    const containerEl = document.getElementById('specialists-container');
-    
-    statusEl.innerHTML = `
-        <div style="flex: 1;">
-            <p style="margin-bottom: 1rem; font-weight: 500;">Enter your location:</p>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                <input type="text" id="location-address" placeholder="Enter city or address (e.g., Johannesburg, South Africa)" 
-                       style="flex: 1; min-width: 250px; padding: 0.75rem; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem;"
-                       onkeypress="if(event.key === 'Enter') searchByAddress()">
-                <button class="btn btn-primary" onclick="searchByAddress()">Search</button>
-                <button class="btn btn-secondary" onclick="resetLocationSearch()">Cancel</button>
-            </div>
-            <p style="font-size: 0.9rem; color: #666; margin-top: 1rem; font-weight: 500;">Quick select major cities:</p>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
-                <button class="btn btn-secondary" onclick="searchByCity('Johannesburg')" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Johannesburg</button>
-                <button class="btn btn-secondary" onclick="searchByCity('Cape Town')" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Cape Town</button>
-                <button class="btn btn-secondary" onclick="searchByCity('Durban')" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Durban</button>
-                <button class="btn btn-secondary" onclick="searchByCity('Pretoria')" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Pretoria</button>
-                <button class="btn btn-secondary" onclick="searchByCity('Port Elizabeth')" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Port Elizabeth</button>
-                <button class="btn btn-secondary" onclick="searchByCity('Bloemfontein')" style="font-size: 0.9rem; padding: 0.5rem 1rem;">Bloemfontein</button>
-            </div>
-        </div>
-    `;
-    
-    containerEl.innerHTML = '';
+    const panel = document.getElementById('manual-location-panel');
+    if (panel) {
+        panel.hidden = false;
+        const input = document.getElementById('location-address');
+        if (input) {
+            try { input.focus(); } catch (e) {}
+        }
+        return;
+    }
+    setLocationStatus('Enter a city or address, or use a quick-city button.', '');
 }
 
 // AI-Enhanced Search by address with intelligent geocoding
 async function searchByAddress() {
     const addressInput = document.getElementById('location-address');
-    const address = addressInput.value.trim();
+    const address = addressInput ? addressInput.value.trim() : '';
     
     if (!address) {
         alert('Please enter a location');
@@ -598,19 +527,19 @@ async function searchByAddress() {
     const filterControls = document.getElementById('filter-controls');
     const statusEl = document.getElementById('location-status');
     
-    if (!loadingEl || !containerEl || !statusEl) {
+    if (!containerEl || !statusEl) {
         console.error('Required elements not found');
         alert('Error: Page elements not loaded. Please refresh the page.');
         return;
     }
     
-    loadingEl.style.display = 'block';
-    containerEl.innerHTML = '';
-    const locationText = statusEl.querySelector('#location-text');
-    if (locationText) {
-        locationText.textContent = `🔍 AI-powered search for "${address}"...`;
-        locationText.style.color = '#667eea';
+    if (loadingEl) loadingEl.style.display = 'block';
+    const quickCoords = getCityCoordinates(address);
+    if (quickCoords) {
+        userLocation = quickCoords;
+        loadDirectorySpecialists(quickCoords, 'Showing directory practices near ' + address + '. Searching for more…');
     }
+    setLocationStatus('Searching for "' + address + '"…');
     
     try {
         // AI-Enhanced: Use AI for intelligent address parsing and normalization
@@ -692,9 +621,7 @@ async function searchByAddress() {
         // AI-Enhanced: Search for specialists with the obtained location
         const distance = (maxDistance || parseInt(document.getElementById('distance-slider')?.value || 50)) * 1000;
         
-        if (locationText) {
-            locationText.textContent = `📍 Location found! Searching specialists with AI...`;
-        }
+        setLocationStatus('Location found. Searching specialists…');
         
         const specialists = await searchEyeSpecialists(userLocation, distance);
         
@@ -713,18 +640,12 @@ async function searchByAddress() {
         specialistsList = rankedSpecialists;
         filteredSpecialists = rankedSpecialists;
         
-        loadingEl.style.display = 'none';
+        if (loadingEl) loadingEl.style.display = 'none';
         if (filterControls) filterControls.style.display = 'flex';
         
-        // Update status
-        if (statusEl.querySelector('#location-text')) {
-            const address = userLocation.address || searchAddress;
-            const aiBadge = rankedSpecialists !== specialists ? ' 🤖 AI-Ranked' : '';
-            statusEl.querySelector('#location-text').textContent = 
-                const distanceKm = maxDistance || parseInt(document.getElementById('distance-slider')?.value || 50);
-                locationText.textContent = `Found ${rankedSpecialists.length} specialist(s) near ${address} (within ${distanceKm} km)${aiBadge}`;
-            statusEl.querySelector('#location-text').style.color = '#10b981';
-        }
+        const shownAddress = userLocation.address || searchAddress;
+        const distanceKm = maxDistance || parseInt(document.getElementById('distance-slider')?.value || 50);
+        setLocationStatus(`Found ${rankedSpecialists.length} specialist(s) near ${shownAddress} (within ${distanceKm} km). Times you pick are requests until the practice confirms.`, '#10b981');
         
         displaySpecialists(rankedSpecialists);
     } catch (error) {
@@ -733,67 +654,35 @@ async function searchByAddress() {
         
         if (loadingEl) loadingEl.style.display = 'none';
         
+        if (specialistsList.length > 0) {
+            setLocationStatus('Could not refine that address. Showing the Spect-IT directory. Try a city button if this is not the right area.');
+            return;
+        }
         const errorMsg = error.message || 'An error occurred while searching. Please try again or use a city button.';
-        
-        // Show error in status
-        if (statusEl && statusEl.querySelector('#location-text')) {
-            statusEl.querySelector('#location-text').textContent = `❌ Error: ${errorMsg}`;
-            statusEl.querySelector('#location-text').style.color = '#f44336';
-        } else if (statusEl) {
-            statusEl.innerHTML = `<span id="location-text" style="color: #f44336;">❌ Error: ${errorMsg}</span>`;
-        }
-        
-        // Show error in container
-        if (containerEl) {
-            containerEl.innerHTML = `
-                <div style="text-align: center; padding: 2rem;">
-                    <p style="color: #f44336; margin-bottom: 1rem;"><strong>Error:</strong> ${errorMsg}</p>
-                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Try using one of the city buttons or check your internet connection.</p>
-                    <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="searchByAddress()">Try Again</button>
-                        <button class="btn btn-secondary" onclick="showManualLocationInput()">Enter Different Location</button>
-                        <button class="btn btn-secondary" onclick="findNearestSpecialists()">Use My Location</button>
-                    </div>
-                </div>
-            `;
-        }
+        setLocationStatus(errorMsg, '#f44336');
+        loadDirectorySpecialists(userLocation, 'Showing the Spect-IT directory.');
     }
 }
 
 // Search by city
 function searchByCity(cityName) {
+    const coords = getCityCoordinates(cityName + ', South Africa') || getCityCoordinates(cityName);
     const addressInput = document.getElementById('location-address');
-    if (addressInput) {
-        addressInput.value = cityName + ', South Africa';
-        searchByAddress();
-    } else {
-        // If input doesn't exist yet, show manual input first
+    if (addressInput) addressInput.value = cityName + ', South Africa';
+    if (!coords) {
         showManualLocationInput();
-        setTimeout(() => {
-            const input = document.getElementById('location-address');
-            if (input) {
-                input.value = cityName + ', South Africa';
-                searchByAddress();
-            }
-        }, 100);
+        searchByAddress();
+        return;
     }
+    userLocation = Object.assign({}, coords, { source: 'city' });
+    loadDirectorySpecialists(userLocation, 'Showing directory practices near ' + cityName + '. Times you pick are requests until the practice confirms.');
 }
 
-// Reset location search
 function resetLocationSearch() {
-    const statusEl = document.getElementById('location-status');
-    statusEl.innerHTML = `
-        <span id="location-text">Click to find specialists near you</span>
-        <div>
-            <button class="btn btn-primary" onclick="findNearestSpecialists()">Find Nearest Specialists</button>
-            <button class="btn btn-secondary" onclick="showManualLocationInput()" style="margin-left: 0.5rem;">Enter Location</button>
-        </div>
-    `;
-    const containerEl = document.getElementById('specialists-container');
-    if (containerEl) containerEl.innerHTML = '';
-    const filterControls = document.getElementById('filter-controls');
-    if (filterControls) filterControls.style.display = 'none';
     userLocation = null;
+    const panel = document.getElementById('manual-location-panel');
+    if (panel) panel.hidden = true;
+    loadDirectorySpecialists(null, 'Browse the Spect-IT directory, or pick a city to sort by distance.');
 }
 
 // Enhanced function to extract contact details from text
@@ -1649,7 +1538,8 @@ function getKnownSouthAfricanOpticalRetailers(location) {
     ];
     
     return retailers.map((retailer, index) => {
-        const distance = calculateDistance(location, { lat: retailer.lat, lng: retailer.lng });
+        const hasLoc = location && typeof location.lat === 'number' && typeof location.lng === 'number';
+        const distance = hasLoc ? calculateDistance(location, { lat: retailer.lat, lng: retailer.lng }) : null;
         const province = getProvinceFromLocation({ lat: retailer.lat, lng: retailer.lng });
         const city = extractCityFromAddress(retailer.address);
         
@@ -1662,16 +1552,13 @@ function getKnownSouthAfricanOpticalRetailers(location) {
             phone: retailer.phone || '',
             email: retailer.email || '',
             website: retailer.website || '',
-            rating: retailer.rating || (4.0 + Math.random() * 1.0),
-            rating_count: retailer.rating_count || Math.floor(Math.random() * 500),
+            rating: typeof retailer.rating === 'number' ? retailer.rating : 0,
+            rating_count: typeof retailer.rating_count === 'number' ? retailer.rating_count : 0,
             distance: distance,
-            open_now: retailer.open_now !== undefined ? retailer.open_now : true,
-            licensed: retailer.licensed || 'likely',
-            license_info: retailer.type === 'optometrist' || retailer.type === 'ophthalmologist'
-                ? 'Should be registered with HPCSA (Health Professions Council of South Africa)'
-                : 'May be registered with HPCSA or have business license',
+            licensed: '',
+            license_info: '',
             license_verify_url: 'https://www.hpcsa.co.za/PublicSearch',
-            source: 'South African Optical Directory',
+            source: 'Spect-IT optical directory',
             province: province,
             city: city,
             price_level: retailer.price_level
@@ -1906,23 +1793,7 @@ async function searchEyeSpecialists(location, radius = 500000) { // 500km to cov
         }
     })();
     
-    // Start web scraping in background (non-blocking)
-    scrapeOptometristsFromWeb(location).then(scrapedResults => {
-        if (scrapedResults && Array.isArray(scrapedResults)) {
-            scrapedResults.forEach(specialist => {
-                if (!seenPlaceIds.has(specialist.place_id)) {
-                    specialists.push(specialist);
-                    seenPlaceIds.add(specialist.place_id);
-                }
-            });
-            // Update display if results are already shown
-            if (specialistsList.length > 0) {
-                displaySpecialists(specialists);
-            }
-        }
-    }).catch(error => {
-        console.warn('Web scraping failed (non-critical):', error);
-    });
+    // Curated directory + Places only. Do not scrape retailer websites.
     
     // Major South African cities and regions for comprehensive search
     const majorCities = [
@@ -2579,37 +2450,51 @@ function displaySpecialists(specialists) {
     if (!specialists || specialists.length === 0) {
         container.innerHTML = `
             <div class="no-results">
-                <p>No specialists found within ${maxDistance} km. Try increasing the distance filter.</p>
+                <p>No specialists in the directory yet. Pick a city above or try Find Nearest Specialists.</p>
             </div>
         `;
         return;
     }
+
+    const located = hasUserLocation();
+
+    if (!located) {
+        const byProvince = {};
+        specialists.forEach(specialist => {
+            const province = specialist.province || 'South Africa';
+            byProvince[province] = (byProvince[province] || 0) + 1;
+        });
+        const rows = Object.keys(byProvince).sort().map(function (province) {
+            const n = byProvince[province];
+            return '<li><strong>' + province + '</strong> — ' + n + ' practice' + (n === 1 ? '' : 's') + '</li>';
+        }).join('');
+        const summary = document.getElementById('specialists-summary');
+        if (summary) summary.innerHTML = '';
+        container.innerHTML =
+            '<div class="directory-overview">' +
+                '<p>The Spect-IT directory lists <strong>' + specialists.length + '</strong> optical practices across South Africa. Pick a city or share your location to see practices you can request a time with.</p>' +
+                '<ul class="directory-provinces">' + rows + '</ul>' +
+            '</div>';
+        return;
+    }
     
-    // Calculate distances if not already calculated
     specialists.forEach(specialist => {
-        if (!specialist.distance && specialist.location && userLocation) {
+        if ((specialist.distance == null || !isFinite(specialist.distance)) && specialist.location && userLocation) {
             specialist.distance = calculateDistance(userLocation, specialist.location);
         }
     });
     
-    // Sort by distance (nearest first) - prioritize web-scraped specialists
     const sorted = [...specialists].sort((a, b) => {
-        // First sort by distance
-        const distA = a.distance || Infinity;
-        const distB = b.distance || Infinity;
+        const distA = (a.distance != null && isFinite(a.distance)) ? a.distance : Infinity;
+        const distB = (b.distance != null && isFinite(b.distance)) ? b.distance : Infinity;
         if (Math.abs(distA - distB) > 0.1) {
             return distA - distB;
         }
-        // If similar distance, prioritize web-scraped (has source info)
-        if (a.source && !b.source) return -1;
-        if (!a.source && b.source) return 1;
-        // Then by rating
-        return (b.rating || 0) - (a.rating || 0);
+        return (a.name || '').localeCompare(b.name || '');
     });
     
-    // Filter by distance
     const filtered = sorted.filter(s => {
-        const dist = s.distance || Infinity;
+        const dist = (s.distance != null && isFinite(s.distance)) ? s.distance : Infinity;
         return dist <= maxDistance;
     });
     
@@ -2648,15 +2533,15 @@ function displaySpecialists(specialists) {
     const summary = document.getElementById('specialists-summary');
     if (summary) {
         const nearest = filtered[0];
-        const nearestDistance = nearest ? (nearest.distance || 0).toFixed(1) : 'N/A';
+        const nearestHasDist = nearest && nearest.distance != null && isFinite(nearest.distance);
+        const nearestDistance = nearestHasDist ? nearest.distance.toFixed(1) : null;
         const nearestName = nearest ? nearest.name : 'N/A';
-        const webScrapedCount = filtered.filter(s => s.source && (s.source.includes('web') || s.source.includes('scraped') || s.source.includes('Yellow') || s.source.includes('Brabys'))).length;
         
         summary.innerHTML = `
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; color: white; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.3rem; color: white;">📍 Search Results</h3>
+                        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.3rem; color: white;">Search results</h3>
                         <p style="margin: 0; font-size: 1rem; opacity: 0.95;">
                             <strong>${filtered.length}</strong> specialist(s) found in <strong>${provinces.length}</strong> province(s)
                         </p>
@@ -2666,7 +2551,7 @@ function displaySpecialists(specialists) {
                         <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; font-weight: 600;">📍 Nearest Location</div>
                         <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;">${nearestName}</div>
                         <div style="font-size: 0.95rem; opacity: 0.9; display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
-                            <span>${nearestDistance} km away</span>
+                            <span>${nearestDistance ? nearestDistance + ' km away' : 'Pick a city to see distance'}</span>
                         </div>
                     </div>
                     ` : ''}
@@ -2679,9 +2564,14 @@ function displaySpecialists(specialists) {
     let html = '';
     
     provinces.forEach(province => {
-        const provinceSpecialists = byProvince[province].sort((a, b) => a.distance - b.distance);
+        const provinceSpecialists = byProvince[province].sort((a, b) => {
+            const da = (a.distance != null && isFinite(a.distance)) ? a.distance : Infinity;
+            const db = (b.distance != null && isFinite(b.distance)) ? b.distance : Infinity;
+            return da - db;
+        });
         const provinceCount = provinceSpecialists.length;
-        const closestDistance = provinceSpecialists[0]?.distance.toFixed(1);
+        const closestRaw = provinceSpecialists[0] && provinceSpecialists[0].distance;
+        const closestDistance = (closestRaw != null && isFinite(closestRaw)) ? closestRaw.toFixed(1) : null;
         
         html += `
             <div class="province-section" style="margin-bottom: 2.5rem;">
@@ -2693,7 +2583,7 @@ function displaySpecialists(specialists) {
                         </span>
                     </h3>
                     <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
-                        Closest: ${closestDistance} km away
+                        Closest: ${closestDistance ? closestDistance + ' km away' : 'distance unavailable'}
                     </p>
                 </div>
                 <div class="specialists-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
@@ -2702,12 +2592,10 @@ function displaySpecialists(specialists) {
         provinceSpecialists.forEach(specialist => {
             // License status badge
             let licenseBadge = '';
-            if (specialist.licensed === 'likely') {
-                licenseBadge = '<span class="license-badge licensed" title="Appears to be a licensed practice">✅ Licensed Practice</span>';
-            } else if (specialist.licensed === 'verified') {
-                licenseBadge = '<span class="license-badge verified" title="License verified">✅ Verified License</span>';
-            } else {
-                licenseBadge = '<span class="license-badge unknown" title="License status unknown - verify before booking">⚠️ Verify License</span>';
+            if (specialist.licensed === 'verified') {
+                licenseBadge = '<span class="license-badge verified" title="License verified">Verified licence</span>';
+            } else if (specialist.licensed === 'likely') {
+                licenseBadge = '<span class="license-badge unknown" title="Confirm registration with HPCSA">Confirm HPCSA registration</span>';
             }
             
             html += `
@@ -2721,7 +2609,7 @@ function displaySpecialists(specialists) {
             </div>
             <div class="specialist-info">
                 <p class="specialist-address">📍 ${specialist.address}</p>
-                <p class="specialist-distance">📏 ${specialist.distance.toFixed(1)} km away</p>
+                ${specialist.distance != null && isFinite(specialist.distance) ? `<p class="specialist-distance">${specialist.distance.toFixed(1)} km away</p>` : ''}
                 ${(() => {
                     // Extract phone number - check ALL possible sources
                     let phone = specialist.phone || specialist.formatted_phone_number || specialist.international_phone_number || '';
@@ -2850,7 +2738,7 @@ function displaySpecialists(specialists) {
                     
                     return `
                         <button class="btn" onclick="event.preventDefault(); event.stopPropagation(); bookAppointment('${specialist.place_id}'); return false;" style="flex: 1 1 100%; min-width: 100%; padding: 0.85rem; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; box-shadow: 0 6px 16px -6px rgba(99,102,241,.6);">
-                            📅 Book appointment
+                            Request a time
                         </button>
                         <button class="btn btn-primary" onclick="event.preventDefault(); event.stopPropagation(); getDirections(${specialist.location.lat}, ${specialist.location.lng}); return false;" style="flex: 1; min-width: 120px; padding: 0.75rem; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
                             🗺️ Directions
@@ -3057,7 +2945,7 @@ function showSpecialistModalFromData(specialist) {
                 ` : ''}
                 ${specialist.distance !== undefined ? `
                     <p style="margin: 0.75rem 0;">
-                        <strong>📏 Distance:</strong> ${specialist.distance.toFixed(1)} km away
+                        ${specialist.distance != null && isFinite(specialist.distance) ? `<strong>Distance:</strong> ${specialist.distance.toFixed(1)} km away` : ''}
                     </p>
                 ` : ''}
                 ${phone ? `
@@ -3350,6 +3238,7 @@ window.showManualLocationInput = showManualLocationInput;
 window.searchByAddress = searchByAddress;
 window.searchByCity = searchByCity;
 window.resetLocationSearch = resetLocationSearch;
+window.loadDirectorySpecialists = loadDirectorySpecialists;
 window.testSpecialistFinder = window.testSpecialistFinder;
 window.syncOptometristDatabase = syncOptometristDatabase;
 window.scrapeCapeTownOptometrists = scrapeCapeTownOptometrists;

@@ -39,37 +39,11 @@ async function loadProducts() {
     containerEl.innerHTML = '';
     
     try {
-        // Try to get products from enhanced scraper
-        let scrapedProducts = [];
-        
-        if (window.SpectITProductScraper && window.SpectITProductScraper.getAllProducts) {
-            scrapedProducts = await window.SpectITProductScraper.getAllProducts();
-        }
-        
-        // Also try original scraping method
-        if (scrapedProducts.length === 0) {
-            scrapedProducts = await scrapeRetailerProducts();
-        }
-        
-        // Merge with fallback products
-        const fallbackProducts = getFallbackProducts();
-        const allProducts = [...scrapedProducts, ...fallbackProducts];
-        
-        // Remove duplicates based on name
-        const uniqueProducts = [];
-        const seenNames = new Set();
-        allProducts.forEach(product => {
-            const key = product.name.toLowerCase().trim();
-            if (!seenNames.has(key)) {
-                seenNames.add(key);
-                uniqueProducts.push(product);
-            }
-        });
-        
-        products = uniqueProducts;
+        // Curated catalog only — do not scrape retailer sites.
+        products = getFallbackProducts();
         filteredProducts = products;
         displayProducts(products);
-        
+        window.retailerContacts = RETAILER_CONTACTS;
     } catch (error) {
         console.error('Error loading products:', error);
         products = getFallbackProducts();
@@ -739,91 +713,63 @@ function displayProducts(productsToShow) {
         return;
     }
     
-    container.innerHTML = productsToShow.map(product => {
-        // Enhanced image loading with multiple fallbacks
-        const imageUrl = product.image || getDefaultImage(product.name);
-        const imageId = `product-img-${product.id}`;
-        
-        return `
-        <div class="product-card premium-product-card" data-category="${product.category}">
-            <div class="product-image premium-product-image">
-                <img id="${imageId}" src="${imageUrl}" alt="${product.name}" 
-                     onerror="handleImageError('${imageId}', '${product.name.replace(/'/g, "\\'")}')"
-                     loading="lazy"
-                     style="width: 100%; height: 280px; object-fit: cover; background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);">
-                ${product.inStock ? '<span class="stock-badge in-stock premium-stock-badge">✓ In Stock</span>' : '<span class="stock-badge out-of-stock premium-stock-badge">Out of Stock</span>'}
-                ${product.brand ? `<div class="product-brand-badge">${product.brand}</div>` : ''}
-            </div>
-            <div class="product-info premium-product-info">
-                <h3 class="product-name premium-product-name">${product.name}</h3>
-                ${product.brand ? `<div class="product-brand premium-brand">${product.brand}</div>` : ''}
-                <div class="product-retailer-info premium-retailer-info">
-                    <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #667eea; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                        🏥 Certified Retailer: <strong>${product.retailer}</strong>
-                    </p>
-                    ${product.retailerPhone || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].phone) ? `
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem;">
-                            📞 <a href="tel:${(product.retailerPhone || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].phone) || '').replace(/\s+/g, '')}" style="color: #667eea; text-decoration: none; font-weight: 600;">${product.retailerPhone || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].phone) || ''}</a>
-                        </p>
-                    ` : ''}
-                    ${product.retailerEmail || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].email) ? `
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem;">
-                            📧 <a href="mailto:${product.retailerEmail || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].email) || ''}" style="color: #667eea; text-decoration: none; font-weight: 600;">${product.retailerEmail || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].email) || ''}</a>
-                        </p>
-                    ` : ''}
-                    ${product.retailerWebsite || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].website) || product.url ? `
-                        <p style="margin: 0.25rem 0; font-size: 0.9rem;">
-                            🌐 <a href="${product.retailerWebsite || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].website) || product.url || ''}" target="_blank" style="color: #667eea; text-decoration: none; font-weight: 600;">Visit ${product.retailer} Website</a>
-                        </p>
-                    ` : ''}
-                    ${product.retailerAddress || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].address) ? `
-                        <p style="margin: 0.25rem 0; font-size: 0.85rem; color: #666;">
-                            📍 ${product.retailerAddress || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].address) || ''}
-                        </p>
-                    ` : ''}
-                </div>
-                ${product.description ? `<p class="product-description">${product.description}</p>` : ''}
-                ${product.sizes ? `
-                    <div class="product-options">
-                        <label>Size:</label>
-                        <select class="product-size" data-product-id="${product.id}">
-                            ${product.sizes.map(size => `<option value="${size}">${size}</option>`).join('')}
-                        </select>
-                    </div>
-                ` : ''}
-                ${product.colors ? `
-                    <div class="product-options">
-                        <label>Color:</label>
-                        <select class="product-color" data-product-id="${product.id}">
-                            ${product.colors.map(color => `<option value="${color}">${color}</option>`).join('')}
-                        </select>
-                    </div>
-                ` : ''}
-                ${product.strengths ? `
-                    <div class="product-options">
-                        <label>Strength:</label>
-                        <select class="product-strength" data-product-id="${product.id}">
-                            ${product.strengths.map(strength => `<option value="${strength}">${strength}</option>`).join('')}
-                        </select>
-                    </div>
-                ` : ''}
-                <div class="product-price">
-                    <span class="price-amount">R${product.price.toFixed(2)}</span>
-                    <span class="price-vat">incl. VAT</span>
-                </div>
-                <div class="product-actions">
-                    ${(product.category === 'frames' || product.category === 'sunglasses') ? `
-                        <button class="btn btn-try-on" onclick="openVirtualTryOn('${product.id}', '${product.image}', '${product.name.replace(/'/g, "\\'")}')">
-                            👓 Try On
-                        </button>
-                    ` : ''}
-                    <button class="btn btn-add-cart" onclick="addToCart('${product.id}')" ${!product.inStock ? 'disabled' : ''}>
-                        ${product.inStock ? '🛒 Add to Cart' : 'Out of Stock'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
+    function optionList(values) {
+        return (values || []).map(function (value) {
+            return '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>';
+        }).join('');
+    }
+
+    container.innerHTML = productsToShow.map(function (product) {
+        var imageUrl = product.image || getDefaultImage(product.name);
+        var imageId = 'product-img-' + product.id;
+        var phone = product.retailerPhone || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].phone) || '';
+        var email = product.retailerEmail || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].email) || '';
+        var website = product.retailerWebsite || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].website) || product.url || '';
+        var address = product.retailerAddress || (window.retailerContacts && window.retailerContacts[product.retailer] && window.retailerContacts[product.retailer].address) || '';
+        var canTryOn = product.category === 'frames' || product.category === 'sunglasses';
+
+        return (
+            '<div class="product-card premium-product-card" data-category="' + escapeHtml(product.category) + '">' +
+            '<div class="product-image premium-product-image">' +
+            '<img id="' + escapeHtml(imageId) + '" src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(product.name) + '" loading="lazy">' +
+            (product.inStock
+                ? '<span class="stock-badge in-stock premium-stock-badge">Listed</span>'
+                : '<span class="stock-badge out-of-stock premium-stock-badge">Unavailable</span>') +
+            (product.brand ? '<div class="product-brand-badge">' + escapeHtml(product.brand) + '</div>' : '') +
+            '</div>' +
+            '<div class="product-info premium-product-info">' +
+            '<h3 class="product-name premium-product-name">' + escapeHtml(product.name) + '</h3>' +
+            (product.brand ? '<div class="product-brand premium-brand">' + escapeHtml(product.brand) + '</div>' : '') +
+            '<div class="product-retailer-info premium-retailer-info">' +
+            '<p>Retailer: <strong>' + escapeHtml(product.retailer) + '</strong></p>' +
+            (phone ? '<p><a href="tel:' + escapeHtml(phone.replace(/\s+/g, '')) + '">' + escapeHtml(phone) + '</a></p>' : '') +
+            (email ? '<p><a href="mailto:' + escapeHtml(email) + '">' + escapeHtml(email) + '</a></p>' : '') +
+            (website ? '<p><a href="' + escapeHtml(website) + '" target="_blank" rel="noopener">Visit ' + escapeHtml(product.retailer) + '</a></p>' : '') +
+            (address ? '<p>' + escapeHtml(address) + '</p>' : '') +
+            '</div>' +
+            (product.description ? '<p class="product-description">' + escapeHtml(product.description) + '</p>' : '') +
+            (product.sizes ? '<div class="product-options"><label>Size</label><select class="product-size" data-product-id="' + escapeHtml(product.id) + '">' + optionList(product.sizes) + '</select></div>' : '') +
+            (product.colors ? '<div class="product-options"><label>Color</label><select class="product-color" data-product-id="' + escapeHtml(product.id) + '">' + optionList(product.colors) + '</select></div>' : '') +
+            (product.strengths ? '<div class="product-options"><label>Strength</label><select class="product-strength" data-product-id="' + escapeHtml(product.id) + '">' + optionList(product.strengths) + '</select></div>' : '') +
+            '<div class="product-price"><span class="price-amount">R' + product.price.toFixed(2) + '</span><span class="price-vat">indicative, incl. VAT</span></div>' +
+            '<div class="product-actions">' +
+            (canTryOn ? '<button type="button" class="btn btn-try-on" data-product-id="' + escapeHtml(product.id) + '">Try on</button>' : '') +
+            '<button type="button" class="btn btn-add-cart" data-product-id="' + escapeHtml(product.id) + '"' + (product.inStock ? '' : ' disabled') + '>' +
+            (product.inStock ? 'Add to list' : 'Unavailable') +
+            '</button></div></div></div>'
+        );
+    }).join('');
+
+    container.querySelectorAll('.btn-add-cart').forEach(function (btn) {
+        btn.addEventListener('click', function () { addToCart(btn.getAttribute('data-product-id')); });
+    });
+    container.querySelectorAll('.btn-try-on').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-product-id');
+            var product = products.find(function (p) { return p.id === id; });
+            if (product) openVirtualTryOn(product.id, product.image, product.name);
+        });
+    });
 }
 
 // Enhanced image error handling
@@ -867,7 +813,7 @@ function filterProducts(category) {
         tabs.forEach(tab => {
             tab.classList.remove('active');
         });
-        const activeTab = document.querySelector(`[data-category="${category}"]`);
+        const activeTab = document.querySelector('.category-tab[data-category="' + category + '"]');
         if (activeTab) {
             activeTab.classList.add('active');
         }
@@ -1097,7 +1043,7 @@ function clearAdvancedFilters() {
 }
 
 // Add to cart
-function addToCart(productId) {
+async function addToCart(productId) {
     const product = products.find(p => p.id === productId);
     if (!product || !product.inStock) return;
     
@@ -1133,7 +1079,7 @@ function addToCart(productId) {
     }
     
     updateCartDisplay();
-    showNotification(`${product.name} added to cart!`);
+    showNotification(`${product.name} added to your order list.`);
 }
 
 // Remove from cart
@@ -1187,7 +1133,7 @@ function updateCartDisplay() {
     // Update cart items
     if (cartItemsEl) {
         if (shoppingCart.length === 0) {
-            cartItemsEl.innerHTML = '<p class="cart-empty">Your cart is empty</p>';
+            cartItemsEl.innerHTML = '<p class="cart-empty">Your order list is empty</p>';
             if (checkoutBtn) checkoutBtn.disabled = true;
         } else {
             cartItemsEl.innerHTML = shoppingCart.map(item => `
@@ -1212,176 +1158,170 @@ function updateCartDisplay() {
 // Toggle cart sidebar
 function toggleCart() {
     const cartSidebar = document.getElementById('cart-sidebar');
-    cartSidebar.classList.toggle('active');
+    if (!cartSidebar) return;
+    const open = !cartSidebar.classList.contains('active');
+    cartSidebar.classList.toggle('active', open);
+    cartSidebar.setAttribute('aria-hidden', open ? 'false' : 'true');
 }
 
 // Proceed to checkout
 function proceedToCheckout() {
     if (shoppingCart.length === 0) {
-        alert('Your cart is empty!');
+        showNotification('Your order list is empty.');
         return;
     }
-    
-    // Create checkout summary
+
     const subtotal = shoppingCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const vat = subtotal * 0.15;
     const total = subtotal + vat;
-    
-    const checkoutData = {
+
+    showCheckoutModal({
         items: shoppingCart,
         subtotal: subtotal,
         vat: vat,
         total: total,
         timestamp: new Date().toISOString()
-    };
-    
-    // Show checkout modal
-    showCheckoutModal(checkoutData);
+    });
 }
 
-// Show checkout modal
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Show checkout modal — enquiry only, no payment
 function showCheckoutModal(checkoutData) {
+    const existing = document.getElementById('enquiry-modal');
+    if (existing) existing.remove();
+
     const modal = document.createElement('div');
+    modal.id = 'enquiry-modal';
     modal.className = 'modal active';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-labelledby', 'enquiry-title');
     modal.innerHTML = `
         <div class="modal-content" style="max-width: 600px;">
-            <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
-            <h2>Checkout</h2>
+            <button type="button" class="modal-close" aria-label="Close enquiry form" onclick="this.closest('.modal').remove()">&times;</button>
+            <h2 id="enquiry-title">Request this order</h2>
+            <p class="enquiry-note">Spect-IT does not take payment online. We send your list to the listed retailer so they can confirm stock, fit, and price.</p>
             <div class="checkout-summary">
-                <h3>Order Summary</h3>
+                <h3>Your list</h3>
                 ${checkoutData.items.map(item => `
                     <div class="checkout-item">
-                        <span>${item.name}</span>
+                        <span>${escapeHtml(item.name)}${item.quantity > 1 ? ' × ' + item.quantity : ''}</span>
                         <span>R${item.price.toFixed(2)}</span>
                     </div>
                 `).join('')}
                 <div class="checkout-totals">
                     <div class="checkout-row">
-                        <span>Subtotal:</span>
+                        <span>Indicative subtotal</span>
                         <span>R${checkoutData.subtotal.toFixed(2)}</span>
                     </div>
                     <div class="checkout-row">
-                        <span>VAT (15%):</span>
+                        <span>VAT (15%)</span>
                         <span>R${checkoutData.vat.toFixed(2)}</span>
                     </div>
                     <div class="checkout-row checkout-total">
-                        <span>Total:</span>
+                        <span>Indicative total</span>
                         <span>R${checkoutData.total.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
-            <form id="checkout-form" onsubmit="processCheckout(event, ${JSON.stringify(checkoutData).replace(/"/g, '&quot;')})">
+            <form id="checkout-form">
                 <div class="form-group">
-                    <label>Full Name *</label>
-                    <input type="text" required>
+                    <label for="enq-name">Full name</label>
+                    <input id="enq-name" name="name" type="text" required autocomplete="name">
                 </div>
                 <div class="form-group">
-                    <label>Email *</label>
-                    <input type="email" required>
+                    <label for="enq-email">Email</label>
+                    <input id="enq-email" name="email" type="email" required autocomplete="email">
                 </div>
                 <div class="form-group">
-                    <label>Phone *</label>
-                    <input type="tel" required>
+                    <label for="enq-phone">Phone</label>
+                    <input id="enq-phone" name="phone" type="tel" required autocomplete="tel">
                 </div>
                 <div class="form-group">
-                    <label>Delivery Address *</label>
-                    <textarea required rows="3"></textarea>
+                    <label for="enq-notes">Preferred collection or notes</label>
+                    <textarea id="enq-notes" name="notes" rows="3" placeholder="City, branch, or fitting notes"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Payment Method *</label>
-                    <select required>
-                        <option value="">Select payment method</option>
-                        <option value="card">Credit/Debit Card</option>
-                        <option value="eft">EFT/Bank Transfer</option>
-                        <option value="payfast">PayFast</option>
-                        <option value="snapscan">SnapScan</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Complete Purchase</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Send order request</button>
             </form>
         </div>
     `;
     document.body.appendChild(modal);
+    modal.querySelector('#checkout-form').addEventListener('submit', function (event) {
+        processCheckout(event, checkoutData);
+    });
+    document.getElementById('enq-name').focus();
 }
 
-// Process checkout
+// Process enquiry — never claim payment was taken
 async function processCheckout(event, checkoutData) {
     event.preventDefault();
-    
+
     const form = event.target;
-    const formData = new FormData(form);
-    
-    // Get form values
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
+    }
+
     const orderData = {
+        status: 'enquiry',
         customer: {
-            name: form.querySelector('input[type="text"]').value,
-            email: form.querySelector('input[type="email"]').value,
-            phone: form.querySelector('input[type="tel"]').value,
-            address: form.querySelector('textarea').value
+            name: form.querySelector('#enq-name').value.trim(),
+            email: form.querySelector('#enq-email').value.trim(),
+            phone: form.querySelector('#enq-phone').value.trim(),
+            notes: form.querySelector('#enq-notes').value.trim()
         },
-        payment: {
-            method: form.querySelector('select').value
-        },
+        payment: { method: 'enquiry' },
         order: checkoutData,
-        orderNumber: 'SPECT-' + Date.now(),
+        orderNumber: 'SPECT-ENQ-' + Date.now(),
         date: new Date().toISOString()
     };
-    
-    // Save to localStorage first
+
     const orders = JSON.parse(localStorage.getItem('spectit_orders') || '[]');
     orders.push(orderData);
     localStorage.setItem('spectit_orders', JSON.stringify(orders));
-    
-    // Save to Supabase if available
-    const userEmail = window.getUserEmail ? window.getUserEmail() : orderData.customer.email;
+
+    const userEmail = (window.getUserEmail && window.getUserEmail()) || orderData.customer.email;
     if (window.SupabaseStorage && window.SupabaseStorage.isAvailable() && userEmail) {
         try {
             await window.SupabaseStorage.orders.saveOrder(orderData, userEmail);
         } catch (error) {
-            console.warn('Failed to save order to Supabase:', error);
+            console.warn('Failed to save enquiry to Supabase:', error);
         }
     }
-    
-    // Save to Supabase if available
-    const userEmail = window.getUserEmail ? window.getUserEmail() : orderData.customer.email;
-    if (window.SupabaseStorage && window.SupabaseStorage.isAvailable() && userEmail) {
-        try {
-            await window.SupabaseStorage.orders.saveOrder(orderData, userEmail);
-        } catch (error) {
-            console.warn('Failed to save order to Supabase:', error);
-        }
-    }
-    
-    // Show success message
+
     const successModal = document.createElement('div');
     successModal.className = 'modal active';
+    successModal.setAttribute('role', 'dialog');
     successModal.innerHTML = `
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
-            <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
-            <h2>Order Placed Successfully!</h2>
-            <p><strong>Order Number:</strong> ${orderData.orderNumber}</p>
-            <p>You will receive a confirmation email at <strong>${orderData.customer.email}</strong></p>
-            <p style="color: #666; font-size: 0.9rem; margin-top: 1rem;">
-                ${orderData.payment.method === 'card' || orderData.payment.method === 'payfast' || orderData.payment.method === 'snapscan' 
-                    ? 'You will be redirected to the payment gateway shortly.' 
-                    : 'Please complete payment via EFT using the details we will send to your email.'}
-            </p>
-            <button class="btn btn-primary" onclick="this.closest('.modal').remove(); location.reload();" style="margin-top: 1.5rem; width: 100%;">
-                Continue Shopping
+            <button type="button" class="modal-close" aria-label="Close" onclick="this.closest('.modal').remove()">&times;</button>
+            <h2>Request received</h2>
+            <p><strong>Reference:</strong> ${escapeHtml(orderData.orderNumber)}</p>
+            <p>We have saved your list. A retailer or Spect-IT will follow up at <strong>${escapeHtml(orderData.customer.email)}</strong> to confirm stock and price. No payment has been taken.</p>
+            <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove();" style="margin-top: 1.5rem; width: 100%;">
+                Back to shop
             </button>
         </div>
     `;
     document.body.appendChild(successModal);
-    
-    // Clear cart
+
     shoppingCart = [];
     localStorage.setItem('shoppingCart', JSON.stringify(shoppingCart));
     updateCartDisplay();
-    
-    // Close checkout modal
+
     form.closest('.modal').remove();
-    toggleCart();
+    const cartSidebar = document.getElementById('cart-sidebar');
+    if (cartSidebar) {
+        cartSidebar.classList.remove('active');
+        cartSidebar.setAttribute('aria-hidden', 'true');
+    }
 }
 
 // Show notification
@@ -1429,7 +1369,7 @@ function openVirtualTryOn(productId, frameImageUrl, productName) {
                 </div>
                 <div class="tryon-actions">
                     <button class="btn btn-secondary" onclick="closeVirtualTryOn()">Close</button>
-                    <button class="btn btn-primary" onclick="addToCartFromTryOn('${productId}')">Add to Cart</button>
+                    <button class="btn btn-primary" onclick="addToCartFromTryOn('${productId}')">Add to list</button>
                 </div>
             </div>
         </div>
@@ -1461,7 +1401,7 @@ function closeVirtualTryOn() {
 // Add to cart from virtual try-on
 function addToCartFromTryOn(productId) {
     addToCart(productId);
-    showNotification('Added to cart! You can continue shopping or proceed to checkout.');
+    showNotification('Added to your order list. Request the order when you are ready.');
     closeVirtualTryOn();
 }
 
