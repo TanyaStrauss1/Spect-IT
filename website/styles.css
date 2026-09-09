@@ -1683,3 +1683,70 @@ footer {
         transform: translateY(0);
     }
 }
+
+.install-app-btn {
+    background: #c9a962;
+    color: #152a45;
+    border: none;
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ios-install-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    background: rgba(12, 21, 36, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+}
+
+.ios-install-card {
+    position: relative;
+    max-width: 420px;
+    width: 100%;
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem 1.5rem;
+    color: #152a45;
+}
+
+.ios-install-card h2 {
+    margin-bottom: 0.5rem;
+}
+
+.ios-install-card ol {
+    margin: 1rem 0 1.25rem 1.25rem;
+}
+
+.ios-install-note {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+}
+
+.ios-install-close {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.75rem;
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+@media (display-mode: standalone) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .install-app-btn {
+        display: none !important;
+    }
+}

@@ -1,16 +1,16 @@
 {
-  "name": "Spect-IT - Vision Testing App",
+  "name": "Spect-IT Vision Screening",
   "short_name": "Spect-IT",
-  "description": "AI-powered professional-grade vision assessment: visual acuity, color blindness, astigmatism, contrast sensitivity, visual field, and prescription measurement.",
+  "description": "Clinical-grade vision screening from home. Results are screening only — not a diagnosis or a dispensable prescription.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#faf9f7",
+  "background_color": "#1e3a5f",
   "theme_color": "#1e3a5f",
   "categories": ["health", "medical", "utilities"],
-  "lang": "en-US",
+  "lang": "en-ZA",
   "dir": "ltr",
   "icons": [
     {
@@ -23,20 +23,30 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
     {
-      "name": "Start Testing",
+      "name": "Start a screening",
       "short_name": "Tests",
       "url": "/#tests"
     },
     {
-      "name": "View Results",
+      "name": "View results",
       "short_name": "Results",
       "url": "/#results"
+    },
+    {
+      "name": "Find specialists",
+      "short_name": "Specialists",
+      "url": "/#find-specialists"
     }
-  ],
-  "screenshots": []
+  ]
 }

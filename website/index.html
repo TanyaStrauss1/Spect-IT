@@ -16,6 +16,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/svg+xml" href="logo-icon.svg">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Spect-IT">
@@ -39,7 +40,7 @@
     <meta name="twitter:image" content="https://www.spect-it.com/og-image.png">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=7.3">
     <link rel="stylesheet" href="user-signed-in-styles.css">
     <link rel="stylesheet" href="premium-styles.css">
     <link rel="stylesheet" href="premium-shop-styles.css">
@@ -78,6 +79,11 @@
                 <li><a href="#find-specialists" class="nav-link">Find Specialists</a></li>
                 <li><a href="#results" class="nav-link">Results</a></li>
                 <li><a href="#tests" class="nav-link nav-cta">Start free test</a></li>
+                <li>
+                    <button type="button" id="install-app-btn" class="install-app-btn" hidden onclick="installSpectItApp()">
+                        Install app
+                    </button>
+                </li>
                 <li>
                     <button type="button" class="cart-toggle" onclick="toggleCart()" aria-label="Open order list">
                         Order list <span id="cart-count" class="cart-count">0</span>
@@ -310,12 +316,12 @@
                     <div class="why-card reveal d2">
                         <div class="why-icon">📍</div>
                         <h3>Specialists nearby</h3>
-                        <p>Find optometrists, ophthalmologists and opticians across South Africa, sorted by distance.</p>
+                        <p>Browse named optical stores at major malls and request a time. The practice confirms.</p>
                     </div>
                     <div class="why-card reveal">
                         <div class="why-icon">🛍️</div>
                         <h3>Eyewear shop</h3>
-                        <p>Browse frames and lenses from trusted retailers — and try them on virtually before you buy.</p>
+                        <p>Browse a curated list of frames and lenses. Request an order — we do not take payment on this site.</p>
                     </div>
                     <div class="why-card reveal d1">
                         <div class="why-icon">🔒</div>
@@ -364,7 +370,7 @@
             <div class="container">
                 <h2 class="section-heading" style="text-align:center;margin-bottom:.5rem">Find Eye Care Specialists</h2>
                 <p class="section-subtitle" style="margin-bottom: 1.5rem;">
-                    Browse the Spect-IT directory of <strong>optometrists</strong>, <strong>ophthalmologists</strong>, and <strong>opticians</strong> across South Africa.<br>
+                    Browse named <strong>optical stores</strong> at major South African malls. Confirm the store with the retailer before you visit.<br>
                     <span style="color: var(--accent-dark, #a8864a); font-weight: 500;">Pick a city or share your location • Request a time • The practice confirms</span>
                 </p>
                 <div style="margin-bottom: 1.25rem;">
@@ -517,6 +523,10 @@
                         <div class="faq-body">Just a device with a screen — phone, tablet or computer. Some tests use your camera for AI eye-tracking and face-mapping; camera access is always requested up front and processed on your device.</div>
                     </details>
                     <details class="faq-item reveal">
+                        <summary>Can I use Spect-IT as an app?</summary>
+                        <div class="faq-body">Yes. On Android and desktop Chrome, tap <strong>Install app</strong>. On iPhone, open Spect-IT in Safari, tap Share, then <strong>Add to Home Screen</strong>. The installed app is this website in standalone mode — the same screening tests, shop enquiry, and specialist requests.</div>
+                    </details>
+                    <details class="faq-item reveal">
                         <summary>Is my data private?</summary>
                         <div class="faq-body">Yes. Tests run in your browser and we treat your health data with care. We never sell your data. See our <a href="privacy.html">Privacy Policy</a> for details.</div>
                     </details>
@@ -556,10 +566,10 @@
     <script src="spectit-location.js"></script>
     <script src="premium-dashboard.js?v=6.8"></script>
     <script src="tests.js?v=6.8"></script>
-    <script src="app.js"></script>
-    <script src="specialists.js?v=7.0"></script>
-    <script src="shop.js"></script>
-    <script src="email-signup-modal.js"></script>
+    <script src="app.js?v=7.3"></script>
+    <script src="specialists.js?v=7.2"></script>
+    <script src="shop.js?v=7.2"></script>
+    <script src="email-signup-modal.js?v=7.3"></script>
     <script src="spectit-prescription.js"></script>
     <script src="spectit-calibration.js"></script>
     <script src="spectit-booking.js?v=6.8"></script>

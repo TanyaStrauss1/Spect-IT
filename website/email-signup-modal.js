@@ -85,16 +85,16 @@ function showEmailSignupModalForTesting() {
     modal.innerHTML = `
         <div class="email-signup-content">
             <div class="email-signup-header">
-                <h2>📧 Sign In to Start Testing</h2>
-                <p class="email-signup-subtitle">Enter your email address to begin your eye test. Your results will be saved and sent to this email address.</p>
+                <h2>Save your screening results</h2>
+                <p class="email-signup-subtitle">Email is optional. You can start the screening now and keep results on this device.</p>
             </div>
             
             <div class="email-signup-benefits">
                 <div class="benefit-item">
-                    <span class="benefit-icon">🔐</span>
+                    <span class="benefit-icon">📧</span>
                     <div>
-                        <strong>Required for Testing</strong>
-                        <p>Email sign-in is required to start any eye test</p>
+                        <strong>Optional email</strong>
+                        <p>Add an email if you want a copy of your screening results</p>
                     </div>
                 </div>
                 <div class="benefit-item">
@@ -138,25 +138,28 @@ function showEmailSignupModalForTesting() {
                         required
                         autocomplete="email"
                     >
-                    <small class="email-hint">Required to start testing. We'll send your results to this address.</small>
+                    <small class="email-hint">Optional. Results stay on this device either way. This is a screening, not a diagnosis.</small>
                 </div>
                 
                 <div class="email-consent">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="email-consent" required>
-                        <span>I agree to receive my test results via email and understand that my data will be stored securely. Email is required to take tests.</span>
+                        <input type="checkbox" id="email-consent">
+                        <span>If I add an email, I agree to receive my screening results at that address.</span>
                     </label>
                 </div>
                 
                 <div class="email-signup-actions">
                     <button type="submit" class="btn-email-submit">
-                        Continue to Test
+                        Save email and continue
+                    </button>
+                    <button type="button" class="btn-email-skip" onclick="skipEmailSignup()">
+                        Continue without email
                     </button>
                 </div>
             </form>
             
             <div class="email-signup-footer">
-                <p>By continuing, you agree to our <a href="/privacy-policy" target="_blank">Privacy Policy</a></p>
+                <p>By continuing, you agree to our <a href="privacy.html">Privacy Policy</a></p>
             </div>
         </div>
     `;
@@ -181,7 +184,7 @@ async function handleEmailSignup(event) {
     }
     
     if (!consent) {
-        alert('Please agree to receive your results via email');
+        alert('Please tick the box if you want results sent to this email.');
         return;
     }
     
@@ -227,7 +230,13 @@ async function handleEmailSignup(event) {
     }
 }
 
-// Removed skipEmailSignup - email is now required before testing
+function skipEmailSignup() {
+    closeEmailSignupModal();
+    if (pendingTestFunction) {
+        runPendingTest(pendingTestFunction);
+        pendingTestFunction = null;
+    }
+}
 
 function closeEmailSignupModal() {
     const modal = document.getElementById('email-signup-modal');
