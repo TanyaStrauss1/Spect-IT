@@ -7,7 +7,8 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 export interface TestResult {
   id?: number
-  user_id: string
+  user_id: string  // UUID from auth.users(id)
+  user_email?: string  // Optional, for backwards compatibility
   test_type: string
   test_name: string
   test_data: any
@@ -15,6 +16,11 @@ export interface TestResult {
   decimal_acuity?: number
   test_date: string
   test_distance?: number
+  eye?: string
+  lidar_calibrated?: boolean
+  stability_score?: number
+  level?: string
+  accuracy_rating?: string
   created_at?: string
 }
 

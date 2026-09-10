@@ -76,6 +76,7 @@ export default function AcuityTestScreen() {
           .from('test_results')
           .insert({
             user_id: user.id,
+            user_email: user.email,
             test_type: 'Visual Acuity',
             test_name: 'Snellen Chart',
             test_data: testResult,

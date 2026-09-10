@@ -65,6 +65,7 @@ supabase db push
    - `20260703180000_rls_hardening.sql`
    - `20260704123000_provider_staff_auth.sql`
    - `20260706170000_practices_and_audit_log.sql`
+   - `20260910180000_auth_user_id_and_rls.sql` (Required for auth apps)
 
 ## Step 3: Configure Environment Variables
 
