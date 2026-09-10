@@ -92,12 +92,20 @@ export default function DashboardScreen() {
           <Text style={styles.statLabel}>Total Tests</Text>
           <Text style={styles.statValue}>{results.length}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('/test/acuity')}
-        >
-          <Text style={styles.actionButtonText}>New Test</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => router.push('/test/acuity')}
+          >
+            <Text style={styles.actionButtonText}>👁️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: '#9333EA' }]}
+            onPress={() => router.push('/test/color-vision')}
+          >
+            <Text style={styles.actionButtonText}>🎨</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -112,27 +120,56 @@ export default function DashboardScreen() {
             </View>
 
             <View style={styles.resultGrid}>
-              <View style={styles.resultItem}>
-                <Text style={styles.resultItemLabel}>Snellen</Text>
-                <Text style={styles.resultItemValue}>{result.test_data?.snellen || 'N/A'}</Text>
-              </View>
-              <View style={styles.resultItem}>
-                <Text style={styles.resultItemLabel}>Decimal</Text>
-                <Text style={styles.resultItemValue}>{result.decimal_acuity?.toFixed(2) || 'N/A'}</Text>
-              </View>
-              <View style={styles.resultItem}>
-                <Text style={styles.resultItemLabel}>Lines</Text>
-                <Text style={styles.resultItemValue}>{result.score || 0}</Text>
-              </View>
-              <View style={styles.resultItem}>
-                <Text style={styles.resultItemLabel}>Date</Text>
-                <Text style={styles.resultItemValue}>
-                  {new Date(result.test_date || result.created_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </Text>
-              </View>
+              {result.test_type === 'Visual Acuity' && (
+                <>
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultItemLabel}>Snellen</Text>
+                    <Text style={styles.resultItemValue}>{result.test_data?.snellen || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultItemLabel}>Decimal</Text>
+                    <Text style={styles.resultItemValue}>{result.decimal_acuity?.toFixed(2) || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultItemLabel}>Lines</Text>
+                    <Text style={styles.resultItemValue}>{result.score || 0}</Text>
+                  </View>
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultItemLabel}>Date</Text>
+                    <Text style={styles.resultItemValue}>
+                      {new Date(result.test_date || result.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </Text>
+                  </View>
+                </>
+              )}
+              {result.test_type === 'Color Vision' && (
+                <>
+                  <View style={[styles.resultItem, { minWidth: '100%' }]}>
+                    <Text style={styles.resultItemLabel}>Result</Text>
+                    <Text style={[styles.resultItemValue, { fontSize: 13 }]}>{result.test_data?.screeningResult || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultItemLabel}>Plates Correct</Text>
+                    <Text style={styles.resultItemValue}>{result.score || 0}/{result.test_data?.platesTotal || 8}</Text>
+                  </View>
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultItemLabel}>Control</Text>
+                    <Text style={styles.resultItemValue}>{result.test_data?.controlPlatesCorrect || 0}/2</Text>
+                  </View>
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultItemLabel}>Date</Text>
+                    <Text style={styles.resultItemValue}>
+                      {new Date(result.test_date || result.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         ))}
@@ -217,14 +254,16 @@ const styles = StyleSheet.create({
     marginTop: 0,
     padding: 20,
     borderRadius: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
   },
   stat: {
     flex: 1,
@@ -241,14 +280,13 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     backgroundColor: '#4F46E5',
-    paddingHorizontal: 20,
+    flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
+    alignItems: 'center',
   },
   actionButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 24,
   },
   section: {
     padding: 20,

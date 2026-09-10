@@ -42,7 +42,14 @@ export default function HomeScreen() {
           style={styles.primaryButton}
           onPress={() => router.push('/test/acuity')}
         >
-          <Text style={styles.primaryButtonText}>Start Vision Test</Text>
+          <Text style={styles.primaryButtonText}>👁️ Visual Acuity Test</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.purpleButton}
+          onPress={() => router.push('/test/color-vision')}
+        >
+          <Text style={styles.purpleButtonText}>🎨 Color Vision Test</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
@@ -102,6 +109,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  purpleButton: {
+    backgroundColor: '#9333EA',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  purpleButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
