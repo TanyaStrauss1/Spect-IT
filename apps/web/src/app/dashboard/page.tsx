@@ -14,11 +14,12 @@ interface TestResult {
   id: number
   user_id: string
   test_type: string
-  test_name: string
+  test_name?: string
   test_data: any
-  score: number
-  decimal_acuity: number
-  test_date: string
+  results?: any
+  score?: number
+  decimal_acuity?: number
+  test_date?: string
   created_at: string
 }
 

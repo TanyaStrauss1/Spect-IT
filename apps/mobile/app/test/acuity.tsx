@@ -35,40 +35,51 @@ export default function AcuityTestScreen() {
   }, [user, authLoading])
 
   const handleSubmit = () => {
-    const correctLetters = snellenLines[currentLine]
-    const userLetters = userInput.trim().toUpperCase().split(/\s+/)
-    const isCorrect = userLetters.length === correctLetters.length && 
-                      userLetters.every((letter, i) => letter === correctLetters[i])
+    if (!currentLine) return
 
-    const newResponses = [...responses, {
-      line: currentLine + 1,
-      letters: correctLetters,
-      userInput: userLetters,
-      correct: isCorrect
-    }]
-    setResponses(newResponses)
-    setUserInput('')
+    const letter = currentLine.letters[currentLetterIndex]
+    const correct = test.checkResponse(letter, userInput)
+    const response: LetterResponse = { letter, userResponse: userInput.trim().toUpperCase(), correct }
 
-    if (isCorrect && currentLine < snellenLines.length - 1) {
-      setCurrentLine(currentLine + 1)
+    const currentLineLetters = lineResponses[currentLineIndex]?.letters || []
+    const updatedLineLetters = [...currentLineLetters, response]
+
+    if (updatedLineLetters.length === currentLine.letters.length) {
+      const lineResponse = test.scoreLine(currentLine, updatedLineLetters)
+      const updatedLineResponses = [...lineResponses]
+      updatedLineResponses[currentLineIndex] = lineResponse
+      setLineResponses(updatedLineResponses)
+
+      if (test.shouldStop(lineResponse) || currentLineIndex >= chartLines.length - 1) {
+        finishEye(updatedLineResponses)
+      } else {
+        setCurrentLineIndex(currentLineIndex + 1)
+        setCurrentLetterIndex(0)
+      }
     } else {
-      finishTest(newResponses)
+      setCurrentLetterIndex(currentLetterIndex + 1)
+    }
+
+    setUserInput('')
+  }
+
+  const finishEye = (responses: LineResponse[]) => {
+    const eyeResult = test.processEyeResult(currentEye, responses)
+
+    if (currentEye === 'right') {
+      setRightEyeResult(eyeResult)
+      setCurrentEye('left')
+      setCurrentLineIndex(0)
+      setCurrentLetterIndex(0)
+      setLineResponses([])
+    } else {
+      setLeftEyeResult(eyeResult)
+      finishTest(rightEyeResult!, eyeResult)
     }
   }
 
-  const finishTest = async (finalResponses: any[]) => {
-    const lastCorrect = finalResponses.filter(r => r.correct).length
-    const snellenScore = snellenScores[Math.min(lastCorrect, snellenScores.length - 1)]
-    
-    const testResult = {
-      snellen: snellenScore,
-      decimal: parseFloat((20 / parseInt(snellenScore.split('/')[1])).toFixed(2)),
-      logMAR: parseFloat((Math.log10(parseInt(snellenScore.split('/')[1]) / 20)).toFixed(2)),
-      linesRead: lastCorrect,
-      responses: finalResponses
-    }
-
-    setResult(testResult)
+  const finishTest = async (rightEye: EyeResult, leftEye: EyeResult) => {
+    const result = test.createResult(calibration, rightEye, leftEye)
     setCompleted(true)
 
     if (user) {
@@ -78,14 +89,9 @@ export default function AcuityTestScreen() {
           .from('test_results')
           .insert({
             user_id: user.id,
-            user_email: user.email,
-            test_type: 'Visual Acuity',
-            test_name: 'Snellen Chart',
-            test_data: testResult,
-            score: lastCorrect,
-            decimal_acuity: testResult.decimal,
-            test_date: new Date().toISOString(),
-            test_distance: 2.0,
+            test_type: 'Visual Acuity (Clinical)',
+            test_data: result,
+            results: { rightEye, leftEye, methodology: result.methodology },
           })
 
         if (error) {
@@ -100,7 +106,7 @@ export default function AcuityTestScreen() {
     }
   }
 
-  if (completed && result) {
+  if (completed && rightEyeResult && leftEyeResult) {
     return (
       <View style={styles.container}>
         <View style={styles.resultCard}>
@@ -111,25 +117,21 @@ export default function AcuityTestScreen() {
           </Text>
 
           <View style={styles.resultMain}>
-            <Text style={styles.resultLabel}>Snellen Acuity</Text>
-            <Text style={styles.resultScore}>{result.snellen}</Text>
+            <Text style={styles.resultLabel}>Right Eye (OD)</Text>
+            <Text style={styles.resultScore}>{rightEyeResult.finalSnellen}</Text>
+            <Text style={styles.resultSmall}>logMAR: {rightEyeResult.finalLogMAR.toFixed(2)}</Text>
           </View>
 
-          <View style={styles.resultGrid}>
-            <View style={styles.resultItem}>
-              <Text style={styles.resultItemLabel}>Decimal</Text>
-              <Text style={styles.resultItemValue}>{result.decimal}</Text>
-            </View>
-            <View style={styles.resultItem}>
-              <Text style={styles.resultItemLabel}>LogMAR</Text>
-              <Text style={styles.resultItemValue}>{result.logMAR}</Text>
-            </View>
+          <View style={styles.resultMain}>
+            <Text style={styles.resultLabel}>Left Eye (OS)</Text>
+            <Text style={styles.resultScore}>{leftEyeResult.finalSnellen}</Text>
+            <Text style={styles.resultSmall}>logMAR: {leftEyeResult.finalLogMAR.toFixed(2)}</Text>
           </View>
 
           <View style={styles.disclaimer}>
             <Text style={styles.disclaimerText}>
-              <Text style={styles.disclaimerBold}>Note:</Text> This is a screening result, not a medical diagnosis. 
-              Please consult an eye care professional for a comprehensive eye examination.
+              <Text style={styles.disclaimerBold}>Screening Result:</Text> ETDRS/LogMAR methodology with per-eye testing. 
+              This is a screening, not a medical diagnosis. Consult an eye care professional.
             </Text>
           </View>
 
@@ -151,7 +153,7 @@ export default function AcuityTestScreen() {
     )
   }
 
-  const fontSize = Math.max(24, 96 - (currentLine * 10))
+  const letterSizePx = currentLine ? calibrator.calculateETDRSLetterSize(currentLine.logMAR) || 60 : 60
 
   return (
     <View style={styles.container}>
@@ -159,15 +161,17 @@ export default function AcuityTestScreen() {
         <View style={styles.header}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
-              Line {currentLine + 1} of {snellenLines.length}
+              {currentEye === 'right' ? 'Right Eye (OD)' : 'Left Eye (OS)'} - Letter {currentLetterIndex + 1}/{currentLine?.letters.length || 5}
             </Text>
           </View>
-          <Text style={styles.instruction}>Read the letters below</Text>
+          <Text style={styles.instruction}>
+            {currentEye === 'right' ? 'Cover LEFT eye' : 'Cover RIGHT eye'}
+          </Text>
         </View>
 
         <View style={styles.lettersContainer}>
-          <Text style={[styles.letters, { fontSize }]}>
-            {snellenLines[currentLine].join(' ')}
+          <Text style={[styles.letters, { fontSize: letterSizePx }]}>
+            {currentLine?.letters[currentLetterIndex] || ''}
           </Text>
         </View>
 
@@ -176,29 +180,31 @@ export default function AcuityTestScreen() {
             style={styles.input}
             value={userInput}
             onChangeText={setUserInput}
-            placeholder="Type letters (space between)"
+            placeholder="Type the letter"
             autoCapitalize="characters"
             autoFocus
+            maxLength={1}
             onSubmitEditing={handleSubmit}
           />
 
           <TouchableOpacity
             style={styles.submitButton}
             onPress={handleSubmit}
+            disabled={!userInput}
           >
-            <Text style={styles.submitButtonText}>Submit Answer</Text>
+            <Text style={styles.submitButtonText}>Submit</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.progress}>
           <Text style={styles.progressText}>
-            Progress: {responses.length} / {snellenLines.length}
+            Line: {currentLineIndex + 1} / {chartLines.length}
           </Text>
           <View style={styles.progressBar}>
             <View 
               style={[
                 styles.progressFill,
-                { width: `${(responses.length / snellenLines.length) * 100}%` }
+                { width: `${((currentLineIndex + 1) / chartLines.length) * 100}%` }
               ]}
             />
           </View>
