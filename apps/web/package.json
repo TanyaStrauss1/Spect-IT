@@ -15,7 +15,7 @@
     "react-dom": "^18.2.0",
     "@supabase/supabase-js": "^2.39.0",
     "@tensorflow/tfjs": "^4.10.0",
-    "@tensorflow-models/face-landmarks-detection": "^2.0.4"
+    "@tensorflow-models/face-landmarks-detection": "^1.0.6"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

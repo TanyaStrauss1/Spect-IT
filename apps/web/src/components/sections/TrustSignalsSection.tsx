@@ -5,7 +5,7 @@
 
 'use client'
 
-import { Card, CardContent } from '../components/ui'
+import { Card, CardContent } from '../ui'
 
 const trustSignals = [
   {
