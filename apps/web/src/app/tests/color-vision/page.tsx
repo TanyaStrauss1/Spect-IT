@@ -1,8 +1,8 @@
 /**
- * Color Vision Screening Test Page
+ * Clinical Color Vision Screening Test Page
  * 
- * Uses generated pseudoisochromatic plates (Ishihara-style)
- * NOT using copyrighted Ishihara plates - these are original generated plates
+ * Confusion-line pseudoisochromatic method
+ * NOT using copyrighted Ishihara plates - these are confusion-line based screening plates
  */
 
 'use client'
@@ -11,127 +11,54 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
-
-// Plate configuration for the test
-interface ColorPlate {
-  id: number
-  correctAnswer: string
-  type: 'normal' | 'protanopia' | 'deuteranopia' | 'control'
-  description: string
-}
-
-const testPlates: ColorPlate[] = [
-  { id: 1, correctAnswer: '12', type: 'control', description: 'Control plate - visible to all' },
-  { id: 2, correctAnswer: '8', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 3, correctAnswer: '6', type: 'protanopia', description: 'Protan deficiency screening' },
-  { id: 4, correctAnswer: '45', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 5, correctAnswer: '5', type: 'deuteranopia', description: 'Deutan deficiency screening' },
-  { id: 6, correctAnswer: '73', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 7, correctAnswer: '2', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 8, correctAnswer: '16', type: 'control', description: 'Control plate - visible to all' },
-]
+import {
+  createColorVisionTest,
+  type ColorPlate,
+  type PlateResponse,
+} from '@spect-it/cv'
 
 export default function ColorVisionTestPage() {
-  const [currentPlate, setCurrentPlate] = useState(0)
+  const router = useRouter()
+  const { user } = useAuth()
+  const [test] = useState(() => createColorVisionTest())
+  const [currentPlateIndex, setCurrentPlateIndex] = useState(-1) // -1 = instructions
   const [userInput, setUserInput] = useState('')
-  const [responses, setResponses] = useState<any[]>([])
+  const [responses, setResponses] = useState<PlateResponse[]>([])
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
-  const [instructions, setInstructions] = useState(true)
-  
-  const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+
+  const plates = test.getPlates()
+  const currentPlate = plates[currentPlateIndex]
 
   useEffect(() => {
-    if (authLoading) return
-    
     if (!user) {
       router.push('/auth/signin')
-      return
     }
-  }, [user, authLoading, router])
+  }, [user, router])
 
   const startTest = () => {
-    setInstructions(false)
+    setCurrentPlateIndex(0)
   }
 
   const handleSubmit = () => {
-    const plate = testPlates[currentPlate]
-    const isCorrect = userInput.trim() === plate.correctAnswer
-    
-    const newResponses = [...responses, {
-      plateId: plate.id,
-      correctAnswer: plate.correctAnswer,
-      userAnswer: userInput.trim(),
-      correct: isCorrect,
-      type: plate.type
-    }]
-    setResponses(newResponses)
+    if (!currentPlate || !userInput.trim()) return
+
+    const plateResponse = test.scorePlate(currentPlate, userInput.trim())
+    const updatedResponses = [...responses, plateResponse]
+    setResponses(updatedResponses)
     setUserInput('')
 
-    if (currentPlate < testPlates.length - 1) {
-      setCurrentPlate(currentPlate + 1)
+    if (currentPlateIndex < plates.length - 1) {
+      setCurrentPlateIndex(currentPlateIndex + 1)
     } else {
-      finishTest(newResponses)
+      finishTest(updatedResponses)
     }
   }
 
-  const handleCannotSee = () => {
-    const plate = testPlates[currentPlate]
-    
-    const newResponses = [...responses, {
-      plateId: plate.id,
-      correctAnswer: plate.correctAnswer,
-      userAnswer: 'CANNOT_SEE',
-      correct: false,
-      type: plate.type
-    }]
-    setResponses(newResponses)
-    setUserInput('')
-
-    if (currentPlate < testPlates.length - 1) {
-      setCurrentPlate(currentPlate + 1)
-    } else {
-      finishTest(newResponses)
-    }
-  }
-
-  const finishTest = async (finalResponses: any[]) => {
-    // Analyze results
-    const controlCorrect = finalResponses.filter(r => r.type === 'control' && r.correct).length
-    const controlTotal = finalResponses.filter(r => r.type === 'control').length
-    const normalCorrect = finalResponses.filter(r => r.type === 'normal' && r.correct).length
-    const normalTotal = finalResponses.filter(r => r.type === 'normal').length
-    const totalCorrect = finalResponses.filter(r => r.correct).length
-    
-    // Determine screening result
-    let screeningResult = 'Normal color vision'
-    let recommendations = 'Your color vision appears normal based on this screening.'
-    
-    if (controlCorrect < controlTotal) {
-      screeningResult = 'Test inconclusive'
-      recommendations = 'Control plates were not read correctly. This may indicate difficulty with the test format rather than color vision deficiency. Please consult an eye care professional.'
-    } else if (normalCorrect === 0) {
-      screeningResult = 'Possible red-green color vision deficiency detected'
-      recommendations = 'This screening suggests you may have difficulty distinguishing red and green colors. Please consult an eye care professional for comprehensive testing.'
-    } else if (normalCorrect < normalTotal / 2) {
-      screeningResult = 'Possible color vision deficiency detected'
-      recommendations = 'This screening suggests you may have some difficulty with color discrimination. Please consult an eye care professional for comprehensive testing.'
-    }
-
-    const testResult = {
-      screeningResult,
-      recommendations,
-      platesCorrect: totalCorrect,
-      platesTotal: finalResponses.length,
-      controlPlatesCorrect: controlCorrect,
-      normalPlatesCorrect: normalCorrect,
-      responses: finalResponses
-    }
-
+  const finishTest = async (finalResponses: PlateResponse[]) => {
+    const testResult = test.createResult(finalResponses)
     setResult(testResult)
 
-    // Save to Supabase
     if (user) {
       setSaving(true)
       try {
@@ -139,17 +66,17 @@ export default function ColorVisionTestPage() {
           .from('test_results')
           .insert({
             user_id: user.id,
-            user_email: user.email,
-            test_type: 'Color Vision',
-            test_name: 'Pseudoisochromatic Plate Test',
+            test_type: 'Color Vision (Clinical)',
             test_data: testResult,
-            score: totalCorrect,
-            test_date: new Date().toISOString(),
+            results: {
+              classification: testResult.classification,
+              protanScore: testResult.protanScore,
+              deutanScore: testResult.deutanScore,
+              methodology: testResult.methodology,
+            },
           })
 
-        if (error) {
-          console.error('Error saving test result:', error)
-        }
+        if (error) console.error('Error saving test result:', error)
       } catch (error) {
         console.error('Error saving test result:', error)
       } finally {
@@ -158,109 +85,108 @@ export default function ColorVisionTestPage() {
     }
   }
 
-  if (instructions) {
+  // Instructions
+  if (currentPlateIndex === -1) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
         <div className="container mx-auto max-w-2xl">
           <div className="bg-white rounded-lg shadow-xl p-8">
-            <div className="text-center mb-8">
-              <div className="text-6xl mb-4">🎨</div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Color Vision Screening</h1>
-              <p className="text-gray-600">Test your ability to distinguish colors</p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Important Information</h3>
-                <p className="text-sm text-blue-800 mb-2">
-                  This is a <strong>screening test</strong>, not a diagnostic tool. It uses generated 
-                  pseudoisochromatic plates similar to Ishihara plates.
-                </p>
-                <p className="text-sm text-blue-800">
-                  Results should be confirmed by an eye care professional using standardized clinical tests.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">Instructions:</h3>
-                <ol className="list-decimal list-inside space-y-2 text-gray-700">
-                  <li>Ensure you're in good lighting conditions</li>
-                  <li>Remove any tinted glasses (clear glasses are fine)</li>
-                  <li>Look at each plate and identify the number you see</li>
-                  <li>Type the number(s) you see, or click "Cannot See" if you cannot identify a number</li>
-                  <li>You'll see 8 plates in total</li>
-                  <li>Take your time with each plate</li>
-                </ol>
-              </div>
-
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Color Vision Screening</h1>
+            
+            <div className="space-y-4 mb-8">
+              <p className="text-gray-700">
+                This test uses confusion-line pseudoisochromatic plates to screen for color vision deficiencies.
+              </p>
+              
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-semibold text-yellow-900 mb-2">Test Environment</h3>
-                <p className="text-sm text-yellow-800">
-                  For best results, take this test on a device with good color accuracy. 
-                  Results may vary on different screens or in poor lighting.
+                <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Display Limitations</h3>
+                <p className="text-sm text-yellow-800 mb-2">
+                  This test depends on accurate color reproduction by your screen. Please ensure:
                 </p>
+                <ul className="text-sm text-yellow-800 list-disc list-inside space-y-1">
+                  {test.getDisplayChecklist().map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
               </div>
 
-              <button
-                onClick={startTest}
-                className="w-full bg-purple-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors text-lg"
-              >
-                Begin Test
-              </button>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Instructions</h3>
+                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                  <li>You will see {plates.length} colored plates</li>
+                  <li>Each plate contains a number</li>
+                  <li>Type the number you see</li>
+                  <li>If you can't see a number, type "0" or "X"</li>
+                  <li>Take your time with each plate</li>
+                </ul>
+              </div>
             </div>
+
+            <button
+              onClick={startTest}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors"
+            >
+              Start Test
+            </button>
           </div>
         </div>
       </div>
     )
   }
 
+  // Results
   if (result) {
+    const interpretation = test.getInterpretation(result.classification)
+    
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
         <div className="container mx-auto max-w-2xl">
           <div className="bg-white rounded-lg shadow-xl p-8">
             <div className="text-center mb-8">
-              <div className="text-6xl mb-4">✓</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Screening Complete!</h2>
+              <div className="text-6xl mb-4">
+                {result.classification === 'NORMAL' ? '✓' : '⚠️'}
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Test Complete!</h2>
               <p className="text-gray-600">{saving ? 'Saving results...' : 'Results saved'}</p>
             </div>
-            
+
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6">
-                <p className="text-gray-600 text-sm uppercase tracking-wide mb-2 text-center">Screening Result</p>
-                <p className="text-2xl font-bold text-purple-600 text-center">{result.screeningResult}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <p className="text-gray-600 text-sm mb-1">Plates Correct</p>
-                  <p className="text-3xl font-bold text-gray-900">{result.platesCorrect}/{result.platesTotal}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <p className="text-gray-600 text-sm mb-1">Control Plates</p>
-                  <p className="text-3xl font-bold text-gray-900">{result.controlPlatesCorrect}/2</p>
-                </div>
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6">
+                <p className="text-gray-600 text-sm uppercase tracking-wide mb-2">Classification</p>
+                <p className="text-2xl font-bold text-gray-900 mb-4">
+                  {result.classification.replace('_', ' ')}
+                </p>
+                <p className="text-sm text-gray-700">{interpretation}</p>
               </div>
 
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <h3 className="font-semibold text-purple-900 mb-2">Recommendations</h3>
-                <p className="text-sm text-purple-800">{result.recommendations}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-red-50 rounded-lg p-4 text-center">
+                  <p className="text-gray-600 text-sm mb-1">Protan Score</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {(result.protanScore * 100).toFixed(0)}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Red-deficient</p>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <p className="text-gray-600 text-sm mb-1">Deutan Score</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {(result.deutanScore * 100).toFixed(0)}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Green-deficient</p>
+                </div>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Important:</strong> This is a screening result, not a medical diagnosis. 
-                  Color vision deficiency can only be definitively diagnosed by a qualified eye care 
-                  professional using standardized clinical tests. If you have concerns, please consult 
-                  an optometrist or ophthalmologist.
+                  <strong>Screening Result:</strong> {result.displayWarning}
                 </p>
               </div>
             </div>
-            
+
             <div className="mt-8 flex gap-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="flex-1 bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
               >
                 View Dashboard
               </button>
@@ -277,245 +203,70 @@ export default function ColorVisionTestPage() {
     )
   }
 
-  const plate = testPlates[currentPlate]
-
+  // Test in progress
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
       <div className="container mx-auto max-w-4xl">
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="inline-block bg-purple-100 text-purple-600 px-4 py-2 rounded-full font-semibold mb-4">
-              Plate {currentPlate + 1} of {testPlates.length}
+            <div className="inline-block bg-green-100 text-green-600 px-4 py-2 rounded-full font-semibold mb-4">
+              Plate {currentPlateIndex + 1} of {plates.length}
             </div>
-            <h3 className="text-xl text-gray-600 mb-2">What number do you see?</h3>
+            <h3 className="text-xl text-gray-600 mb-2">
+              What number do you see?
+            </h3>
+            <p className="text-sm text-gray-500">
+              {currentPlate?.description}
+            </p>
           </div>
 
+          {/* Simulated Plate */}
           <div className="flex justify-center mb-8">
-            <ColorPlateVisualization 
-              plateId={plate.id}
-              number={plate.correctAnswer}
-              type={plate.type}
-            />
+            <div 
+              className="w-64 h-64 rounded-full flex items-center justify-center text-8xl font-bold shadow-lg"
+              style={{ 
+                backgroundColor: currentPlate?.backgroundColors[0] || '#e0e0e0',
+                color: currentPlate?.figureColor || '#666',
+              }}
+            >
+              {currentPlate?.number}
+            </div>
           </div>
-          
+
+          {/* Input */}
           <div className="space-y-4 max-w-lg mx-auto">
             <input
               type="text"
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
-              placeholder="Enter the number you see"
-              className="w-full px-4 py-3 text-2xl text-center border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              placeholder="Type the number (or X if you can't see one)"
+              className="w-full px-4 py-3 text-xl text-center border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
               onKeyPress={(e) => e.key === 'Enter' && userInput && handleSubmit()}
               autoFocus
             />
-            <div className="flex gap-3">
-              <button
-                onClick={handleSubmit}
-                disabled={!userInput}
-                className="flex-1 bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Submit Answer
-              </button>
-              <button
-                onClick={handleCannotSee}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Cannot See
-              </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!userInput.trim()}
+              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+            >
+              Submit Answer
+            </button>
+          </div>
+
+          {/* Progress */}
+          <div className="mt-8">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Progress</span>
+              <span>{responses.length} / {plates.length}</span>
             </div>
-            <p className="text-sm text-gray-500 text-center">
-              Press Enter to submit
-            </p>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(responses.length / plates.length) * 100}%` }}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Progress indicator */}
-        <div className="mt-6 bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Progress</span>
-            <span>{responses.length} / {testPlates.length}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(responses.length / testPlates.length) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/**
- * ColorPlateVisualization Component
- * Generates pseudoisochromatic plates using SVG
- * These are NOT copyrighted Ishihara plates - they are original generated plates
- */
-interface ColorPlateVisualizationProps {
-  plateId: number
-  number: string
-  type: 'normal' | 'protanopia' | 'deuteranopia' | 'control'
-}
-
-function ColorPlateVisualization({ plateId, number, type }: ColorPlateVisualizationProps) {
-  const size = 400
-  const circleRadius = 8
-  const seed = plateId * 1000
-
-  // Generate deterministic random number based on seed
-  const seededRandom = (index: number) => {
-    const x = Math.sin(seed + index) * 10000
-    return x - Math.floor(x)
-  }
-
-  // Color palettes for different deficiency types
-  const getColorPalette = () => {
-    switch (type) {
-      case 'control':
-        // High contrast - visible to everyone
-        return {
-          numberColors: ['#FF0000', '#D40000', '#FF2020'],
-          backgroundColors: ['#00AA00', '#00CC00', '#00DD00', '#009900']
-        }
-      case 'protanopia':
-        // Red deficiency screening
-        return {
-          numberColors: ['#CC6600', '#DD7700', '#EE8800'],
-          backgroundColors: ['#88AA00', '#99BB00', '#77AA22', '#668811']
-        }
-      case 'deuteranopia':
-        // Green deficiency screening
-        return {
-          numberColors: ['#DD6644', '#CC5533', '#EE7755'],
-          backgroundColors: ['#88AA66', '#99BB77', '#77AA55', '#6699AA']
-        }
-      case 'normal':
-      default:
-        // General red-green screening
-        return {
-          numberColors: ['#DD5500', '#CC4400', '#EE6600'],
-          backgroundColors: ['#88BB44', '#99CC55', '#77AA33', '#669922']
-        }
-    }
-  }
-
-  const palette = getColorPalette()
-
-  // Generate circles for the plate
-  const circles: JSX.Element[] = []
-  const numCircles = 400
-  
-  // Define the number path (simplified digit paths)
-  const isPartOfNumber = (x: number, y: number) => {
-    const centerX = size / 2
-    const centerY = size / 2
-    const relX = (x - centerX) / 30
-    const relY = (y - centerY) / 30
-
-    // Simple number patterns
-    if (number === '12') {
-      // "1"
-      if (relX >= -3 && relX <= -1 && relY >= -2.5 && relY <= 2.5) return true
-      // "2"
-      if (relX >= 0.5 && relX <= 3 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-    } else if (number === '8') {
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if ((Math.abs(relX) >= 1.5 && Math.abs(relX) <= 2.5) && 
-          Math.abs(relY) <= 2.5) return true
-    } else if (number === '6') {
-      if ((Math.abs(relX) >= 1.5 && Math.abs(relX) <= 2.5) && relY <= 2.5) return true
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-    } else if (number === '45') {
-      // "4"
-      if (relX >= -3.5 && relX <= -2 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= -3.5 && relX <= -1 && relY >= -0.5 && relY <= 0.5) return true
-      if (relX >= -2.5 && relX <= -1.5 && relY >= -2.5 && relY <= 2.5) return true
-      // "5"
-      if (relX >= 0.5 && relX <= 3 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= 0.5 && relX <= 1.5 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= 2 && relX <= 3 && relY >= 0 && relY <= 2.5) return true
-    } else if (number === '5') {
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= -2 && relX <= -1 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= 1 && relX <= 2 && relY >= 0 && relY <= 2.5) return true
-    } else if (number === '73') {
-      // "7"
-      if (relX >= -3.5 && relX <= -1 && relY >= -2.5 && relY <= -1.5) return true
-      if (relX >= -2.5 && relX <= -1.5 && relY >= -2.5 && relY <= 2.5) return true
-      // "3"
-      if (relX >= 0.5 && relX <= 3 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= 2 && relX <= 3 && Math.abs(relY) <= 2.5) return true
-    } else if (number === '2') {
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= 1 && relX <= 2 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= -2 && relX <= -1 && relY >= 0 && relY <= 2.5) return true
-    } else if (number === '16') {
-      // "1"
-      if (relX >= -3 && relX <= -1 && relY >= -2.5 && relY <= 2.5) return true
-      // "6"
-      if ((Math.abs(relX - 1.5) >= 1 && Math.abs(relX - 1.5) <= 2) && relY <= 2.5) return true
-      if (Math.abs(relX - 1.5) <= 1.5 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-    }
-
-    return false
-  }
-
-  for (let i = 0; i < numCircles; i++) {
-    const angle = seededRandom(i * 2) * Math.PI * 2
-    const radius = Math.sqrt(seededRandom(i * 2 + 1)) * (size * 0.45)
-    const cx = size / 2 + Math.cos(angle) * radius
-    const cy = size / 2 + Math.sin(angle) * radius
-    
-    const inNumber = isPartOfNumber(cx, cy)
-    const colors = inNumber ? palette.numberColors : palette.backgroundColors
-    const color = colors[Math.floor(seededRandom(i * 3) * colors.length)]
-    const r = circleRadius * (0.7 + seededRandom(i * 4) * 0.6)
-    
-    circles.push(
-      <circle
-        key={i}
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill={color}
-        opacity={0.8 + seededRandom(i * 5) * 0.2}
-      />
-    )
-  }
-
-  return (
-    <div className="relative">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="rounded-full shadow-lg">
-        <circle cx={size/2} cy={size/2} r={size/2} fill="#F5F5DC" />
-        {circles}
-      </svg>
-      <div className="mt-4 text-center text-sm text-gray-500">
-        Generated pseudoisochromatic plate (not copyrighted Ishihara)
       </div>
     </div>
   )
