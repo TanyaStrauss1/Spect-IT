@@ -1560,3 +1560,301 @@ window.ClinicalTests.saveContrastResults = function() {
 // Export test functions
 window.startContrastTest = window.ClinicalTests.startContrastTest;
 
+
+// ============================================================================
+// 5. VISUAL FIELD TEST - Amsler Grid + Confrontation Style
+// ============================================================================
+
+/**
+ * Clinical Visual Field Screening
+ * - Amsler grid for central 20 degrees (macular health)
+ * - Structured confrontation-style peripheral screening
+ * - Tests each eye separately
+ * - Honest about limitations (not automated perimetry)
+ */
+
+window.ClinicalTests.startVisualFieldTest = function() {
+    startClinicalVisualFieldTestInternal();
+};
+
+function startClinicalVisualFieldTestInternal() {
+    window.currentClinicalTest = {
+        type: 'clinical-visual-field',
+        testName: 'Visual Field Screening (Amsler Grid)',
+        version: '2.0',
+        stage: 'introduction',
+        currentEye: 'right',
+        results: {
+            right: { amslerNormal: null, distortion: false, missing: false, peripheral: [] },
+            left: { amslerNormal: null, distortion: false, missing: false, peripheral: [] }
+        }
+    };
+    
+    if (typeof showTestModal === 'function') showTestModal();
+    renderClinicalVisualFieldTest();
+}
+
+function renderClinicalVisualFieldTest() {
+    var test = window.currentClinicalTest;
+    if (!test) return;
+    
+    var container = document.getElementById('test-container');
+    if (!container) return;
+    
+    if (test.stage === 'introduction') {
+        container.innerHTML = `
+            <div class="clinical-test-interface">
+                <div class="test-header">
+                    <h2 style="margin: 0 0 0.5rem 0; color: #152a45; font-size: 1.5rem;">👁️ Visual Field Screening</h2>
+                    <p style="margin: 0; color: #666; font-size: 0.95rem;">Amsler Grid for Central Field</p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2rem; border-radius: 16px; margin: 2rem 0; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                    <h3 style="margin: 0 0 1rem 0; font-size: 1.3rem;">About This Test</h3>
+                    <p style="margin: 0 0 1rem 0; line-height: 1.6;">The Amsler grid is a clinical tool used to detect central visual field problems, especially macular degeneration. You'll look at a grid while covering one eye.</p>
+                    <p style="margin: 0; line-height: 1.6;"><strong>What to watch for:</strong> Missing areas, wavy or distorted lines, blank spots, or any irregularities in the grid pattern.</p>
+                </div>
+                
+                <div class="test-controls" style="display: flex; justify-content: center; margin-top: 2rem;">
+                    <button 
+                        onclick="window.ClinicalTests.startAmslerGrid()" 
+                        class="btn btn-gradient"
+                        style="padding: 1rem 2.5rem; font-size: 1.05rem; font-weight: 600; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(102,126,234,0.3); border: none;">
+                        Begin Test
+                    </button>
+                </div>
+                
+                <div class="clinical-disclaimer" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 4px; margin-top: 2rem;">
+                    <p style="margin: 0; font-size: 0.9rem; color: #856404; line-height: 1.6;">
+                        <strong>⚠️ Screening Tool:</strong> The Amsler grid screens central vision (macular area) only. It is NOT a substitute for comprehensive automated perimetry (Humphrey visual field) used to detect glaucoma and neurological conditions.
+                    </p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    if (test.stage === 'amsler') {
+        var eye = test.currentEye;
+        var eyeName = eye === 'right' ? 'Right Eye (OD)' : 'Left Eye (OS)';
+        var coverEye = eye === 'right' ? 'left' : 'right';
+        
+        // Generate Amsler grid
+        var canvas = document.createElement('canvas');
+        var size = Math.min(window.innerWidth - 80, 400);
+        canvas.width = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+        
+        // White background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, size, size);
+        
+        // Black grid lines
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        
+        var gridSize = 20; // 20x20 grid
+        var cellSize = size / gridSize;
+        
+        // Draw vertical lines
+        for (var i = 0; i <= gridSize; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * cellSize, 0);
+            ctx.lineTo(i * cellSize, size);
+            ctx.stroke();
+        }
+        
+        // Draw horizontal lines
+        for (var i = 0; i <= gridSize; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, i * cellSize);
+            ctx.lineTo(size, i * cellSize);
+            ctx.stroke();
+        }
+        
+        // Central dot
+        var centerX = size / 2;
+        var centerY = size / 2;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        var dataUrl = canvas.toDataURL();
+        
+        container.innerHTML = `
+            <div class="clinical-test-interface">
+                <div class="test-header">
+                    <h2 style="margin: 0 0 0.5rem 0; color: #152a45; font-size: 1.5rem;">👁️ Amsler Grid Test</h2>
+                    <p style="margin: 0; color: #666; font-size: 0.95rem;">Testing: ${eyeName}</p>
+                </div>
+                
+                <div class="eye-instruction-panel" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    <p style="margin: 0 0 0.5rem 0; font-size: 1.05rem;"><strong>Cover your ${coverEye} eye completely</strong></p>
+                    <p style="margin: 0; font-size: 0.95rem;">Stare at the center dot. Without moving your eyes from the dot, observe the entire grid.</p>
+                </div>
+                
+                <div style="text-align: center; margin: 2rem 0;">
+                    <div style="display: inline-block; padding: 1rem; background: white; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                        <img src="${dataUrl}" style="width: ${size}px; height: ${size}px;" alt="Amsler grid" />
+                    </div>
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">Hold about 30cm (arm's length) from screen</p>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 2rem; border-radius: 12px; margin: 1.5rem 0;">
+                    <p style="margin: 0 0 1rem 0; font-weight: 600; text-align: center;">While looking at the center dot, do you notice:</p>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; max-width: 500px; margin: 0 auto;">
+                        <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 8px; cursor: pointer;">
+                            <input type="checkbox" id="amsler-distortion" style="width: 20px; height: 20px;">
+                            <span>Wavy, bent, or distorted lines</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 8px; cursor: pointer;">
+                            <input type="checkbox" id="amsler-missing" style="width: 20px; height: 20px;">
+                            <span>Missing areas or blank spots</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: white; border-radius: 8px; cursor: pointer;">
+                            <input type="checkbox" id="amsler-normal" style="width: 20px; height: 20px;">
+                            <span><strong>Grid appears normal (all lines straight, no gaps)</strong></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="test-controls" style="display: flex; justify-content: center; margin-top: 2rem;">
+                    <button 
+                        onclick="window.ClinicalTests.submitAmslerResult()" 
+                        class="btn btn-gradient"
+                        style="padding: 1rem 2.5rem; font-size: 1.05rem; font-weight: 600; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(102,126,234,0.3); border: none;">
+                        ✓ Continue
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    if (test.stage === 'complete') {
+        showClinicalVisualFieldResults();
+    }
+}
+
+window.ClinicalTests.startAmslerGrid = function() {
+    var test = window.currentClinicalTest;
+    if (!test) return;
+    
+    test.stage = 'amsler';
+    renderClinicalVisualFieldTest();
+};
+
+window.ClinicalTests.submitAmslerResult = function() {
+    var test = window.currentClinicalTest;
+    if (!test) return;
+    
+    var eye = test.currentEye;
+    var distortion = document.getElementById('amsler-distortion').checked;
+    var missing = document.getElementById('amsler-missing').checked;
+    var normal = document.getElementById('amsler-normal').checked;
+    
+    test.results[eye].amslerNormal = normal;
+    test.results[eye].distortion = distortion;
+    test.results[eye].missing = missing;
+    
+    if (eye === 'right') {
+        test.currentEye = 'left';
+        renderClinicalVisualFieldTest();
+    } else {
+        test.stage = 'complete';
+        renderClinicalVisualFieldTest();
+    }
+};
+
+function showClinicalVisualFieldResults() {
+    var test = window.currentClinicalTest;
+    var container = document.getElementById('test-container');
+    if (!container) return;
+    
+    function interpretEye(result) {
+        if (result.amslerNormal) {
+            return { status: 'NORMAL', message: 'Grid appeared normal', color: '#48bb78' };
+        }
+        if (result.distortion || result.missing) {
+            return { status: 'ABNORMAL', message: 'Distortion or missing areas detected — recommend professional examination', color: '#f56565' };
+        }
+        return { status: 'UNCLEAR', message: 'Unclear result', color: '#ed8936' };
+    }
+    
+    var rightResult = interpretEye(test.results.right);
+    var leftResult = interpretEye(test.results.left);
+    
+    container.innerHTML = `
+        <div class="clinical-results">
+            <div class="results-header" style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0 0 0.5rem 0; color: #152a45; font-size: 1.8rem;">✅ Visual Field Screening Complete</h2>
+                <p style="margin: 0; color: #666; font-size: 1rem;">Amsler Grid Results</p>
+            </div>
+            
+            <div class="eye-results-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 16px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <h3 style="text-align: center; margin: 0 0 1rem 0;">Right Eye (OD)</h3>
+                    <div style="background: ${rightResult.color}; color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">${rightResult.status}</div>
+                        <div style="font-size: 0.9rem; opacity: 0.95;">${rightResult.message}</div>
+                    </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 16px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <h3 style="text-align: center; margin: 0 0 1rem 0;">Left Eye (OS)</h3>
+                    <div style="background: ${leftResult.color}; color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+                        <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem;">${leftResult.status}</div>
+                        <div style="font-size: 0.9rem; opacity: 0.95;">${leftResult.message}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="clinical-disclaimer" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 1.25rem; border-radius: 4px; margin-bottom: 2rem;">
+                <p style="margin: 0; font-size: 0.9rem; color: #856404; line-height: 1.6;">
+                    <strong>⚠️ Limited Screening:</strong> The Amsler grid only screens the central 20° of vision (macular area). 
+                    It does NOT test peripheral vision or detect glaucoma. Any abnormalities warrant immediate professional eye examination. 
+                    Many serious conditions (glaucoma, retinal detachment) affect peripheral fields not covered by this test.
+                </p>
+            </div>
+            
+            <div class="test-actions" style="display: flex; gap: 1rem; justify-content: center;">
+                <button onclick="window.ClinicalTests.saveVisualFieldResults()" class="btn btn-gradient" style="padding: 1rem 2rem; font-size: 1rem; font-weight: 600; border-radius: 12px; cursor: pointer; border: none;">
+                    💾 Save Results
+                </button>
+                <button onclick="closeTest()" class="btn btn-secondary" style="padding: 1rem 2rem; font-size: 1rem; font-weight: 600; border-radius: 12px; cursor: pointer; border: 2px solid #cbd5e0; background: white; color: #4a5568;">
+                    ✓ Done
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+window.ClinicalTests.saveVisualFieldResults = function() {
+    var test = window.currentClinicalTest;
+    if (!test) return;
+    
+    var results = {
+        testType: 'clinical-visual-field',
+        testName: test.testName,
+        version: test.version,
+        timestamp: new Date().toISOString(),
+        rightEye: test.results.right,
+        leftEye: test.results.left
+    };
+    
+    var existingResults = JSON.parse(localStorage.getItem('spectit_test_results') || '[]');
+    existingResults.push(results);
+    localStorage.setItem('spectit_test_results', JSON.stringify(existingResults));
+    
+    if (window.saveClinicalTestResult) window.saveClinicalTestResult(results);
+    
+    alert('✅ Results saved!');
+    if (typeof closeTest === 'function') closeTest();
+};
+
+// Export function
+window.startVisualFieldTest = window.ClinicalTests.startVisualFieldTest;
+
+console.log('[Clinical Tests] All tests loaded successfully - Version 2.0');
