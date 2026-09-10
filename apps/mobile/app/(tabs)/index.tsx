@@ -51,6 +51,34 @@ export default function HomeScreen() {
         >
           <Text style={styles.purpleButtonText}>🎨 Color Vision Test</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push('/test/astigmatism')}
+        >
+          <Text style={styles.primaryButtonText}>🌀 Astigmatism Test</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push('/test/contrast')}
+        >
+          <Text style={styles.primaryButtonText}>🌓 Contrast Sensitivity</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push('/test/visual-field')}
+        >
+          <Text style={styles.primaryButtonText}>📍 Visual Field Test</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => router.push('/test/prescription')}
+        >
+          <Text style={styles.primaryButtonText}>🔬 Prescription Test</Text>
+        </TouchableOpacity>
         
         <TouchableOpacity
           style={styles.secondaryButton}

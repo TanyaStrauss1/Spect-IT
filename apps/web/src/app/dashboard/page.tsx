@@ -94,18 +94,42 @@ export default function DashboardPage() {
                   <p className="text-gray-600 text-sm">Total Tests Completed</p>
                   <p className="text-3xl font-bold text-indigo-600">{results.length}</p>
                 </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Link
                 href="/tests/acuity"
-                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
               >
-                Visual Acuity Test
+                Visual Acuity
               </Link>
               <Link
                 href="/tests/color-vision"
-                className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
               >
-                Color Vision Test
+                Color Vision
+              </Link>
+              <Link
+                href="/tests/astigmatism"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+              >
+                Astigmatism
+              </Link>
+              <Link
+                href="/tests/contrast"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+              >
+                Contrast Sensitivity
+              </Link>
+              <Link
+                href="/tests/visual-field"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+              >
+                Visual Field
+              </Link>
+              <Link
+                href="/tests/prescription"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+              >
+                Prescription
               </Link>
             </div>
               </div>
@@ -157,6 +181,72 @@ export default function DashboardPage() {
                               <div>
                                 <p className="text-xs text-gray-500 uppercase">Control Plates</p>
                                 <p className="text-lg font-semibold text-gray-900">{result.test_data?.controlPlatesCorrect || 0}/2</p>
+                              </div>
+                            </>
+                          )}
+                          {result.test_type === 'Astigmatism' && (
+                            <>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Assessment</p>
+                                <p className="text-sm font-bold text-indigo-600">{result.test_data?.overallAssessment || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Left Eye</p>
+                                <p className="text-sm font-semibold text-gray-900">{result.test_data?.leftEye?.status || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Right Eye</p>
+                                <p className="text-sm font-semibold text-gray-900">{result.test_data?.rightEye?.status || 'N/A'}</p>
+                              </div>
+                            </>
+                          )}
+                          {result.test_type === 'Contrast Sensitivity' && (
+                            <>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Assessment</p>
+                                <p className="text-sm font-bold text-indigo-600">{result.test_data?.assessment || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Lowest Level</p>
+                                <p className="text-lg font-semibold text-gray-900">{result.test_data?.lowestContrastLevel || 0}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Accuracy</p>
+                                <p className="text-lg font-semibold text-gray-900">
+                                  {result.test_data?.correctCount || 0}/{result.test_data?.totalCount || 0}
+                                </p>
+                              </div>
+                            </>
+                          )}
+                          {result.test_type === 'Visual Field' && (
+                            <>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Assessment</p>
+                                <p className="text-sm font-bold text-indigo-600">{result.test_data?.assessment || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Left Eye</p>
+                                <p className="text-lg font-semibold text-gray-900">{result.test_data?.leftEye?.percentage || 0}%</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Right Eye</p>
+                                <p className="text-lg font-semibold text-gray-900">{result.test_data?.rightEye?.percentage || 0}%</p>
+                              </div>
+                            </>
+                          )}
+                          {result.test_type === 'Prescription Measurement' && (
+                            <>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Left Distance</p>
+                                <p className="text-sm font-semibold text-gray-900">{result.test_data?.leftEye?.distance || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Right Distance</p>
+                                <p className="text-sm font-semibold text-gray-900">{result.test_data?.rightEye?.distance || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Note</p>
+                                <p className="text-xs text-orange-600 font-semibold">Screening estimate only</p>
                               </div>
                             </>
                           )}
