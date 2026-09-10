@@ -6,17 +6,17 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useAuth } from '@/lib/auth/auth-context'
 
 const navItems = [
   { label: 'Home', href: '/' },
   { label: 'Tests', href: '/tests' },
   { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Marketplace', href: '/marketplace' },
-  { label: 'Find Specialists', href: '/specialists' },
 ]
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user, signOut } = useAuth()
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
@@ -42,12 +42,37 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/tests"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-            >
-              Start Screening
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/tests/acuity"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  Start Test
+                </Link>
+                <button
+                  onClick={() => signOut()}
+                  className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/signin"
+                  className="text-gray-700 hover:text-indigo-600 font-medium transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
@@ -80,13 +105,43 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
-              <Link
-                href="/tests"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-center mt-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Start Screening
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href="/tests/acuity"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Start Test
+                  </Link>
+                  <button
+                    onClick={() => {
+                      signOut()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="text-gray-700 hover:text-indigo-600 font-medium px-2 py-1 text-left"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/signin"
+                    className="text-gray-700 hover:text-indigo-600 font-medium px-2 py-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold text-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         )}
