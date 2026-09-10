@@ -37,7 +37,23 @@ npm install
    - Project URL (something like `https://xxxxx.supabase.co`)
    - Anon/Public key (starts with `eyJ...`)
 
-### 2.3 Run Database Migrations
+### 2.3 Configure Auth Redirect URLs
+
+For password reset functionality to work, you need to configure redirect URLs in Supabase:
+
+1. Go to your Supabase Dashboard
+2. Navigate to Authentication > URL Configuration
+3. Add the following redirect URLs:
+   - For local development:
+     - `http://localhost:3000/auth/reset-password` (web)
+     - `http://localhost:3000/auth/callback` (web sign-up confirmation)
+     - `spectit://reset-password` (mobile)
+   - For production:
+     - `https://yourdomain.com/auth/reset-password` (web)
+     - `https://yourdomain.com/auth/callback` (web sign-up confirmation)
+     - `spectit://reset-password` (mobile)
+
+### 2.4 Run Database Migrations
 
 **Option A: Using Supabase CLI (Recommended)**
 

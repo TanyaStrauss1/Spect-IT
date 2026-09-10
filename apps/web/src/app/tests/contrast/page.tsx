@@ -33,14 +33,16 @@ export default function ContrastTestPage() {
   const [saving, setSaving] = useState(false)
   
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.push('/auth/signin')
       return
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   useEffect(() => {
     if (step === 'test') {

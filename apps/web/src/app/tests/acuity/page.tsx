@@ -19,16 +19,18 @@ export default function AcuityTestPage() {
   const [saving, setSaving] = useState(false)
   
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.push('/auth/signin')
       return
     }
     initializeTest()
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const initializeTest = async () => {
     try {

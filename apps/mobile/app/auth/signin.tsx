@@ -59,6 +59,10 @@ export default function SignInScreen() {
           </Text>
         </TouchableOpacity>
 
+        <TouchableOpacity onPress={() => router.push('/auth/forgot-password')}>
+          <Text style={styles.forgotLink}>Forgot password?</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={() => router.push('/auth/signup')}>
           <Text style={styles.link}>
             Don't have an account? <Text style={styles.linkBold}>Sign Up</Text>
@@ -112,6 +116,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
+  },
+  forgotLink: {
+    textAlign: 'center',
+    color: '#4F46E5',
+    fontSize: 14,
+    marginTop: 8,
   },
   link: {
     textAlign: 'center',
