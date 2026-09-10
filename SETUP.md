@@ -172,6 +172,17 @@ This will open Expo Dev Tools. You can:
 
 **Solution:** Run the database migrations (see Step 2.3)
 
+### Issue: "Column user_id doesn't exist" error
+
+**Solution:** Make sure you ran the latest migration `20260910180000_auth_user_id_and_rls.sql` that adds the `user_id` column
+
+### Issue: Dashboard shows "Loading..." but no results appear
+
+**Solution:** This is usually an RLS (Row Level Security) issue:
+1. Verify the `20260910180000_auth_user_id_and_rls.sql` migration ran successfully
+2. Check that test results have `user_id` populated (not null)
+3. Verify you're signed in with the same account that created the test results
+
 ### Issue: Mobile app can't connect to Supabase
 
 **Solution:** 

@@ -35,14 +35,28 @@ export interface TestResultFilters {
 
 /**
  * Save a test result to the database
+ * Automatically adds user_id from the current authenticated user
  */
 export async function saveTestResult(
   supabase: SupabaseClient,
-  result: Omit<TestResult, 'id' | 'created_at'>
+  result: Omit<TestResult, 'id' | 'created_at' | 'user_id'>
 ) {
+  // Get current user to set user_id
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    throw new Error('User must be authenticated to save test results')
+  }
+
+  const resultWithUserId = {
+    ...result,
+    user_id: user.id,
+    user_email: user.email, // Keep for backwards compatibility
+  }
+
   const { data, error } = await supabase
     .from('test_results')
-    .insert(result)
+    .insert(resultWithUserId)
     .select()
     .single()
 
