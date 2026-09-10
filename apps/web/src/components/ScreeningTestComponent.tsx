@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { useScreeningModel, type ScreeningInput } from "../hooks/useScreeningModel";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "../components/ui";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "./ui";
 import { LiDARDetector, EyeLandmarkDetector, PupilGeometryExtractor } from "@/lib/cv"";
 
 export function ScreeningTestComponent() {

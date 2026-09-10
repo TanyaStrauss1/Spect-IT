@@ -5,7 +5,7 @@
 
 'use client'
 
-import { TestCard } from '../components/ui'
+import { TestCard } from '../ui'
 import Link from 'next/link'
 
 const tests = [

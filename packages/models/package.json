@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@tensorflow/tfjs": "^4.10.0",
-    "@tensorflow-models/face-landmarks-detection": "^2.0.4",
+    "@tensorflow-models/face-landmarks-detection": "^1.0.6",
     "onnxruntime-web": "^1.16.0"
   },
   "devDependencies": {
