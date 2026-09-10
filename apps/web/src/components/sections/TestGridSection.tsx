@@ -15,7 +15,8 @@ const tests = [
     description: 'Measure how clearly you can see at a distance using the standard Snellen chart',
     icon: '👁️',
     duration: '3-5 min',
-    route: '/tests/acuity'
+    route: '/tests/acuity',
+    available: true
   },
   {
     id: 'color',
@@ -23,7 +24,8 @@ const tests = [
     description: 'Screen for color vision deficiency using pseudoisochromatic plates',
     icon: '🎨',
     duration: '2-3 min',
-    route: '/tests/color-vision'
+    route: '/tests/color-vision',
+    available: true
   },
   {
     id: 'astigmatism',
@@ -31,7 +33,8 @@ const tests = [
     description: 'Detect astigmatism using radial line patterns',
     icon: '🌀',
     duration: '2-3 min',
-    route: '/tests/astigmatism'
+    route: '/tests/astigmatism',
+    available: false
   },
   {
     id: 'contrast',
@@ -39,7 +42,8 @@ const tests = [
     description: 'Measure ability to distinguish objects from background',
     icon: '🌓',
     duration: '3-4 min',
-    route: '/tests/contrast'
+    route: '/tests/contrast',
+    available: false
   },
   {
     id: 'visual-field',
@@ -47,7 +51,8 @@ const tests = [
     description: 'Test peripheral vision and detect blind spots',
     icon: '📍',
     duration: '5-7 min',
-    route: '/tests/visual-field'
+    route: '/tests/visual-field',
+    available: false
   },
   {
     id: 'prescription',
@@ -55,7 +60,8 @@ const tests = [
     description: 'Estimate your eyeglass prescription using AI and computer vision',
     icon: '🔬',
     duration: '5-10 min',
-    route: '/tests/prescription'
+    route: '/tests/prescription',
+    available: false
   }
 ]
 
@@ -76,16 +82,25 @@ export function TestGridSection() {
         {/* Test Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {tests.map((test) => (
-            <TestCard
-              key={test.id}
-              title={test.title}
-              description={test.description}
-              icon={test.icon}
-              duration={test.duration}
-              onStart={() => {
-                window.location.href = test.route
-              }}
-            />
+            <div key={test.id} className="relative">
+              {!test.available && (
+                <div className="absolute top-4 right-4 z-10 bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full">
+                  Coming Soon
+                </div>
+              )}
+              <TestCard
+                title={test.title}
+                description={test.description}
+                icon={test.icon}
+                duration={test.duration}
+                disabled={!test.available}
+                onStart={() => {
+                  if (test.available) {
+                    window.location.href = test.route
+                  }
+                }}
+              />
+            </div>
           ))}
         </div>
 
