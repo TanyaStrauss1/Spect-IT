@@ -1,6 +1,6 @@
 /**
- * Astigmatism Test Page
- * Uses a radial fan chart to detect astigmatism
+ * Clinical Astigmatism Test Page (Clock Dial)
+ * 12 radial lines, per-eye testing, axis indication only (no cylinder power)
  */
 
 'use client'
@@ -9,54 +9,52 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import { createAstigmatismTest, type ClockPosition, type EyeAstigmatismResult } from '@spect-it/cv'
+
+type Eye = 'right' | 'left'
 
 export default function AstigmatismTestPage() {
-  const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
-  const [leftEyeResponse, setLeftEyeResponse] = useState<number | null>(null)
-  const [rightEyeResponse, setRightEyeResponse] = useState<number | null>(null)
-  const [currentEye, setCurrentEye] = useState<'left' | 'right'>('left')
-  const [selectedLines, setSelectedLines] = useState<number[]>([])
-  const [result, setResult] = useState<any>(null)
-  const [saving, setSaving] = useState(false)
-  
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user } = useAuth()
+  const [test] = useState(() => createAstigmatismTest())
+  const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
+  const [currentEye, setCurrentEye] = useState<Eye>('right')
+  const [selectedPositions, setSelectedPositions] = useState<ClockPosition[]>([])
+  const [rightEyeResult, setRightEyeResult] = useState<EyeAstigmatismResult | null>(null)
+  const [leftEyeResult, setLeftEyeResult] = useState<EyeAstigmatismResult | null>(null)
+  const [saving, setSaving] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    if (authLoading) return
-    
     if (!user) {
       router.push('/auth/signin')
       return
     }
-  }, [user, authLoading, router])
+  }, [user, router])
 
   useEffect(() => {
     if (step === 'test' && canvasRef.current) {
-      drawRadialChart()
+      drawClockDial()
     }
   }, [step])
 
-  const drawRadialChart = () => {
+  const drawClockDial = () => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     const centerX = canvas.width / 2
     const centerY = canvas.height / 2
     const radius = Math.min(centerX, centerY) - 40
-    const numLines = 12 // 12 radial lines (like clock positions)
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.strokeStyle = '#000000'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 3
 
-    // Draw 12 radial lines
-    for (let i = 0; i < numLines; i++) {
-      const angle = (i * Math.PI * 2) / numLines
+    // Draw 12 radial lines (30° apart)
+    for (let i = 0; i < 12; i++) {
+      const angle = (i * Math.PI * 2) / 12 - Math.PI / 2 // Start at 12 o'clock
       const x1 = centerX + Math.cos(angle) * 30
       const y1 = centerY + Math.sin(angle) * 30
       const x2 = centerX + Math.cos(angle) * radius
@@ -67,74 +65,57 @@ export default function AstigmatismTestPage() {
       ctx.lineTo(x2, y2)
       ctx.stroke()
     }
+
+    // Draw clock numbers
+    ctx.fillStyle = '#666'
+    ctx.font = '16px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    for (let i = 1; i <= 12; i++) {
+      const angle = (i * Math.PI * 2) / 12 - Math.PI / 2
+      const x = centerX + Math.cos(angle) * (radius + 20)
+      const y = centerY + Math.sin(angle) * (radius + 20)
+      ctx.fillText(i.toString(), x, y)
+    }
   }
 
-  const handleLineSelection = (lineNumber: number) => {
-    if (selectedLines.includes(lineNumber)) {
-      setSelectedLines(selectedLines.filter(l => l !== lineNumber))
+  const togglePosition = (position: ClockPosition) => {
+    if (selectedPositions.includes(position)) {
+      setSelectedPositions(selectedPositions.filter(p => p !== position))
     } else {
-      setSelectedLines([...selectedLines, lineNumber])
+      setSelectedPositions([...selectedPositions, position])
     }
   }
 
   const handleSubmitEye = () => {
-    const response = selectedLines.length
-    
-    if (currentEye === 'left') {
-      setLeftEyeResponse(response)
-      setCurrentEye('right')
-      setSelectedLines([])
+    const eyeResult = test.processEyeResult(currentEye, selectedPositions)
+
+    if (currentEye === 'right') {
+      setRightEyeResult(eyeResult)
+      setCurrentEye('left')
+      setSelectedPositions([])
+      setTimeout(() => drawClockDial(), 100)
     } else {
-      setRightEyeResponse(response)
-      finishTest(leftEyeResponse!, response)
+      setLeftEyeResult(eyeResult)
+      finishTest(rightEyeResult!, eyeResult)
     }
   }
 
-  const finishTest = async (leftResponse: number, rightResponse: number) => {
-    // Calculate result
-    // If 0-1 lines appear darker: likely no astigmatism
-    // If 2+ lines appear darker: possible astigmatism
-    const leftStatus = leftResponse <= 1 ? 'Normal' : 'Possible Astigmatism'
-    const rightStatus = rightResponse <= 1 ? 'Normal' : 'Possible Astigmatism'
-    
-    const testResult = {
-      leftEye: {
-        darkerLines: leftResponse,
-        status: leftStatus
-      },
-      rightEye: {
-        darkerLines: rightResponse,
-        status: rightStatus
-      },
-      overallAssessment: leftResponse <= 1 && rightResponse <= 1 
-        ? 'No signs of astigmatism detected' 
-        : 'Possible astigmatism detected - consult an eye care professional'
-    }
-
-    setResult(testResult)
+  const finishTest = async (right: EyeAstigmatismResult, left: EyeAstigmatismResult) => {
+    const result = test.createResult(undefined, right, left)
     setStep('result')
 
-    // Save to Supabase
     if (user) {
       setSaving(true)
       try {
-        const { error } = await supabase
-          .from('test_results')
-          .insert({
-            user_id: user.id,
-            user_email: user.email,
-            test_type: 'Astigmatism',
-            test_name: 'Radial Fan Chart',
-            test_data: testResult,
-            score: leftResponse + rightResponse,
-            test_date: new Date().toISOString(),
-          })
-
-        if (error) {
-          console.error('Error saving test result:', error)
-        }
+        await supabase.from('test_results').insert({
+          user_id: user.id,
+          test_type: 'Astigmatism (Clinical)',
+          test_data: result,
+          results: { rightEye: right, leftEye: left, methodology: result.methodology },
+        })
       } catch (error) {
-        console.error('Error saving test result:', error)
+        console.error('Error saving:', error)
       } finally {
         setSaving(false)
       }
@@ -143,207 +124,86 @@ export default function AstigmatismTestPage() {
 
   if (step === 'intro') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 py-12 px-4">
+        <div className="container mx-auto max-w-2xl">
+          <div className="bg-white rounded-lg shadow-xl p-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Astigmatism Screening (Clock Dial)</h1>
+            <div className="space-y-4 mb-8">
+              <p className="text-gray-700">This test uses a clock dial to screen for astigmatism.</p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Instructions</h3>
+                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                  {test.getInstructions().map((inst, i) => (<li key={i}>{inst}</li>))}
+                </ul>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800"><strong>Note:</strong> This test provides axis indication only, not cylinder power. Comprehensive refraction required for prescription.</p>
+              </div>
+            </div>
+            <button onClick={() => setStep('test')} className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white py-3 rounded-lg font-semibold hover:from-orange-700 hover:to-amber-700">Start Test</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'result' && rightEyeResult && leftEyeResult) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 py-12 px-4">
         <div className="container mx-auto max-w-2xl">
           <div className="bg-white rounded-lg shadow-xl p-8">
             <div className="text-center mb-8">
-              <div className="text-6xl mb-4">🌀</div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Astigmatism Test</h1>
-              <p className="text-gray-600">Radial Fan Chart Screening</p>
+              <div className="text-6xl mb-4">✓</div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Test Complete!</h2>
             </div>
-
-            <div className="space-y-6 text-gray-700">
-              <div>
-                <h3 className="font-semibold text-lg mb-2">What is this test?</h3>
-                <p>
-                  This test uses a radial fan chart with lines radiating from the center. 
-                  If you have astigmatism, some lines may appear darker or sharper than others.
-                </p>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Right Eye (OD)</h3>
+                <p className="text-sm text-gray-700">{test.getInterpretation(rightEyeResult)}</p>
               </div>
-
-              <div>
-                <h3 className="font-semibold text-lg mb-2">Instructions:</h3>
-                <ol className="list-decimal list-inside space-y-2">
-                  <li>You'll test each eye separately</li>
-                  <li>Cover one eye with your hand (don't press on it)</li>
-                  <li>Look at the radial chart and identify which lines appear darker or sharper</li>
-                  <li>Select all lines that appear darker than the others</li>
-                  <li>Repeat for the other eye</li>
-                </ol>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Important:</strong> Sit about 2 feet (60cm) from your screen in good lighting.
-                  If all lines appear equally dark, that's normal! Only select lines that appear 
-                  noticeably darker or sharper.
-                </p>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  <strong>Screening Notice:</strong> This is a screening tool, not a diagnostic test. 
-                  Results do not constitute a medical diagnosis. Please consult an eye care professional 
-                  for a comprehensive eye examination.
-                </p>
+              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Left Eye (OS)</h3>
+                <p className="text-sm text-gray-700">{test.getInterpretation(leftEyeResult)}</p>
               </div>
             </div>
-
-            <button
-              onClick={() => setStep('test')}
-              className="w-full mt-8 bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-lg"
-            >
-              Start Test
-            </button>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800"><strong>Screening Result:</strong> This test provides axis indication only. Comprehensive eye examination required for cylinder power and precise prescription.</p>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => router.push('/dashboard')} className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700">Dashboard</button>
+              <button onClick={() => router.push('/')} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300">Home</button>
+            </div>
           </div>
         </div>
       </div>
     )
   }
 
-  if (step === 'test') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="bg-white rounded-lg shadow-xl p-8">
-            <div className="text-center mb-8">
-              <div className="inline-block bg-indigo-100 text-indigo-600 px-4 py-2 rounded-full font-semibold mb-4">
-                Testing {currentEye === 'left' ? 'Left' : 'Right'} Eye
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Cover your {currentEye === 'left' ? 'right' : 'left'} eye
-              </h2>
-              <p className="text-gray-600">
-                Select the numbers of any lines that appear darker or sharper
-              </p>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 py-8 px-4">
+      <div className="container mx-auto max-w-4xl">
+        <div className="bg-white rounded-lg shadow-xl p-8">
+          <div className="text-center mb-8">
+            <div className="inline-block bg-orange-100 text-orange-600 px-4 py-2 rounded-full font-semibold mb-4">
+              {currentEye === 'right' ? 'Right Eye (OD) - Cover LEFT eye' : 'Left Eye (OS) - Cover RIGHT eye'}
             </div>
-
-            <div className="flex justify-center mb-8">
-              <div className="relative inline-block">
-                <canvas
-                  ref={canvasRef}
-                  width={400}
-                  height={400}
-                  className="border-2 border-gray-300 rounded-lg"
-                />
-                {/* Number labels around the chart */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {[...Array(12)].map((_, i) => {
-                    const angle = (i * Math.PI * 2) / 12 - Math.PI / 2
-                    const distance = 220
-                    const x = 200 + Math.cos(angle) * distance
-                    const y = 200 + Math.sin(angle) * distance
-                    return (
-                      <div
-                        key={i}
-                        className="absolute text-sm font-semibold text-gray-600"
-                        style={{
-                          left: `${x}px`,
-                          top: `${y}px`,
-                          transform: 'translate(-50%, -50%)'
-                        }}
-                      >
-                        {i + 1}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Line selection buttons */}
-            <div className="grid grid-cols-6 gap-2 max-w-md mx-auto mb-8">
-              {[...Array(12)].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleLineSelection(i + 1)}
-                  className={`py-3 px-4 rounded-lg font-semibold transition-colors ${
-                    selectedLines.includes(i + 1)
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {i + 1}
+            <h3 className="text-xl text-gray-600">Select lines that appear darker or sharper</h3>
+            <p className="text-sm text-gray-500">If all lines look the same, don't select any</p>
+          </div>
+          <div className="flex justify-center mb-8">
+            <canvas ref={canvasRef} width={400} height={400} className="border-2 border-gray-300 rounded-lg" />
+          </div>
+          <div className="mb-6">
+            <p className="text-sm text-gray-600 mb-2 text-center">Selected positions: {selectedPositions.length > 0 ? selectedPositions.sort((a, b) => a - b).join(', ') : 'None'}</p>
+            <div className="grid grid-cols-6 gap-2 max-w-md mx-auto">
+              {test.getClockPositions().map(pos => (
+                <button key={pos} onClick={() => togglePosition(pos)} className={`py-2 rounded-lg font-semibold transition-colors ${selectedPositions.includes(pos) ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  {pos}
                 </button>
               ))}
             </div>
-
-            <div className="space-y-4 max-w-md mx-auto">
-              <button
-                onClick={handleSubmitEye}
-                className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-              >
-                {currentEye === 'left' ? 'Continue to Right Eye' : 'Finish Test'}
-              </button>
-              <button
-                onClick={() => setSelectedLines([])}
-                className="w-full bg-gray-200 text-gray-700 py-2 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Clear Selection
-              </button>
-              <p className="text-sm text-gray-500 text-center">
-                If all lines look the same, leave nothing selected and continue
-              </p>
-            </div>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Results view
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-4">✓</div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Test Complete!</h2>
-            <p className="text-gray-600">Your results have been {saving ? 'saving...' : 'saved'}</p>
-          </div>
-          
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6">
-              <p className="text-gray-600 text-sm uppercase tracking-wide mb-4 text-center">Assessment</p>
-              <p className="text-2xl font-bold text-indigo-600 text-center">{result.overallAssessment}</p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-600 text-sm mb-2 font-semibold">Left Eye</p>
-                <p className="text-lg text-gray-900">{result.leftEye.status}</p>
-                <p className="text-sm text-gray-500 mt-1">{result.leftEye.darkerLines} line(s) selected</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-600 text-sm mb-2 font-semibold">Right Eye</p>
-                <p className="text-lg text-gray-900">{result.rightEye.status}</p>
-                <p className="text-sm text-gray-500 mt-1">{result.rightEye.darkerLines} line(s) selected</p>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> This is a screening result, not a medical diagnosis. 
-                If possible astigmatism is detected, please consult an eye care professional 
-                for a comprehensive eye examination and precise measurement.
-              </p>
-            </div>
-          </div>
-          
-          <div className="mt-8 flex gap-4">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-            >
-              View Dashboard
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-            >
-              Home
-            </button>
-          </div>
+          <button onClick={handleSubmitEye} className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700">Continue</button>
         </div>
       </div>
     </div>
