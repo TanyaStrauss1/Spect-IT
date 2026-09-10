@@ -20,10 +20,10 @@ const tests = [
   {
     id: 'color',
     title: 'Color Vision',
-    description: 'Test for color blindness using Ishihara plates',
+    description: 'Screen for color vision deficiency using pseudoisochromatic plates',
     icon: '🎨',
     duration: '2-3 min',
-    route: '/tests/color'
+    route: '/tests/color-vision'
   },
   {
     id: 'astigmatism',

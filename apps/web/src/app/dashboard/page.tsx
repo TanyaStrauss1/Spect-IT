@@ -94,12 +94,20 @@ export default function DashboardPage() {
                   <p className="text-gray-600 text-sm">Total Tests Completed</p>
                   <p className="text-3xl font-bold text-indigo-600">{results.length}</p>
                 </div>
-                <Link
-                  href="/tests/acuity"
-                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-                >
-                  Take New Test
-                </Link>
+            <div className="flex gap-3">
+              <Link
+                href="/tests/acuity"
+                className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Visual Acuity Test
+              </Link>
+              <Link
+                href="/tests/color-vision"
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              >
+                Color Vision Test
+              </Link>
+            </div>
               </div>
             </div>
 
@@ -120,18 +128,38 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase">Snellen</p>
-                            <p className="text-lg font-bold text-indigo-600">{result.test_data?.snellen || 'N/A'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase">Decimal</p>
-                            <p className="text-lg font-semibold text-gray-900">{result.decimal_acuity?.toFixed(2) || 'N/A'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase">Lines Read</p>
-                            <p className="text-lg font-semibold text-gray-900">{result.score || 0}</p>
-                          </div>
+                          {result.test_type === 'Visual Acuity' && (
+                            <>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Snellen</p>
+                                <p className="text-lg font-bold text-indigo-600">{result.test_data?.snellen || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Decimal</p>
+                                <p className="text-lg font-semibold text-gray-900">{result.decimal_acuity?.toFixed(2) || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Lines Read</p>
+                                <p className="text-lg font-semibold text-gray-900">{result.score || 0}</p>
+                              </div>
+                            </>
+                          )}
+                          {result.test_type === 'Color Vision' && (
+                            <>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Result</p>
+                                <p className="text-sm font-bold text-purple-600">{result.test_data?.screeningResult || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Plates Correct</p>
+                                <p className="text-lg font-semibold text-gray-900">{result.score || 0}/{result.test_data?.platesTotal || 8}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">Control Plates</p>
+                                <p className="text-lg font-semibold text-gray-900">{result.test_data?.controlPlatesCorrect || 0}/2</p>
+                              </div>
+                            </>
+                          )}
                           <div>
                             <p className="text-xs text-gray-500 uppercase">Date</p>
                             <p className="text-sm text-gray-700">
