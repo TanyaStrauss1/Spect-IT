@@ -20,15 +20,17 @@ export default function AstigmatismTestPage() {
   const [saving, setSaving] = useState(false)
   
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.push('/auth/signin')
       return
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   useEffect(() => {
     if (step === 'test' && canvasRef.current) {

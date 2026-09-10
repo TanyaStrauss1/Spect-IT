@@ -24,13 +24,15 @@ export default function AcuityTestScreen() {
   const [completed, setCompleted] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.replace('/auth/signin')
     }
-  }, [user])
+  }, [user, authLoading])
 
   const handleSubmit = () => {
     const correctLetters = snellenLines[currentLine]

@@ -7,7 +7,7 @@ export default function AuthCallbackPage() {
   const router = useRouter()
 
   useEffect(() => {
-    router.push('/dashboard')
+    window.location.href = '/dashboard'
   }, [router])
 
   return (

@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
     } else {
       setSuccess(true)
       setTimeout(() => {
-        router.push('/dashboard')
+        window.location.href = '/dashboard'
       }, 2000)
     }
   }

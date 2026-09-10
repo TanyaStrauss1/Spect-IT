@@ -19,15 +19,17 @@ interface TestResult {
 export default function DashboardScreen() {
   const [results, setResults] = useState<TestResult[]>([])
   const [loading, setLoading] = useState(true)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.replace('/auth/signin')
       return
     }
     loadResults()
-  }, [user])
+  }, [user, authLoading])
 
   const loadResults = async () => {
     if (!user) return

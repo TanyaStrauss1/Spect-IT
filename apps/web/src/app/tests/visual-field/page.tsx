@@ -34,15 +34,17 @@ export default function VisualFieldTestPage() {
   const [saving, setSaving] = useState(false)
   
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.push('/auth/signin')
       return
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   useEffect(() => {
     if (step === 'test' && !waitingForResponse && currentTrial < testPositions.length) {

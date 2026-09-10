@@ -26,15 +26,17 @@ export default function DashboardPage() {
   const [results, setResults] = useState<TestResult[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.push('/auth/signin')
       return
     }
     loadResults()
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const loadResults = async () => {
     if (!user) return

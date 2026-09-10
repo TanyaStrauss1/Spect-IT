@@ -38,13 +38,15 @@ export default function ColorVisionTestScreen() {
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const [instructions, setInstructions] = useState(true)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.replace('/auth/signin')
     }
-  }, [user])
+  }, [user, authLoading])
 
   const startTest = () => {
     setInstructions(false)

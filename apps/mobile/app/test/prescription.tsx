@@ -26,13 +26,15 @@ export default function PrescriptionTestScreen() {
   const [currentLetter, setCurrentLetter] = useState('')
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.replace('/auth/signin')
     }
-  }, [user])
+  }, [user, authLoading])
 
   useEffect(() => {
     if (step === 'distance' || step === 'near') {

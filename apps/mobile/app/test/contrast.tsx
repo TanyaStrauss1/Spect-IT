@@ -24,13 +24,15 @@ export default function ContrastTestScreen() {
   const [responses, setResponses] = useState<any[]>([])
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   useEffect(() => {
+    if (authLoading) return
+    
     if (!user) {
       router.replace('/auth/signin')
     }
-  }, [user])
+  }, [user, authLoading])
 
   useEffect(() => {
     if (step === 'test') {
