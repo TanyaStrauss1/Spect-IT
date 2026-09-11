@@ -1,19 +1,35 @@
-import { useState, useEffect, useRef } from 'react'
+/**
+ * Clinical Astigmatism Screening - Mobile
+ * Clock dial with proper axis analysis
+ */
+
+import { useState, useEffect } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
-import { Canvas, Path } from '@shopify/react-native-skia'
+import Svg, { Line, Circle } from 'react-native-svg'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
+import { 
+  createAstigmatismTest,
+  type ClockPosition,
+  type EyeAstigmatismResult,
+  type Eye,
+  type CalibrationData,
+  ScreenCalibrator,
+} from '@spect-it/cv'
 
 export default function AstigmatismTestScreen() {
   const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
-  const [leftEyeResponse, setLeftEyeResponse] = useState<number | null>(null)
-  const [rightEyeResponse, setRightEyeResponse] = useState<number | null>(null)
-  const [currentEye, setCurrentEye] = useState<'left' | 'right'>('left')
-  const [selectedLines, setSelectedLines] = useState<number[]>([])
+  const [currentEye, setCurrentEye] = useState<Eye>('right')
+  const [selectedPositions, setSelectedPositions] = useState<ClockPosition[]>([])
+  const [rightEyeResult, setRightEyeResult] = useState<EyeAstigmatismResult | null>(null)
+  const [leftEyeResult, setLeftEyeResult] = useState<EyeAstigmatismResult | null>(null)
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const { user, loading: authLoading } = useAuth()
+  
+  const test = createAstigmatismTest()
+  const clockPositions = test.getClockPositions()
 
   useEffect(() => {
     if (authLoading) return
@@ -23,46 +39,40 @@ export default function AstigmatismTestScreen() {
     }
   }, [user, authLoading])
 
-  const handleLineSelection = (lineNumber: number) => {
-    if (selectedLines.includes(lineNumber)) {
-      setSelectedLines(selectedLines.filter(l => l !== lineNumber))
+  const handlePositionToggle = (position: ClockPosition) => {
+    if (selectedPositions.includes(position)) {
+      setSelectedPositions(selectedPositions.filter(p => p !== position))
     } else {
-      setSelectedLines([...selectedLines, lineNumber])
+      setSelectedPositions([...selectedPositions, position])
     }
   }
 
   const handleSubmitEye = () => {
-    const response = selectedLines.length
+    const eyeResult = test.processEyeResult(currentEye, selectedPositions)
     
-    if (currentEye === 'left') {
-      setLeftEyeResponse(response)
-      setCurrentEye('right')
-      setSelectedLines([])
+    if (currentEye === 'right') {
+      setRightEyeResult(eyeResult)
+      setCurrentEye('left')
+      setSelectedPositions([])
     } else {
-      setRightEyeResponse(response)
-      finishTest(leftEyeResponse!, response)
+      setLeftEyeResult(eyeResult)
+      finishTest(rightEyeResult!, eyeResult)
     }
   }
 
-  const finishTest = async (leftResponse: number, rightResponse: number) => {
-    const leftStatus = leftResponse <= 1 ? 'Normal' : 'Possible Astigmatism'
-    const rightStatus = rightResponse <= 1 ? 'Normal' : 'Possible Astigmatism'
+  const finishTest = async (rightEye: EyeAstigmatismResult, leftEye: EyeAstigmatismResult) => {
+    const calibrator = new ScreenCalibrator()
+    const calibration = calibrator.isReady() ? calibrator.getCalibration() : undefined
     
-    const testResult = {
-      leftEye: {
-        darkerLines: leftResponse,
-        status: leftStatus
-      },
-      rightEye: {
-        darkerLines: rightResponse,
-        status: rightStatus
-      },
-      overallAssessment: leftResponse <= 1 && rightResponse <= 1 
-        ? 'No signs of astigmatism detected' 
-        : 'Possible astigmatism detected - consult an eye care professional'
-    }
-
-    setResult(testResult)
+    const testResult = test.createResult(calibration, rightEye, leftEye)
+    const rightInterpretation = test.getInterpretation(rightEye)
+    const leftInterpretation = test.getInterpretation(leftEye)
+    
+    setResult({
+      ...testResult,
+      rightInterpretation,
+      leftInterpretation,
+    })
     setStep('result')
 
     if (user) {
@@ -72,11 +82,9 @@ export default function AstigmatismTestScreen() {
           .from('test_results')
           .insert({
             user_id: user.id,
-            user_email: user.email,
-            test_type: 'Astigmatism',
-            test_name: 'Radial Fan Chart',
+            test_type: 'Astigmatism (Clinical)',
             test_data: testResult,
-            score: leftResponse + rightResponse,
+            score: (rightEye.hasAstigmatism ? 1 : 0) + (leftEye.hasAstigmatism ? 1 : 0),
             test_date: new Date().toISOString(),
           })
 
@@ -92,29 +100,38 @@ export default function AstigmatismTestScreen() {
     }
   }
 
-  const RadialChart = () => {
-    const size = 300
+  const RadialChart = ({ size = 280 }: { size?: number }) => {
     const centerX = size / 2
     const centerY = size / 2
     const radius = size / 2 - 20
     const numLines = 12
 
-    const paths: string[] = []
+    const lines = []
     for (let i = 0; i < numLines; i++) {
       const angle = (i * Math.PI * 2) / numLines
       const x1 = centerX + Math.cos(angle) * 20
       const y1 = centerY + Math.sin(angle) * 20
       const x2 = centerX + Math.cos(angle) * radius
       const y2 = centerY + Math.sin(angle) * radius
-      paths.push(`M ${x1} ${y1} L ${x2} ${y2}`)
+      
+      lines.push(
+        <Line
+          key={i}
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke="black"
+          strokeWidth="2.5"
+        />
+      )
     }
 
     return (
-      <Canvas style={{ width: size, height: size }}>
-        {paths.map((pathData, i) => (
-          <Path key={i} path={pathData} color="black" style="stroke" strokeWidth={2} />
-        ))}
-      </Canvas>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {lines}
+        <Circle cx={centerX} cy={centerY} r={8} fill="#EF4444" />
+      </Svg>
     )
   }
 
@@ -123,14 +140,15 @@ export default function AstigmatismTestScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.emoji}>🌀</Text>
-          <Text style={styles.title}>Astigmatism Test</Text>
-          <Text style={styles.subtitle}>Radial Fan Chart Screening</Text>
+          <Text style={styles.title}>Astigmatism Screening</Text>
+          <Text style={styles.subtitle}>Clock Dial Methodology</Text>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>What is this test?</Text>
-            <Text style={styles.text}>
-              This test uses a radial fan chart with lines radiating from the center. 
-              If you have astigmatism, some lines may appear darker or sharper than others.
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>Clinical Methodology</Text>
+            <Text style={styles.infoText}>
+              This test uses a clock dial with 12 radial lines spaced 30° apart. 
+              If you have astigmatism, some lines may appear darker or sharper than others, 
+              indicating the potential axis of astigmatism.
             </Text>
           </View>
 
@@ -138,22 +156,18 @@ export default function AstigmatismTestScreen() {
             <Text style={styles.sectionTitle}>Instructions:</Text>
             <Text style={styles.text}>1. You'll test each eye separately</Text>
             <Text style={styles.text}>2. Cover one eye with your hand (don't press on it)</Text>
-            <Text style={styles.text}>3. Look at the radial chart and identify which lines appear darker or sharper</Text>
-            <Text style={styles.text}>4. Select all lines that appear darker than the others</Text>
-            <Text style={styles.text}>5. Repeat for the other eye</Text>
-          </View>
-
-          <View style={styles.disclaimer}>
-            <Text style={styles.disclaimerText}>
-              <Text style={styles.disclaimerBold}>Important:</Text> Sit about 2 feet from your screen in good lighting.
-              If all lines appear equally dark, that's normal! Only select lines that appear noticeably darker or sharper.
-            </Text>
+            <Text style={styles.text}>3. Look at the red center dot of the clock dial</Text>
+            <Text style={styles.text}>4. Select the numbers next to lines that appear darker or sharper</Text>
+            <Text style={styles.text}>5. If all lines look the same, leave nothing selected</Text>
+            <Text style={styles.text}>6. Repeat for the other eye</Text>
           </View>
 
           <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>Important Limitation</Text>
             <Text style={styles.warningText}>
-              <Text style={styles.disclaimerBold}>Screening Notice:</Text> This is a screening tool, not a diagnostic test. 
-              Results do not constitute a medical diagnosis. Please consult an eye care professional for a comprehensive eye examination.
+              This test provides axis indication ONLY. It cannot measure cylinder power or 
+              provide a prescription. Astigmatism requires comprehensive refraction by an 
+              optometrist or ophthalmologist.
             </Text>
           </View>
 
@@ -170,35 +184,37 @@ export default function AstigmatismTestScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.card}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Testing {currentEye === 'left' ? 'Left' : 'Right'} Eye</Text>
+            <Text style={styles.badgeText}>
+              Testing {currentEye === 'right' ? 'Right' : 'Left'} Eye
+            </Text>
           </View>
           
           <Text style={styles.testTitle}>
-            Cover your {currentEye === 'left' ? 'right' : 'left'} eye
+            Cover your {currentEye === 'right' ? 'left' : 'right'} eye
           </Text>
           <Text style={styles.testSubtitle}>
-            Select the numbers of any lines that appear darker or sharper
+            Look at the center red dot. Select numbers next to darker/sharper lines.
           </Text>
 
           <View style={styles.chartContainer}>
-            <RadialChart />
+            <RadialChart size={280} />
           </View>
 
           <View style={styles.lineGrid}>
-            {[...Array(12)].map((_, i) => (
+            {clockPositions.map((position) => (
               <TouchableOpacity
-                key={i}
+                key={position}
                 style={[
                   styles.lineButton,
-                  selectedLines.includes(i + 1) && styles.lineButtonSelected
+                  selectedPositions.includes(position) && styles.lineButtonSelected
                 ]}
-                onPress={() => handleLineSelection(i + 1)}
+                onPress={() => handlePositionToggle(position)}
               >
                 <Text style={[
                   styles.lineButtonText,
-                  selectedLines.includes(i + 1) && styles.lineButtonTextSelected
+                  selectedPositions.includes(position) && styles.lineButtonTextSelected
                 ]}>
-                  {i + 1}
+                  {position}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -206,11 +222,11 @@ export default function AstigmatismTestScreen() {
 
           <TouchableOpacity style={styles.primaryButton} onPress={handleSubmitEye}>
             <Text style={styles.primaryButtonText}>
-              {currentEye === 'left' ? 'Continue to Right Eye' : 'Finish Test'}
+              {currentEye === 'right' ? 'Continue to Left Eye' : 'Finish Test'}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => setSelectedLines([])}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => setSelectedPositions([])}>
             <Text style={styles.secondaryButtonText}>Clear Selection</Text>
           </TouchableOpacity>
 
@@ -231,28 +247,40 @@ export default function AstigmatismTestScreen() {
           {saving ? 'Saving results...' : 'Results saved'}
         </Text>
 
-        <View style={styles.resultMain}>
-          <Text style={styles.resultLabel}>Assessment</Text>
-          <Text style={styles.resultScore}>{result.overallAssessment}</Text>
-        </View>
-
         <View style={styles.resultGrid}>
           <View style={styles.resultItem}>
-            <Text style={styles.resultItemLabel}>Left Eye</Text>
-            <Text style={styles.resultItemValue}>{result.leftEye.status}</Text>
-            <Text style={styles.resultItemSubtext}>{result.leftEye.darkerLines} line(s) selected</Text>
+            <Text style={styles.resultItemLabel}>Right Eye (OD)</Text>
+            <Text style={styles.resultItemValue}>
+              {result.rightEye.hasAstigmatism ? 'Possible Astigmatism' : 'No Astigmatism'}
+            </Text>
+            {result.rightEye.estimatedAxis !== null && (
+              <Text style={styles.resultItemSubtext}>Axis: ~{result.rightEye.estimatedAxis}°</Text>
+            )}
           </View>
           <View style={styles.resultItem}>
-            <Text style={styles.resultItemLabel}>Right Eye</Text>
-            <Text style={styles.resultItemValue}>{result.rightEye.status}</Text>
-            <Text style={styles.resultItemSubtext}>{result.rightEye.darkerLines} line(s) selected</Text>
+            <Text style={styles.resultItemLabel}>Left Eye (OS)</Text>
+            <Text style={styles.resultItemValue}>
+              {result.leftEye.hasAstigmatism ? 'Possible Astigmatism' : 'No Astigmatism'}
+            </Text>
+            {result.leftEye.estimatedAxis !== null && (
+              <Text style={styles.resultItemSubtext}>Axis: ~{result.leftEye.estimatedAxis}°</Text>
+            )}
           </View>
+        </View>
+
+        <View style={styles.interpretationBox}>
+          <Text style={styles.interpretationTitle}>Right Eye Interpretation</Text>
+          <Text style={styles.interpretationText}>{result.rightInterpretation}</Text>
+        </View>
+
+        <View style={styles.interpretationBox}>
+          <Text style={styles.interpretationTitle}>Left Eye Interpretation</Text>
+          <Text style={styles.interpretationText}>{result.leftInterpretation}</Text>
         </View>
 
         <View style={styles.disclaimer}>
           <Text style={styles.disclaimerText}>
-            <Text style={styles.disclaimerBold}>Note:</Text> This is a screening result, not a medical diagnosis. 
-            If possible astigmatism is detected, please consult an eye care professional for a comprehensive eye examination and precise measurement.
+            <Text style={styles.disclaimerBold}>Important Limitation:</Text> {result.limitations}
           </Text>
         </View>
 
@@ -302,45 +330,57 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  infoBox: {
+    backgroundColor: '#DBEAFE',
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E3A8A',
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#1E40AF',
+    lineHeight: 20,
+  },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   text: {
     fontSize: 14,
     color: '#374151',
     marginBottom: 8,
-    lineHeight: 20,
-  },
-  disclaimer: {
-    backgroundColor: '#DBEAFE',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  disclaimerText: {
-    fontSize: 12,
-    color: '#1E40AF',
-    lineHeight: 18,
-  },
-  disclaimerBold: {
-    fontWeight: 'bold',
   },
   warningBox: {
     backgroundColor: '#FEF3C7',
-    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
     borderRadius: 12,
+    padding: 16,
     marginBottom: 24,
   },
-  warningText: {
-    fontSize: 12,
+  warningTitle: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#92400E',
-    lineHeight: 18,
+    marginBottom: 8,
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#92400E',
+    lineHeight: 20,
   },
   primaryButton: {
     backgroundColor: '#4F46E5',
@@ -445,25 +485,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
   },
-  resultMain: {
-    backgroundColor: '#EEF2FF',
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  resultLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  resultScore: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4F46E5',
-    textAlign: 'center',
-  },
   resultGrid: {
     flexDirection: 'row',
     gap: 12,
@@ -490,5 +511,36 @@ const styles = StyleSheet.create({
   resultItemSubtext: {
     fontSize: 11,
     color: '#6B7280',
+  },
+  interpretationBox: {
+    backgroundColor: '#F3E8FF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  interpretationTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7C3AED',
+    marginBottom: 8,
+  },
+  interpretationText: {
+    fontSize: 13,
+    color: '#6B21A8',
+    lineHeight: 20,
+  },
+  disclaimer: {
+    backgroundColor: '#FEE2E2',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: '#991B1B',
+    lineHeight: 18,
+  },
+  disclaimerBold: {
+    fontWeight: 'bold',
   },
 })

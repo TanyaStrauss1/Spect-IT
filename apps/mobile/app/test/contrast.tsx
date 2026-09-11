@@ -1,101 +1,110 @@
+/**
+ * Clinical Contrast Sensitivity Test - Mobile
+ * Pelli-Robson style with calibrated Sloan optotypes
+ */
+
 import { useState, useEffect } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
-
-const contrastLevels = [
-  { level: 1, contrast: 1.0, name: '100%' },
-  { level: 2, contrast: 0.75, name: '75%' },
-  { level: 3, contrast: 0.50, name: '50%' },
-  { level: 4, contrast: 0.35, name: '35%' },
-  { level: 5, contrast: 0.25, name: '25%' },
-  { level: 6, contrast: 0.15, name: '15%' },
-  { level: 7, contrast: 0.10, name: '10%' },
-  { level: 8, contrast: 0.05, name: '5%' },
-]
-
-const letters = ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z']
+import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
+import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
+import {
+  createContrastSensitivityTest,
+  type ContrastLevel,
+  type ContrastTripletResponse,
+  type CalibrationData,
+  ScreenCalibrator,
+} from '@spect-it/cv'
 
 export default function ContrastTestScreen() {
+  const [needsCalibration, setNeedsCalibration] = useState(true)
+  const [calibration, setCalibration] = useState<CalibrationData | null>(null)
+  const [calibrator, setCalibrator] = useState<ScreenCalibrator | null>(null)
   const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
-  const [currentLevel, setCurrentLevel] = useState(0)
-  const [targetLetter, setTargetLetter] = useState('')
-  const [responses, setResponses] = useState<any[]>([])
+  const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
+  const [currentLetterIndex, setCurrentLetterIndex] = useState(0)
+  const [tripletResponses, setTripletResponses] = useState<ContrastTripletResponse[]>([])
+  const [currentTripletLetters, setCurrentTripletLetters] = useState<any[]>([])
+  const [userInput, setUserInput] = useState('')
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const { user, loading: authLoading } = useAuth()
 
+  const test = createContrastSensitivityTest({ letterSizeArcMin: 180 })
+  const contrastLevels = test.getContrastLevels()
+
   useEffect(() => {
     if (authLoading) return
-    
+
     if (!user) {
       router.replace('/auth/signin')
     }
+
+    const cal = new ScreenCalibrator()
+    setCalibrator(cal)
+
+    if (cal.isReady()) {
+      const existingCal = cal.getCalibration() || cal.getDefaultCalibration()
+      setCalibration(existingCal)
+      setNeedsCalibration(false)
+    }
   }, [user, authLoading])
 
-  useEffect(() => {
-    if (step === 'test') {
-      generateNewLetter()
-    }
-  }, [step, currentLevel])
-
-  const generateNewLetter = () => {
-    const randomLetter = letters[Math.floor(Math.random() * letters.length)]
-    setTargetLetter(randomLetter)
+  const handleCalibrationComplete = (cal: CalibrationData) => {
+    setCalibration(cal)
+    setNeedsCalibration(false)
   }
 
-  const handleLetterSelect = (selectedLetter: string) => {
-    const isCorrect = selectedLetter === targetLetter
-    const newResponse = {
-      level: currentLevel + 1,
-      contrast: contrastLevels[currentLevel].contrast,
-      targetLetter,
-      selectedLetter,
-      correct: isCorrect
-    }
-
-    const newResponses = [...responses, newResponse]
-    setResponses(newResponses)
-
-    if (!isCorrect || currentLevel >= contrastLevels.length - 1) {
-      finishTest(newResponses)
-    } else {
-      setCurrentLevel(currentLevel + 1)
+  const handleCalibrationSkip = () => {
+    if (calibrator) {
+      calibrator.markSkipped()
+      const defaultCal = calibrator.getDefaultCalibration()
+      setCalibration(defaultCal)
+      setNeedsCalibration(false)
     }
   }
 
-  const finishTest = async (finalResponses: any[]) => {
-    const correctResponses = finalResponses.filter(r => r.correct)
-    const lowestContrastLevel = correctResponses.length > 0 
-      ? Math.max(...correctResponses.map(r => r.level))
-      : 0
+  const handleSubmit = () => {
+    if (!userInput.trim()) return
 
-    const lowestContrast = correctResponses.length > 0
-      ? Math.min(...correctResponses.map(r => r.contrast))
-      : 1.0
+    const currentLevel = contrastLevels[currentLevelIndex]
+    const letter = currentLevel.letters[currentLetterIndex]
+    const correct = test.checkResponse(letter, userInput)
 
-    let assessment = ''
-    if (lowestContrastLevel >= 7) {
-      assessment = 'Excellent contrast sensitivity'
-    } else if (lowestContrastLevel >= 5) {
-      assessment = 'Good contrast sensitivity'
-    } else if (lowestContrastLevel >= 3) {
-      assessment = 'Fair contrast sensitivity'
+    const updatedTripletLetters = [
+      ...currentTripletLetters,
+      { letter, userResponse: userInput.trim().toUpperCase(), correct },
+    ]
+    setCurrentTripletLetters(updatedTripletLetters)
+    setUserInput('')
+
+    if (updatedTripletLetters.length === 3) {
+      const tripletResponse = test.scoreTriplet(currentLevel, updatedTripletLetters)
+      const updatedTriplets = [...tripletResponses, tripletResponse]
+      setTripletResponses(updatedTriplets)
+
+      if (test.shouldStop(tripletResponse) || currentLevelIndex >= contrastLevels.length - 1) {
+        finishTest(updatedTriplets)
+      } else {
+        setCurrentLevelIndex(currentLevelIndex + 1)
+        setCurrentLetterIndex(0)
+        setCurrentTripletLetters([])
+      }
     } else {
-      assessment = 'Reduced contrast sensitivity - consult an eye care professional'
+      setCurrentLetterIndex(currentLetterIndex + 1)
     }
+  }
 
-    const testResult = {
-      lowestContrastLevel,
-      lowestContrast,
-      assessment,
-      correctCount: correctResponses.length,
-      totalCount: finalResponses.length,
-      responses: finalResponses
-    }
-
-    setResult(testResult)
+  const finishTest = async (finalTriplets: ContrastTripletResponse[]) => {
+    const testResult = test.createResult(calibration!, finalTriplets)
+    const interpretation = test.getInterpretation(testResult.category, testResult.finalLogCS)
+    
+    setResult({
+      ...testResult,
+      interpretation,
+    })
     setStep('result')
 
     if (user) {
@@ -105,11 +114,9 @@ export default function ContrastTestScreen() {
           .from('test_results')
           .insert({
             user_id: user.id,
-            user_email: user.email,
-            test_type: 'Contrast Sensitivity',
-            test_name: 'Graded Contrast Letters',
+            test_type: 'Contrast Sensitivity (Clinical)',
             test_data: testResult,
-            score: lowestContrastLevel,
+            score: Math.round(testResult.finalLogCS * 100),
             test_date: new Date().toISOString(),
           })
 
@@ -125,9 +132,13 @@ export default function ContrastTestScreen() {
     }
   }
 
-  const getLetterColor = (contrast: number) => {
-    const grayValue = Math.round(255 * (1 - contrast))
-    return `rgb(${grayValue}, ${grayValue}, ${grayValue})`
+  if (needsCalibration) {
+    return (
+      <CalibrationScreen
+        onComplete={handleCalibrationComplete}
+        onSkip={handleCalibrationSkip}
+      />
+    )
   }
 
   if (step === 'intro') {
@@ -136,38 +147,32 @@ export default function ContrastTestScreen() {
         <View style={styles.card}>
           <Text style={styles.emoji}>🌓</Text>
           <Text style={styles.title}>Contrast Sensitivity Test</Text>
-          <Text style={styles.subtitle}>Graded Contrast Letter Recognition</Text>
+          <Text style={styles.subtitle}>Pelli-Robson Style Screening</Text>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>What is this test?</Text>
-            <Text style={styles.text}>
-              This test measures your ability to distinguish letters with decreasing contrast 
-              against the background. Good contrast sensitivity is important for activities 
-              like driving at night or in fog.
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>Clinical Methodology</Text>
+            <Text style={styles.infoText}>
+              This test measures your ability to distinguish letters at decreasing contrast levels. 
+              Letters remain the same size but become progressively lighter. This tests your 
+              contrast sensitivity function (CSF), which is important for vision in low light, 
+              fog, or glare conditions.
             </Text>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Instructions:</Text>
-            <Text style={styles.text}>1. A letter will appear in the center of the screen</Text>
-            <Text style={styles.text}>2. The contrast will decrease progressively with each level</Text>
-            <Text style={styles.text}>3. Identify the letter by tapping on the correct option below</Text>
-            <Text style={styles.text}>4. The test ends when you make an incorrect identification</Text>
-            <Text style={styles.text}>5. Try to read as many levels as possible</Text>
+            <Text style={styles.text}>1. Letters appear at the same size but varying contrast</Text>
+            <Text style={styles.text}>2. Read each letter you can see clearly</Text>
+            <Text style={styles.text}>3. As contrast decreases, letters become harder to see</Text>
+            <Text style={styles.text}>4. Type your best guess for each letter</Text>
+            <Text style={styles.text}>5. Test stops when letters become invisible</Text>
           </View>
 
           <View style={styles.disclaimer}>
             <Text style={styles.disclaimerText}>
-              <Text style={styles.disclaimerBold}>Important:</Text> Take the test in good, even lighting. 
-              Adjust your screen brightness to a comfortable level before starting. 
-              Sit about 2 feet from your screen.
-            </Text>
-          </View>
-
-          <View style={styles.warningBox}>
-            <Text style={styles.warningText}>
-              <Text style={styles.disclaimerBold}>Screening Notice:</Text> This is a screening tool, not a diagnostic test. 
-              Results do not constitute a medical diagnosis. Please consult an eye care professional for a comprehensive eye examination.
+              <Text style={styles.disclaimerBold}>Important:</Text> Adjust your screen brightness to a 
+              comfortable level before starting. Test in good, even lighting. Sit at your calibrated 
+              viewing distance.
             </Text>
           </View>
 
@@ -179,108 +184,138 @@ export default function ContrastTestScreen() {
     )
   }
 
-  if (step === 'test') {
-    const currentContrast = contrastLevels[currentLevel]
-    const letterColor = getLetterColor(currentContrast.contrast)
-
+  if (step === 'result') {
+    const thresholdPercent = (Math.pow(10, -result.finalLogCS) * 100).toFixed(1)
+    
     return (
       <ScrollView style={styles.container}>
         <View style={styles.card}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
-              Level {currentLevel + 1} of {contrastLevels.length} - Contrast: {currentContrast.name}
+          <Text style={styles.resultEmoji}>✓</Text>
+          <Text style={styles.resultTitle}>Test Complete!</Text>
+          <Text style={styles.resultSubtitle}>
+            {saving ? 'Saving results...' : 'Results saved'}
+          </Text>
+
+          <View style={styles.resultMain}>
+            <Text style={styles.resultLabel}>Log Contrast Sensitivity</Text>
+            <Text style={styles.resultScore}>{result.finalLogCS.toFixed(2)}</Text>
+            <Text style={styles.resultSmall}>
+              Threshold: ~{thresholdPercent}% contrast
+            </Text>
+            <Text style={[styles.categoryBadge, styles[`badge${result.category}`]]}>
+              {result.category}
             </Text>
           </View>
 
-          <Text style={styles.testTitle}>Identify the letter</Text>
-          <Text style={styles.testSubtitle}>Tap on the letter you see</Text>
-
-          <View style={styles.letterDisplay}>
-            <Text style={[styles.targetLetter, { color: letterColor }]}>
-              {targetLetter}
-            </Text>
-          </View>
-
-          <View style={styles.letterGrid}>
-            {letters.map((letter) => (
-              <TouchableOpacity
-                key={letter}
-                style={styles.letterButton}
-                onPress={() => handleLetterSelect(letter)}
-              >
-                <Text style={styles.letterButtonText}>{letter}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={styles.progress}>
-            <Text style={styles.progressText}>
-              Progress: {responses.length} correct
-            </Text>
-            <View style={styles.progressBar}>
-              <View 
-                style={[
-                  styles.progressFill,
-                  { width: `${((currentLevel + 1) / contrastLevels.length) * 100}%` }
-                ]}
-              />
+          <View style={styles.resultGrid}>
+            <View style={styles.resultItem}>
+              <Text style={styles.resultItemLabel}>Triplets Completed</Text>
+              <Text style={styles.resultItemValue}>{result.triplets.length}/{contrastLevels.length}</Text>
+            </View>
+            <View style={styles.resultItem}>
+              <Text style={styles.resultItemLabel}>Total Correct</Text>
+              <Text style={styles.resultItemValue}>
+                {result.triplets.reduce((sum: number, t: ContrastTripletResponse) => sum + t.correctCount, 0)}
+              </Text>
             </View>
           </View>
+
+          <View style={styles.interpretationBox}>
+            <Text style={styles.interpretationTitle}>Interpretation</Text>
+            <Text style={styles.interpretationText}>{result.interpretation}</Text>
+          </View>
+
+          <View style={styles.disclaimer}>
+            <Text style={styles.disclaimerText}>
+              <Text style={styles.disclaimerBold}>Screening Notice:</Text> This is a screening result, not a medical diagnosis. 
+              Reduced contrast sensitivity can indicate various eye conditions. Please consult an eye care 
+              professional for comprehensive evaluation.
+            </Text>
+          </View>
+
+          <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/dashboard')}>
+            <Text style={styles.primaryButtonText}>View Dashboard</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
+            <Text style={styles.secondaryButtonText}>Back to Home</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     )
   }
 
+  const currentLevel = contrastLevels[currentLevelIndex]
+  const currentLetter = currentLevel?.letters[currentLetterIndex]
+  
+  // Calculate letter size for ~3° visual angle (180 arc minutes)
+  const letterSizePx = calibrator?.calculateSizeForVisualAngle(180) || 120
+  const strokeWidthPx = Math.round(letterSizePx / 5)
+  
+  // Calculate letter color based on contrast
+  const grayValue = Math.round(255 * (1 - currentLevel.contrast))
+  const letterColor = `rgb(${grayValue}, ${grayValue}, ${grayValue})`
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.resultEmoji}>✓</Text>
-        <Text style={styles.resultTitle}>Test Complete!</Text>
-        <Text style={styles.resultSubtitle}>
-          {saving ? 'Saving results...' : 'Results saved'}
-        </Text>
-
-        <View style={styles.resultMain}>
-          <Text style={styles.resultLabel}>Assessment</Text>
-          <Text style={styles.resultScore}>{result.assessment}</Text>
-        </View>
-
-        <View style={styles.resultGrid}>
-          <View style={styles.resultItem}>
-            <Text style={styles.resultItemLabel}>Lowest Contrast Level</Text>
-            <Text style={styles.resultItemValue}>{result.lowestContrastLevel}</Text>
-            <Text style={styles.resultItemSubtext}>
-              {Math.round(result.lowestContrast * 100)}% contrast
+    <View style={styles.container}>
+      <View style={styles.testCard}>
+        <View style={styles.header}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              Triplet {currentLevel.triplet} - Letter {currentLetterIndex + 1}/3
             </Text>
           </View>
-          <View style={styles.resultItem}>
-            <Text style={styles.resultItemLabel}>Correct Identifications</Text>
-            <Text style={styles.resultItemValue}>
-              {result.correctCount}/{result.totalCount}
-            </Text>
-            <Text style={styles.resultItemSubtext}>
-              {Math.round((result.correctCount / result.totalCount) * 100)}% accuracy
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>
-            <Text style={styles.disclaimerBold}>Note:</Text> This is a screening result, not a medical diagnosis. 
-            Contrast sensitivity can be affected by various factors including lighting, screen quality, and eye conditions. 
-            Please consult an eye care professional for a comprehensive evaluation.
+          <Text style={styles.instruction}>
+            Contrast: {(currentLevel.contrast * 100).toFixed(0)}% (logCS {currentLevel.logCS.toFixed(2)})
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/dashboard')}>
-          <Text style={styles.primaryButtonText}>View Dashboard</Text>
-        </TouchableOpacity>
+        <View style={styles.lettersContainer}>
+          {currentLetter && (
+            <SloanOptotype
+              letter={currentLetter}
+              strokeWidthPx={strokeWidthPx}
+              color={letterColor}
+            />
+          )}
+        </View>
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
-          <Text style={styles.secondaryButtonText}>Back to Home</Text>
-        </TouchableOpacity>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={userInput}
+            onChangeText={setUserInput}
+            placeholder="Type the letter"
+            autoCapitalize="characters"
+            autoFocus
+            maxLength={1}
+            onSubmitEditing={handleSubmit}
+          />
+
+          <TouchableOpacity
+            style={[styles.submitButton, !userInput && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={!userInput}
+          >
+            <Text style={styles.submitButtonText}>Submit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.progress}>
+          <Text style={styles.progressText}>
+            Triplet Progress: {tripletResponses.length} / {contrastLevels.length} completed
+          </Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${(tripletResponses.length / contrastLevels.length) * 100}%` },
+              ]}
+            />
+          </View>
+        </View>
       </View>
-    </ScrollView>
+    </View>
   )
 }
 
@@ -290,6 +325,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#EEF2FF',
   },
   card: {
+    backgroundColor: 'white',
+    margin: 20,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  testCard: {
+    flex: 1,
     backgroundColor: 'white',
     margin: 20,
     borderRadius: 16,
@@ -318,45 +365,52 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  infoBox: {
+    backgroundColor: '#DBEAFE',
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E3A8A',
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#1E40AF',
+    lineHeight: 20,
+  },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   text: {
     fontSize: 14,
     color: '#374151',
     marginBottom: 8,
-    lineHeight: 20,
   },
   disclaimer: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#FEF3C7',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   disclaimerText: {
     fontSize: 12,
-    color: '#1E40AF',
+    color: '#92400E',
     lineHeight: 18,
   },
   disclaimerBold: {
     fontWeight: 'bold',
-  },
-  warningBox: {
-    backgroundColor: '#FEF3C7',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-  },
-  warningText: {
-    fontSize: 12,
-    color: '#92400E',
-    lineHeight: 18,
   },
   primaryButton: {
     backgroundColor: '#4F46E5',
@@ -381,67 +435,58 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
   badge: {
     backgroundColor: '#E0E7FF',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   badgeText: {
     color: '#4F46E5',
     fontWeight: '600',
     fontSize: 12,
   },
-  testTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  testSubtitle: {
+  instruction: {
     fontSize: 14,
     color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 24,
   },
-  letterDisplay: {
-    height: 200,
+  lettersContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 24,
     backgroundColor: 'white',
-    borderWidth: 4,
+  },
+  inputContainer: {
+    gap: 12,
+  },
+  input: {
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    fontSize: 18,
+    textAlign: 'center',
+    borderWidth: 2,
     borderColor: '#E5E7EB',
+  },
+  submitButton: {
+    backgroundColor: '#4F46E5',
+    padding: 16,
     borderRadius: 12,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
   },
-  targetLetter: {
-    fontSize: 100,
-    fontWeight: 'bold',
-    fontFamily: 'monospace',
+  submitButtonDisabled: {
+    backgroundColor: '#D1D5DB',
   },
-  letterGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
-  },
-  letterButton: {
-    width: 60,
-    height: 60,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 4,
-  },
-  letterButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
+  submitButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
   },
   progress: {
     marginTop: 24,
@@ -493,10 +538,35 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resultScore: {
-    fontSize: 18,
+    fontSize: 48,
     fontWeight: 'bold',
     color: '#4F46E5',
-    textAlign: 'center',
+    marginBottom: 4,
+  },
+  resultSmall: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  badgeNORMAL: {
+    backgroundColor: '#D1FAE5',
+    color: '#065F46',
+  },
+  badgeBORDERLINE: {
+    backgroundColor: '#FEF3C7',
+    color: '#92400E',
+  },
+  badgeREDUCED: {
+    backgroundColor: '#FEE2E2',
+    color: '#991B1B',
   },
   resultGrid: {
     flexDirection: 'row',
@@ -508,6 +578,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
     padding: 16,
     borderRadius: 12,
+    alignItems: 'center',
   },
   resultItemLabel: {
     fontSize: 12,
@@ -519,10 +590,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 4,
   },
-  resultItemSubtext: {
-    fontSize: 11,
-    color: '#6B7280',
+  interpretationBox: {
+    backgroundColor: '#F3E8FF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  interpretationTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7C3AED',
+    marginBottom: 8,
+  },
+  interpretationText: {
+    fontSize: 13,
+    color: '#6B21A8',
+    lineHeight: 20,
   },
 })
