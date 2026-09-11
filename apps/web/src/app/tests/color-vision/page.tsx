@@ -11,24 +11,30 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import PseudoisochromaticPlate from '@/components/PseudoisochromaticPlate'
 import {
   createColorVisionTest,
+  PSEUDOISOCHROMATIC_PLATES,
   type ColorPlate,
   type PlateResponse,
+  type PlateConfig,
 } from '@spect-it/cv'
 
 export default function ColorVisionTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const [test] = useState(() => createColorVisionTest())
+  const [test] = useState(() => createColorVisionTest({ customPlates: PSEUDOISOCHROMATIC_PLATES }))
   const [currentPlateIndex, setCurrentPlateIndex] = useState(-1) // -1 = instructions
   const [userInput, setUserInput] = useState('')
   const [responses, setResponses] = useState<PlateResponse[]>([])
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
 
+  // Get plate configs for rendering
+  const plateConfigs = PSEUDOISOCHROMATIC_PLATES
   const plates = test.getPlates()
   const currentPlate = plates[currentPlateIndex]
+  const currentPlateConfig = plateConfigs[currentPlateIndex]
 
   useEffect(() => {
     if (authLoading) return
@@ -221,18 +227,22 @@ export default function ColorVisionTestPage() {
             </p>
           </div>
 
-          {/* Simulated Plate */}
+          {/* Pseudoisochromatic Plate - Proper dot field rendering */}
           <div className="flex justify-center mb-8">
-            <div 
-              className="w-64 h-64 rounded-full flex items-center justify-center text-8xl font-bold shadow-lg"
-              style={{ 
-                backgroundColor: currentPlate?.backgroundColors[0] || '#e0e0e0',
-                color: currentPlate?.figureColor || '#666',
-              }}
-            >
-              {currentPlate?.number}
-            </div>
+            {currentPlateConfig && (
+              <PseudoisochromaticPlate
+                config={currentPlateConfig}
+                diameterPx={320}
+              />
+            )}
           </div>
+          
+          {/* Clinical note */}
+          <p className="text-xs text-gray-500 text-center mb-6">
+            Confusion-line pseudoisochromatic plate • 
+            Type: {currentPlate?.type} • 
+            ~2000 color-calibrated dots
+          </p>
 
           {/* Input */}
           <div className="space-y-4 max-w-lg mx-auto">

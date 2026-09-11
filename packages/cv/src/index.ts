@@ -100,3 +100,26 @@ export {
   type PrescriptionScreeningResult,
 } from './tests/prescription'
 
+// Rendering utilities
+export {
+  SLOAN_GEOMETRIES,
+  generateSloanSVGPath,
+  generateSloanSVG,
+  renderSloanToCanvas,
+  calculateSloanStrokeWidth,
+  calculateSloanLetterSize,
+  isSloanLetter,
+  getSloanLetters,
+  type SloanLetter as RenderSloanLetter,
+  type StrokeSegment,
+} from './rendering/sloan-optotypes'
+
+export {
+  PSEUDOISOCHROMATIC_PLATES,
+  generatePlateDots,
+  renderPlateToSVG,
+  renderPlateToCanvas,
+  type PlateConfig,
+  type ColorDot,
+} from './rendering/pseudoisochromatic-plates'
+
