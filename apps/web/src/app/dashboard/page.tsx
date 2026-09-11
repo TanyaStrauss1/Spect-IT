@@ -155,19 +155,45 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                          {result.test_type === 'Visual Acuity' && (
+                          {result.test_type.includes('Visual Acuity') && (
                             <>
                               <div>
-                                <p className="text-xs text-gray-500 uppercase">Snellen</p>
-                                <p className="text-lg font-bold text-indigo-600">{result.test_data?.snellen || 'N/A'}</p>
+                                <p className="text-xs text-gray-500 uppercase">Right Eye (OD)</p>
+                                <p className="text-lg font-bold text-indigo-600">
+                                  {result.results?.rightEye?.snellen || result.test_data?.rightEye?.finalSnellen || 'N/A'}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  logMAR: {result.results?.rightEye?.logMAR?.toFixed(2) || result.test_data?.rightEye?.finalLogMAR?.toFixed(2) || 'N/A'}
+                                </p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500 uppercase">Decimal</p>
-                                <p className="text-lg font-semibold text-gray-900">{result.decimal_acuity?.toFixed(2) || 'N/A'}</p>
+                                <p className="text-xs text-gray-500 uppercase">Left Eye (OS)</p>
+                                <p className="text-lg font-bold text-purple-600">
+                                  {result.results?.leftEye?.snellen || result.test_data?.leftEye?.finalSnellen || 'N/A'}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  logMAR: {result.results?.leftEye?.logMAR?.toFixed(2) || result.test_data?.leftEye?.finalLogMAR?.toFixed(2) || 'N/A'}
+                                </p>
                               </div>
                               <div>
-                                <p className="text-xs text-gray-500 uppercase">Lines Read</p>
-                                <p className="text-lg font-semibold text-gray-900">{result.score || 0}</p>
+                                <p className="text-xs text-gray-500 uppercase">OD Category</p>
+                                <p className={`text-sm font-semibold ${
+                                  (result.results?.rightEye?.category || result.test_data?.rightEye?.category) === 'PASS' ? 'text-green-600' :
+                                  (result.results?.rightEye?.category || result.test_data?.rightEye?.category) === 'BORDERLINE' ? 'text-yellow-600' :
+                                  'text-red-600'
+                                }`}>
+                                  {result.results?.rightEye?.category || result.test_data?.rightEye?.category || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 uppercase">OS Category</p>
+                                <p className={`text-sm font-semibold ${
+                                  (result.results?.leftEye?.category || result.test_data?.leftEye?.category) === 'PASS' ? 'text-green-600' :
+                                  (result.results?.leftEye?.category || result.test_data?.leftEye?.category) === 'BORDERLINE' ? 'text-yellow-600' :
+                                  'text-red-600'
+                                }`}>
+                                  {result.results?.leftEye?.category || result.test_data?.leftEye?.category || 'N/A'}
+                                </p>
                               </div>
                             </>
                           )}

@@ -15,7 +15,7 @@ type Eye = 'right' | 'left'
 
 export default function VisualFieldTestPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [test] = useState(() => createVisualFieldTest())
   const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
   const [currentEye, setCurrentEye] = useState<Eye>('right')
@@ -28,8 +28,9 @@ export default function VisualFieldTestPage() {
   const config = test.getGridConfig()
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) router.push('/auth/signin')
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const handleSubmitEye = () => {
     const eyeResult = test.processEyeResult(currentEye, issues, centralFixation)
