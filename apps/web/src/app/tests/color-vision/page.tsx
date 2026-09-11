@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import { useJourney } from '@/lib/journey/useJourney'
 import PseudoisochromaticPlate from '@/components/PseudoisochromaticPlate'
 import {
   createColorVisionTest,
@@ -23,6 +24,7 @@ import {
 export default function ColorVisionTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { markTestComplete } = useJourney()
   const [test] = useState(() => createColorVisionTest({ customPlates: PSEUDOISOCHROMATIC_PLATES }))
   const [currentPlateIndex, setCurrentPlateIndex] = useState(-1) // -1 = instructions
   const [userInput, setUserInput] = useState('')
@@ -65,6 +67,9 @@ export default function ColorVisionTestPage() {
   const finishTest = async (finalResponses: PlateResponse[]) => {
     const testResult = test.createResult(finalResponses)
     setResult(testResult)
+
+    // Mark test as complete in journey
+    markTestComplete('color-vision')
 
     if (user) {
       setSaving(true)

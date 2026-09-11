@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import { useJourney } from '@/lib/journey/useJourney'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
 import SloanOptotype from '@/components/SloanOptotype'
 import { 
@@ -24,6 +25,7 @@ export default function ContrastTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
+  const { markTestComplete } = useJourney()
   const [test] = useState(() => createContrastSensitivityTest())
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0)
@@ -89,6 +91,9 @@ export default function ContrastTestPage() {
   const finishTest = async (triplets: ContrastTripletResponse[]) => {
     const testResult = test.createResult(calibration, triplets)
     setResult(testResult)
+
+    // Mark test as complete in journey
+    markTestComplete('contrast')
 
     if (user) {
       setSaving(true)

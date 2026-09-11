@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import { useJourney } from '@/lib/journey/useJourney'
 import InteractiveAmslerGrid from '@/components/InteractiveAmslerGrid'
 import { createVisualFieldTest, type GridIssue, type IssueType, type EyeVisualFieldResult } from '@spect-it/cv'
 
@@ -17,6 +18,7 @@ type Eye = 'right' | 'left'
 export default function VisualFieldTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { markTestComplete } = useJourney()
   const [test] = useState(() => createVisualFieldTest())
   const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
   const [currentEye, setCurrentEye] = useState<Eye>('right')
@@ -50,6 +52,9 @@ export default function VisualFieldTestPage() {
   const finishTest = async (right: EyeVisualFieldResult, left: EyeVisualFieldResult) => {
     const result = test.createResult(undefined, right, left)
     setStep('result')
+
+    // Mark test as complete in journey
+    markTestComplete('visual-field')
 
     if (user) {
       setSaving(true)

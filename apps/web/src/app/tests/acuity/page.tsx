@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
 import SloanOptotype from '@/components/SloanOptotype'
+import { useJourney } from '@/lib/journey/useJourney'
 import {
   createVisualAcuityTest,
   ETDRS_CHART,
@@ -30,6 +31,7 @@ export default function AcuityTestPage() {
   const router = useRouter()
   const { user } = useAuth()
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
+  const { markTestComplete } = useJourney()
   
   const [test] = useState(() => createVisualAcuityTest({ startLogMAR: 0.5 }))
   const [currentEye, setCurrentEye] = useState<Eye>('right')
@@ -149,6 +151,9 @@ export default function AcuityTestPage() {
   const finishTest = async (rightEye: EyeResult, leftEye: EyeResult) => {
     const result = test.createResult(calibration, rightEye, leftEye)
     setIsComplete(true)
+
+    // Mark test as complete in journey
+    markTestComplete('visual-acuity')
 
     // Save to Supabase
     if (user) {

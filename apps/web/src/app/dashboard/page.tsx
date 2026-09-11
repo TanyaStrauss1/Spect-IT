@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth/auth-context'
 import Link from 'next/link'
+import { Button } from '@/components/ui'
+import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
 
 interface TestResult {
   id: number
@@ -28,6 +30,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { calibrator, isCalibrated, isModalOpen, setIsModalOpen } = useCalibration()
 
   useEffect(() => {
     if (authLoading) return
@@ -58,6 +61,26 @@ export default function DashboardPage() {
     }
   }
 
+  const getCalibrationStatus = () => {
+    if (!isCalibrated) {
+      return { text: 'Not calibrated', color: 'bg-red-100 text-red-700 border-red-300', icon: '⚠️' }
+    }
+    
+    const timestamp = localStorage.getItem('spectit_calibration_timestamp')
+    if (!timestamp) {
+      return { text: 'Calibrated', color: 'bg-green-100 text-green-700 border-green-300', icon: '✓' }
+    }
+    
+    const age = Date.now() - parseInt(timestamp)
+    const daysOld = Math.floor(age / (24 * 60 * 60 * 1000))
+    
+    if (daysOld > 30) {
+      return { text: `Re-check needed (${daysOld} days old)`, color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: '🔄' }
+    }
+    
+    return { text: `Calibrated (${daysOld} days ago)`, color: 'bg-green-100 text-green-700 border-green-300', icon: '✓' }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -69,12 +92,26 @@ export default function DashboardPage() {
     )
   }
 
+  const calibrationStatus = getCalibrationStatus()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Your Dashboard</h1>
-          <p className="text-gray-600">View your vision screening history and track your progress</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Your Dashboard</h1>
+              <p className="text-gray-600">View your vision screening history and track your progress</p>
+            </div>
+            
+            {/* Calibration Status Badge */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-colors ${calibrationStatus.color} hover:opacity-80`}
+            >
+              {calibrationStatus.icon} {calibrationStatus.text}
+            </button>
+          </div>
         </div>
 
         {results.length === 0 ? (
@@ -92,12 +129,18 @@ export default function DashboardPage() {
         ) : (
           <>
             <div className="bg-white rounded-lg shadow-xl p-6 mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <p className="text-gray-600 text-sm">Total Tests Completed</p>
                   <p className="text-3xl font-bold text-indigo-600">{results.length}</p>
                 </div>
-            <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3">
+              <Link
+                href="/dashboard/clinical-summary"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-colors text-sm"
+              >
+                📊 Clinical Summary
+              </Link>
               <Link
                 href="/tests/acuity"
                 className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
@@ -304,6 +347,14 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Calibration Modal */}
+      <CalibrationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onComplete={() => setIsModalOpen(false)}
+        calibrator={calibrator}
+      />
     </div>
   )
 }
