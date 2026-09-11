@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import InteractiveAmslerGrid from '@/components/InteractiveAmslerGrid'
 import { createVisualFieldTest, type GridIssue, type IssueType, type EyeVisualFieldResult } from '@spect-it/cv'
 
 type Eye = 'right' | 'left'
@@ -133,22 +134,46 @@ export default function VisualFieldTestPage() {
             <div className="inline-block bg-teal-100 text-teal-600 px-4 py-2 rounded-full font-semibold mb-4">
               {currentEye === 'right' ? 'Right Eye (OD) - Cover LEFT eye' : 'Left Eye (OS) - Cover RIGHT eye'}
             </div>
-            <h3 className="text-xl text-gray-600">Look at the central dot. Do you see any distortions or missing areas?</h3>
+            <h3 className="text-xl text-gray-600 mb-2">Look at the central dot</h3>
+            <p className="text-sm text-gray-500">Click to mark any distorted, missing, blurry, or dark areas</p>
           </div>
-          <div className="flex justify-center mb-8">
-            <div className="relative w-80 h-80 border-4 border-black bg-white" style={{ backgroundImage: 'repeating-linear-gradient(0deg, black, black 1px, transparent 1px, transparent 32px), repeating-linear-gradient(90deg, black, black 1px, transparent 1px, transparent 32px)', backgroundSize: '32px 32px' }}>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-black rounded-full"></div>
-            </div>
-          </div>
-          <div className="space-y-4 max-w-md mx-auto mb-6">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={!centralFixation} onChange={(e) => setCentralFixation(!e.target.checked)} className="w-4 h-4" />
-              <span className="text-sm text-gray-700">Central dot is missing or distorted</span>
+          
+          {/* Interactive Amsler Grid */}
+          <InteractiveAmslerGrid
+            gridSize={10}
+            pixelSize={400}
+            onIssuesChange={setIssues}
+            showInstructions={false}
+            className="mb-6"
+          />
+          
+          {/* Central fixation status */}
+          <div className="mb-6 max-w-md mx-auto">
+            <label className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+              <input 
+                type="checkbox" 
+                checked={!centralFixation} 
+                onChange={(e) => setCentralFixation(!e.target.checked)} 
+                className="w-5 h-5" 
+              />
+              <span className="text-sm text-gray-700 font-medium">
+                The central fixation dot is missing, distorted, or I cannot see it clearly
+              </span>
             </label>
-            <p className="text-sm text-gray-600">Issues detected: {issues.length}</p>
-            <p className="text-xs text-gray-500">(In full implementation, users would click on grid to mark issues)</p>
           </div>
-          <button onClick={handleSubmitEye} className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700">Continue</button>
+          
+          {/* Clinical note */}
+          <p className="text-xs text-gray-500 text-center mb-6">
+            Interactive 10×10 Amsler grid • Central 20° field screening • 
+            {issues.length} region(s) marked
+          </p>
+          
+          <button 
+            onClick={handleSubmitEye} 
+            className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+          >
+            {currentEye === 'right' ? 'Continue to Left Eye' : 'Complete Test'}
+          </button>
         </div>
       </div>
     </div>

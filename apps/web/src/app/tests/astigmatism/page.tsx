@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import EnhancedClockDial from '@/components/EnhancedClockDial'
 import { createAstigmatismTest, type ClockPosition, type EyeAstigmatismResult } from '@spect-it/cv'
 
 type Eye = 'right' | 'left'
@@ -23,7 +24,6 @@ export default function AstigmatismTestPage() {
   const [rightEyeResult, setRightEyeResult] = useState<EyeAstigmatismResult | null>(null)
   const [leftEyeResult, setLeftEyeResult] = useState<EyeAstigmatismResult | null>(null)
   const [saving, setSaving] = useState(false)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     if (authLoading) return
@@ -32,53 +32,6 @@ export default function AstigmatismTestPage() {
       return
     }
   }, [user, authLoading, router])
-
-  useEffect(() => {
-    if (step === 'test' && canvasRef.current) {
-      drawClockDial()
-    }
-  }, [step])
-
-  const drawClockDial = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = Math.min(centerX, centerY) - 40
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = '#000000'
-    ctx.lineWidth = 3
-
-    // Draw 12 radial lines (30° apart)
-    for (let i = 0; i < 12; i++) {
-      const angle = (i * Math.PI * 2) / 12 - Math.PI / 2 // Start at 12 o'clock
-      const x1 = centerX + Math.cos(angle) * 30
-      const y1 = centerY + Math.sin(angle) * 30
-      const x2 = centerX + Math.cos(angle) * radius
-      const y2 = centerY + Math.sin(angle) * radius
-
-      ctx.beginPath()
-      ctx.moveTo(x1, y1)
-      ctx.lineTo(x2, y2)
-      ctx.stroke()
-    }
-
-    // Draw clock numbers
-    ctx.fillStyle = '#666'
-    ctx.font = '16px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    for (let i = 1; i <= 12; i++) {
-      const angle = (i * Math.PI * 2) / 12 - Math.PI / 2
-      const x = centerX + Math.cos(angle) * (radius + 20)
-      const y = centerY + Math.sin(angle) * (radius + 20)
-      ctx.fillText(i.toString(), x, y)
-    }
-  }
 
   const togglePosition = (position: ClockPosition) => {
     if (selectedPositions.includes(position)) {
@@ -95,7 +48,6 @@ export default function AstigmatismTestPage() {
       setRightEyeResult(eyeResult)
       setCurrentEye('left')
       setSelectedPositions([])
-      setTimeout(() => drawClockDial(), 100)
     } else {
       setLeftEyeResult(eyeResult)
       finishTest(rightEyeResult!, eyeResult)
@@ -188,23 +140,26 @@ export default function AstigmatismTestPage() {
             <div className="inline-block bg-orange-100 text-orange-600 px-4 py-2 rounded-full font-semibold mb-4">
               {currentEye === 'right' ? 'Right Eye (OD) - Cover LEFT eye' : 'Left Eye (OS) - Cover RIGHT eye'}
             </div>
-            <h3 className="text-xl text-gray-600">Select lines that appear darker or sharper</h3>
+            <h3 className="text-xl text-gray-600 mb-2">Select lines that appear darker or sharper</h3>
             <p className="text-sm text-gray-500">If all lines look the same, don't select any</p>
           </div>
-          <div className="flex justify-center mb-8">
-            <canvas ref={canvasRef} width={400} height={400} className="border-2 border-gray-300 rounded-lg" />
-          </div>
-          <div className="mb-6">
-            <p className="text-sm text-gray-600 mb-2 text-center">Selected positions: {selectedPositions.length > 0 ? selectedPositions.sort((a, b) => a - b).join(', ') : 'None'}</p>
-            <div className="grid grid-cols-6 gap-2 max-w-md mx-auto">
-              {test.getClockPositions().map(pos => (
-                <button key={pos} onClick={() => togglePosition(pos)} className={`py-2 rounded-lg font-semibold transition-colors ${selectedPositions.includes(pos) ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                  {pos}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button onClick={handleSubmitEye} className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700">Continue</button>
+          
+          {/* Enhanced Clock Dial */}
+          <EnhancedClockDial
+            selectedPositions={selectedPositions}
+            onTogglePosition={togglePosition}
+            diameterPx={400}
+            lineWeight={3}
+            showInstructions={false}
+            className="mb-6"
+          />
+          
+          <button 
+            onClick={handleSubmitEye} 
+            className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+          >
+            {currentEye === 'right' ? 'Continue to Left Eye' : 'Complete Test'}
+          </button>
         </div>
       </div>
     </div>

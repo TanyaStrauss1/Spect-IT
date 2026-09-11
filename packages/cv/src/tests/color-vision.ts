@@ -5,13 +5,14 @@
  * - Control plates to validate viewing conditions
  * - Protan (red-deficient) screening plates
  * - Deutan (green-deficient) screening plates
- * - Does NOT use copyrighted Ishihara plate images
+ * - Uses procedurally generated dot-field plates (not copyrighted Ishihara)
  * - Includes display calibration warnings
  * 
  * Based on website/clinical-tests.js from PR #57
  */
 
 import type { CalibrationData } from '../calibration/screen-calibrator'
+import { PSEUDOISOCHROMATIC_PLATES, type PlateConfig } from '../rendering/pseudoisochromatic-plates'
 
 /**
  * Plate type for classification
@@ -19,14 +20,14 @@ import type { CalibrationData } from '../calibration/screen-calibrator'
 export type PlateType = 'control' | 'protan' | 'deutan'
 
 /**
- * Color vision plate configuration
+ * Color vision plate (wrapper around PlateConfig for compatibility)
  */
 export interface ColorPlate {
   id: string
-  number: string // The number visible in the plate
+  number: string
   type: PlateType
-  figureColor: string // Color of the figure (hex)
-  backgroundColors: string[] // Colors used in background (hex)
+  figureColor: string // Kept for compatibility
+  backgroundColors: string[] // Kept for compatibility
   description: string
 }
 
@@ -45,7 +46,7 @@ export interface PlateResponse {
  */
 export interface ColorVisionResult {
   testName: 'Color Vision Screening'
-  version: '2.0-clinical'
+  version: '3.0-clinical-plates'
   timestamp: number
   calibration?: CalibrationData
   responses: PlateResponse[]
@@ -59,93 +60,37 @@ export interface ColorVisionResult {
 }
 
 /**
+ * Convert PlateConfig to ColorPlate for compatibility
+ */
+function plateConfigToColorPlate(config: PlateConfig): ColorPlate {
+  return {
+    id: config.id,
+    number: config.digit,
+    type: config.type,
+    figureColor: `hsl(${config.digitHues[0]}, ${config.saturation}%, ${config.lightness}%)`,
+    backgroundColors: config.backgroundHues.map(h => `hsl(${h}, ${config.saturation}%, ${config.lightness}%)`),
+    description: config.description,
+  }
+}
+
+/**
  * Standard confusion-line pseudoisochromatic plates
  * 
  * These plates use color pairs along confusion lines for protan and deutan defects.
- * NOT using copyrighted Ishihara designs - these are general confusion-line principles.
+ * Using procedurally generated dot-field plates from rendering/pseudoisochromatic-plates.ts
  */
-export const COLOR_VISION_PLATES: ColorPlate[] = [
-  // Control plate 1 - Everyone should see this
-  {
-    id: 'control-1',
-    number: '12',
-    type: 'control',
-    figureColor: '#d32f2f', // Red
-    backgroundColors: ['#bdbdbd', '#9e9e9e'], // Gray
-    description: 'Control plate - all viewers should see 12',
-  },
-  
-  // Protan plates (red-deficient screening)
-  {
-    id: 'protan-1',
-    number: '6',
-    type: 'protan',
-    figureColor: '#c62828', // Red
-    backgroundColors: ['#f5deb3', '#daa520'], // Tan/gold confusion
-    description: 'Protan test 1 - protanopes may miss or misread',
-  },
-  {
-    id: 'protan-2',
-    number: '8',
-    type: 'protan',
-    figureColor: '#d32f2f', // Red
-    backgroundColors: ['#ffe0b2', '#ffb74d'], // Orange/peach confusion
-    description: 'Protan test 2',
-  },
-  {
-    id: 'protan-3',
-    number: '45',
-    type: 'protan',
-    figureColor: '#b71c1c', // Dark red
-    backgroundColors: ['#ffccbc', '#ff8a65'], // Light red/salmon confusion
-    description: 'Protan test 3',
-  },
-  
-  // Deutan plates (green-deficient screening)
-  {
-    id: 'deutan-1',
-    number: '3',
-    type: 'deutan',
-    figureColor: '#1976d2', // Blue
-    backgroundColors: ['#d3d3d3', '#a9a9a9'], // Gray confusion for deutans
-    description: 'Deutan test 1 - deuteranopes may miss or misread',
-  },
-  {
-    id: 'deutan-2',
-    number: '5',
-    type: 'deutan',
-    figureColor: '#1565c0', // Blue
-    backgroundColors: ['#e1f5fe', '#81d4fa'], // Light blue confusion
-    description: 'Deutan test 2',
-  },
-  {
-    id: 'deutan-3',
-    number: '74',
-    type: 'deutan',
-    figureColor: '#0d47a1', // Dark blue
-    backgroundColors: ['#bbdefb', '#64b5f6'], // Medium blue confusion
-    description: 'Deutan test 3',
-  },
-  
-  // Control plate 2 - Verification
-  {
-    id: 'control-2',
-    number: '9',
-    type: 'control',
-    figureColor: '#5d4037', // Brown
-    backgroundColors: ['#f5f5dc', '#d2b48c'], // Beige
-    description: 'Control plate 2 - all viewers should see 9',
-  },
-]
+export const COLOR_VISION_PLATES: ColorPlate[] = PSEUDOISOCHROMATIC_PLATES.map(plateConfigToColorPlate)
 
 /**
  * Color Vision Test Controller
  */
 export class ColorVisionTest {
   private plates: ColorPlate[]
+  private plateConfigs: PlateConfig[]
 
-  constructor(config: { customPlates?: ColorPlate[] } = {}) {
-    this.plates = config.customPlates || COLOR_VISION_PLATES
+  constructor(config: { customPlates?: PlateConfig[] } = {}) {
+    this.plateConfigs = config.customPlates || PSEUDOISOCHROMATIC_PLATES
+    this.plates = this.plateConfigs.map(plateConfigToColorPlate)
   }
 
   /**
@@ -244,7 +189,7 @@ export class ColorVisionTest {
 
     return {
       testName: 'Color Vision Screening',
-      version: '2.0-clinical',
+      version: '3.0-clinical-plates',
       timestamp: Date.now(),
       calibration,
       responses,
@@ -253,7 +198,7 @@ export class ColorVisionTest {
       protanScore,
       deutanScore,
       classification,
-      methodology: 'Pseudoisochromatic plates using confusion-line methodology. Separate screening for protan (red-deficient) and deutan (green-deficient) color vision defects. Control plates verify viewing conditions.',
+      methodology: 'Pseudoisochromatic plates using confusion-line methodology with procedurally generated dot fields (~2000 dots per plate). Separate screening for protan (red-deficient) and deutan (green-deficient) color vision defects. Control plates verify viewing conditions.',
       displayWarning: 'Color vision testing depends on accurate color reproduction by your display. Ensure maximum brightness, avoid glare, use natural lighting, and avoid fluorescent lighting. This is a screening tool, not a diagnostic test.',
     }
   }
@@ -296,6 +241,6 @@ export class ColorVisionTest {
 /**
  * Create a new color vision test instance
  */
-export function createColorVisionTest(config?: { customPlates?: ColorPlate[] }): ColorVisionTest {
+export function createColorVisionTest(config?: { customPlates?: PlateConfig[] }): ColorVisionTest {
   return new ColorVisionTest(config)
 }

@@ -11,14 +11,17 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
+import SloanOptotype from '@/components/SloanOptotype'
 import {
   createVisualAcuityTest,
   ETDRS_CHART,
+  calculateSloanStrokeWidth,
   type VisualAcuityTest,
   type ETDRSLine,
   type LetterResponse,
   type LineResponse,
   type EyeResult,
+  type SloanLetter,
 } from '@spect-it/cv'
 
 type Eye = 'right' | 'left'
@@ -64,10 +67,14 @@ export default function AcuityTestPage() {
   const currentLine = chartLines[currentLineIndex]
   const calibration = calibrator.getCalibration() || calibrator.getDefaultCalibration()
   
-  // Calculate letter size based on calibration
-  const letterSizePx = currentLine 
-    ? calibrator.calculateETDRSLetterSize(currentLine.logMAR) || 60
-    : 60
+  // Calculate stroke width for Sloan optotype rendering
+  const strokeWidthPx = currentLine 
+    ? calculateSloanStrokeWidth(
+        currentLine.logMAR,
+        calibration.pxPerMm,
+        calibration.distanceCm * 10
+      )
+    : 12
 
   const handleLetterSubmit = () => {
     if (!currentLine) return
@@ -291,16 +298,21 @@ export default function AcuityTestPage() {
               </p>
             </div>
 
-            {/* Letter Display */}
-            <div 
-              className="text-center font-bold mb-8 tracking-wider select-none" 
-              style={{ 
-                fontSize: `${letterSizePx}px`,
-                lineHeight: 1.2,
-              }}
-            >
-              {currentLine.letters[currentLetterIndex]}
+            {/* Letter Display - Proper Sloan Optotype */}
+            <div className="flex justify-center items-center mb-8" style={{ minHeight: '200px' }}>
+              <SloanOptotype
+                letter={currentLine.letters[currentLetterIndex] as SloanLetter}
+                strokeWidthPx={strokeWidthPx}
+                color="#000000"
+              />
             </div>
+            
+            {/* Clinical note */}
+            <p className="text-xs text-gray-500 text-center mb-4">
+              Proper Sloan optotype with 5×5 grid geometry • 
+              Stroke width: {strokeWidthPx}px • 
+              LogMAR {currentLine.logMAR.toFixed(1)} ({currentLine.snellen})
+            </p>
 
             {/* Input */}
             <div className="space-y-4 max-w-lg mx-auto">

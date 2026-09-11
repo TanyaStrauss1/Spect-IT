@@ -10,7 +10,15 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
-import { createContrastSensitivityTest, type ContrastLetter, type ContrastLetterResponse, type ContrastTripletResponse } from '@spect-it/cv'
+import SloanOptotype from '@/components/SloanOptotype'
+import { 
+  createContrastSensitivityTest, 
+  calculateSloanStrokeWidth,
+  type ContrastLetter, 
+  type ContrastLetterResponse, 
+  type ContrastTripletResponse,
+  type SloanLetter,
+} from '@spect-it/cv'
 
 export default function ContrastTestPage() {
   const router = useRouter()
@@ -27,6 +35,20 @@ export default function ContrastTestPage() {
   const levels = test.getContrastLevels()
   const currentLevel = levels[currentLevelIndex]
   const calibration = calibrator.getCalibration() || calibrator.getDefaultCalibration()
+  
+  // Calculate stroke width for ~3° visual angle letter (180 arcmin)
+  // This gives us a letter of fixed angular size, not varying with logMAR
+  const letterSizeArcMin = 180 // ~3° = 180 arcmin
+  const strokeWidthPx = currentLevel ? calculateSloanStrokeWidth(
+    Math.log10(letterSizeArcMin / 5), // Convert to logMAR-like scale (5 arcmin at 0.0)
+    calibration.pxPerMm,
+    calibration.distanceCm * 10
+  ) : 12
+  
+  // Use proper Weber contrast: letter luminance relative to background
+  // For dark letters on light background: contrast = (Lmax - L) / Lmax
+  const contrastValue = currentLevel?.contrast || 1.0
+  const letterColor = `rgba(0, 0, 0, ${contrastValue})`
 
   useEffect(() => {
     if (authLoading) return
@@ -94,6 +116,17 @@ export default function ContrastTestPage() {
               <div className="text-6xl mb-4">✓</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Test Complete!</h2>
             </div>
+            
+            {/* Display brightness warning if needed */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Viewing Conditions</h4>
+              <p className="text-sm text-yellow-800">
+                Ensure your screen is at maximum brightness and the room has moderate ambient lighting 
+                (not too bright, not too dark). Contrast sensitivity testing is affected by display 
+                brightness and viewing environment.
+              </p>
+            </div>
+            
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
               <p className="text-sm text-gray-600 mb-2">Log Contrast Sensitivity</p>
               <p className="text-5xl font-bold text-purple-600 mb-4">{result.finalLogCS.toFixed(2)}</p>
@@ -117,16 +150,40 @@ export default function ContrastTestPage() {
       <CalibrationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onComplete={() => setIsModalOpen(false)} calibrator={calibrator} />
       <div className="container mx-auto max-w-4xl">
         <div className="bg-white rounded-lg shadow-xl p-8">
+          {/* Brightness warning */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+            <p className="text-xs text-yellow-800">
+              <strong>Ensure:</strong> Screen at maximum brightness • Moderate ambient lighting • 
+              No glare on screen
+            </p>
+          </div>
+          
           <div className="text-center mb-8">
             <div className="inline-block bg-purple-100 text-purple-600 px-4 py-2 rounded-full font-semibold mb-4">
               Level {currentLevelIndex + 1} - Letter {currentLetterIndex + 1}/3
             </div>
             <h3 className="text-xl text-gray-600">Read the letter</h3>
-            <p className="text-sm text-gray-500">Contrast: {(currentLevel.contrast * 100).toFixed(1)}%</p>
+            <p className="text-sm text-gray-500">Weber contrast: {(currentLevel.contrast * 100).toFixed(1)}%</p>
           </div>
-          <div className="text-center font-bold mb-8" style={{ fontSize: '96px', color: `rgba(0,0,0,${currentLevel.contrast})` }}>
-            {currentLevel.letters[currentLetterIndex]}
+          
+          {/* Calibrated Sloan Optotype at ~3° visual angle */}
+          <div className="flex justify-center items-center mb-6" style={{ minHeight: '200px', backgroundColor: '#FFFFFF' }}>
+            <div style={{ opacity: currentLevel.contrast }}>
+              <SloanOptotype
+                letter={currentLevel.letters[currentLetterIndex] as SloanLetter}
+                strokeWidthPx={strokeWidthPx}
+                color="#000000"
+              />
+            </div>
           </div>
+          
+          {/* Clinical note */}
+          <p className="text-xs text-gray-500 text-center mb-6">
+            Fixed-size Sloan letter (~3° visual angle) • 
+            Stroke width: {strokeWidthPx}px • 
+            Log CS: {currentLevel.logCS.toFixed(2)}
+          </p>
+          
           <div className="space-y-4 max-w-lg mx-auto">
             <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value.toUpperCase())} placeholder="Type the letter" className="w-full px-4 py-3 text-xl text-center border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none uppercase" onKeyPress={(e) => e.key === 'Enter' && userInput && handleLetterSubmit()} autoFocus maxLength={1} />
             <button onClick={handleLetterSubmit} disabled={!userInput} className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50">Submit</button>
