@@ -1,136 +1,93 @@
-import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, Dimensions } from 'react-native'
+/**
+ * Clinical Visual Field Screening - Mobile
+ * Interactive Amsler grid methodology
+ */
+
+import { useState, useEffect } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
+import Svg, { Line, Circle, Rect } from 'react-native-svg'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
-
-const testPositions = [
-  { id: 1, x: 50, y: 20, zone: 'top' },
-  { id: 2, x: 80, y: 20, zone: 'top-right' },
-  { id: 3, x: 80, y: 50, zone: 'right' },
-  { id: 4, x: 80, y: 80, zone: 'bottom-right' },
-  { id: 5, x: 50, y: 80, zone: 'bottom' },
-  { id: 6, x: 20, y: 80, zone: 'bottom-left' },
-  { id: 7, x: 20, y: 50, zone: 'left' },
-  { id: 8, x: 20, y: 20, zone: 'top-left' },
-]
+import {
+  createVisualFieldTest,
+  type GridPosition,
+  type GridIssue,
+  type EyeVisualFieldResult,
+  type Eye,
+  type IssueType,
+  type CalibrationData,
+  ScreenCalibrator,
+} from '@spect-it/cv'
 
 export default function VisualFieldTestScreen() {
-  const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
-  const [currentEye, setCurrentEye] = useState<'left' | 'right'>('left')
-  const [currentTrial, setCurrentTrial] = useState(0)
-  const [showStimulus, setShowStimulus] = useState(false)
-  const [stimulusPosition, setStimulusPosition] = useState<any>(null)
-  const [waitingForResponse, setWaitingForResponse] = useState(false)
-  const [responses, setResponses] = useState<any[]>([])
+  const [step, setStep] = useState<'intro' | 'test' | 'report' | 'result'>('intro')
+  const [currentEye, setCurrentEye] = useState<Eye>('right')
+  const [issues, setIssues] = useState<GridIssue[]>([])
+  const [centralFixation, setCentralFixation] = useState(true)
+  const [rightEyeResult, setRightEyeResult] = useState<EyeVisualFieldResult | null>(null)
+  const [leftEyeResult, setLeftEyeResult] = useState<EyeVisualFieldResult | null>(null)
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const { user, loading: authLoading } = useAuth()
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const test = createVisualFieldTest({ gridSize: 10, gridCoverageArcMin: 1200 })
+  const gridConfig = test.getGridConfig()
 
   useEffect(() => {
     if (authLoading) return
-    
+
     if (!user) {
       router.replace('/auth/signin')
     }
   }, [user, authLoading])
 
-  useEffect(() => {
-    if (step === 'test' && !waitingForResponse && currentTrial < testPositions.length) {
-      const delay = 1000 + Math.random() * 2000
-      timeoutRef.current = setTimeout(() => {
-        showNextStimulus()
-      }, delay)
-    }
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [step, currentTrial, waitingForResponse])
-
-  const showNextStimulus = () => {
-    const position = testPositions[currentTrial]
-    setStimulusPosition(position)
-    setShowStimulus(true)
-    setWaitingForResponse(true)
-
-    setTimeout(() => {
-      setShowStimulus(false)
-    }, 500)
+  const handleContinueToReport = () => {
+    setStep('report')
   }
 
-  const handleResponse = (detected: boolean) => {
-    if (!waitingForResponse) return
-
-    const response = {
-      trial: currentTrial + 1,
-      position: stimulusPosition,
-      detected,
-      eye: currentEye,
-      timestamp: Date.now()
+  const handleReportIssue = (type: IssueType) => {
+    const issue: GridIssue = {
+      position: { row: 5, col: 5 }, // Center for demo
+      type,
+      description: `${type} area detected`,
     }
+    setIssues([...issues, issue])
+  }
 
-    const newResponses = [...responses, response]
-    setResponses(newResponses)
-    setWaitingForResponse(false)
+  const handleNoIssues = () => {
+    setCentralFixation(true)
+    finishEye()
+  }
 
-    if (currentTrial < testPositions.length - 1) {
-      setCurrentTrial(currentTrial + 1)
+  const finishEye = () => {
+    const eyeResult = test.processEyeResult(currentEye, issues, centralFixation)
+
+    if (currentEye === 'right') {
+      setRightEyeResult(eyeResult)
+      setCurrentEye('left')
+      setIssues([])
+      setCentralFixation(true)
+      setStep('test')
     } else {
-      if (currentEye === 'left') {
-        setCurrentEye('right')
-        setCurrentTrial(0)
-      } else {
-        finishTest(newResponses)
-      }
+      setLeftEyeResult(eyeResult)
+      finishTest(rightEyeResult!, eyeResult)
     }
   }
 
-  const finishTest = async (finalResponses: any[]) => {
-    const leftEyeResponses = finalResponses.filter(r => r.eye === 'left')
-    const rightEyeResponses = finalResponses.filter(r => r.eye === 'right')
+  const finishTest = async (rightEye: EyeVisualFieldResult, leftEye: EyeVisualFieldResult) => {
+    const calibrator = new ScreenCalibrator()
+    const calibration = calibrator.isReady() ? calibrator.getCalibration() : undefined
 
-    const leftDetected = leftEyeResponses.filter(r => r.detected).length
-    const rightDetected = rightEyeResponses.filter(r => r.detected).length
+    const testResult = test.createResult(calibration, rightEye, leftEye)
+    const rightInterpretation = test.getInterpretation(rightEye)
+    const leftInterpretation = test.getInterpretation(leftEye)
 
-    const leftPercentage = (leftDetected / leftEyeResponses.length) * 100
-    const rightPercentage = (rightDetected / rightEyeResponses.length) * 100
-
-    const missedZones = {
-      left: leftEyeResponses.filter(r => !r.detected).map(r => r.position.zone),
-      right: rightEyeResponses.filter(r => !r.detected).map(r => r.position.zone)
-    }
-
-    let assessment = ''
-    if (leftPercentage >= 85 && rightPercentage >= 85) {
-      assessment = 'Normal peripheral vision detected'
-    } else if (leftPercentage >= 70 && rightPercentage >= 70) {
-      assessment = 'Mild peripheral vision concerns - consider professional evaluation'
-    } else {
-      assessment = 'Peripheral vision concerns detected - consult an eye care professional'
-    }
-
-    const testResult = {
-      leftEye: {
-        detected: leftDetected,
-        total: leftEyeResponses.length,
-        percentage: Math.round(leftPercentage),
-        missedZones: missedZones.left
-      },
-      rightEye: {
-        detected: rightDetected,
-        total: rightEyeResponses.length,
-        percentage: Math.round(rightPercentage),
-        missedZones: missedZones.right
-      },
-      assessment,
-      responses: finalResponses
-    }
-
-    setResult(testResult)
+    setResult({
+      ...testResult,
+      rightInterpretation,
+      leftInterpretation,
+    })
     setStep('result')
 
     if (user) {
@@ -140,11 +97,9 @@ export default function VisualFieldTestScreen() {
           .from('test_results')
           .insert({
             user_id: user.id,
-            user_email: user.email,
-            test_type: 'Visual Field',
-            test_name: 'Peripheral Vision Screening',
+            test_type: 'Visual Field (Clinical)',
             test_data: testResult,
-            score: Math.round((leftPercentage + rightPercentage) / 2),
+            score: (rightEye.hasAbnormalities ? 0 : 1) + (leftEye.hasAbnormalities ? 0 : 1),
             test_date: new Date().toISOString(),
           })
 
@@ -160,20 +115,65 @@ export default function VisualFieldTestScreen() {
     }
   }
 
+  const AmslerGrid = ({ size = 280 }: { size?: number }) => {
+    const gridLines = []
+    const squareSize = size / gridConfig.size
+
+    // Vertical lines
+    for (let i = 0; i <= gridConfig.size; i++) {
+      const x = i * squareSize
+      gridLines.push(
+        <Line
+          key={`v${i}`}
+          x1={x}
+          y1={0}
+          x2={x}
+          y2={size}
+          stroke="#374151"
+          strokeWidth="1"
+        />
+      )
+    }
+
+    // Horizontal lines
+    for (let i = 0; i <= gridConfig.size; i++) {
+      const y = i * squareSize
+      gridLines.push(
+        <Line
+          key={`h${i}`}
+          x1={0}
+          y1={y}
+          x2={size}
+          y2={y}
+          stroke="#374151"
+          strokeWidth="1"
+        />
+      )
+    }
+
+    return (
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Rect x={0} y={0} width={size} height={size} fill="white" />
+        {gridLines}
+        <Circle cx={size / 2} cy={size / 2} r={4} fill="#EF4444" />
+      </Svg>
+    )
+  }
+
   if (step === 'intro') {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.emoji}>📍</Text>
-          <Text style={styles.title}>Visual Field Test</Text>
-          <Text style={styles.subtitle}>Peripheral Vision Screening</Text>
+          <Text style={styles.title}>Visual Field Screening</Text>
+          <Text style={styles.subtitle}>Amsler Grid Methodology</Text>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>What is this test?</Text>
-            <Text style={styles.text}>
-              This test screens your peripheral (side) vision by presenting brief flashes 
-              of light in different areas while you focus on a central point. It can help 
-              detect blind spots or reduced peripheral vision.
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>Clinical Methodology</Text>
+            <Text style={styles.infoText}>
+              This test uses a 10×10 Amsler grid covering the central 20° of visual field. 
+              It screens for central scotomas, metamorphopsia, or distortion that may indicate 
+              macular conditions.
             </Text>
           </View>
 
@@ -181,23 +181,18 @@ export default function VisualFieldTestScreen() {
             <Text style={styles.sectionTitle}>Instructions:</Text>
             <Text style={styles.text}>1. You'll test each eye separately</Text>
             <Text style={styles.text}>2. Cover one eye with your hand (don't press on it)</Text>
-            <Text style={styles.text}>3. Keep your gaze fixed on the central dot - DO NOT look around</Text>
-            <Text style={styles.text}>4. Tap "Saw It" if you see a flash in your peripheral vision</Text>
-            <Text style={styles.text}>5. Tap "Missed It" if you don't see anything after a few seconds</Text>
+            <Text style={styles.text}>3. Look at the red center dot - DO NOT look away</Text>
+            <Text style={styles.text}>4. While maintaining fixation, notice if any grid squares appear missing, distorted, blurry, or dark</Text>
+            <Text style={styles.text}>5. Report any abnormalities you observe</Text>
             <Text style={styles.text}>6. Repeat for the other eye</Text>
           </View>
 
-          <View style={styles.disclaimer}>
-            <Text style={styles.disclaimerText}>
-              <Text style={styles.disclaimerBold}>Important:</Text> Keep your eyes focused on the central dot at all times. 
-              Use your peripheral vision to detect the flashes. Sit about 2 feet from your screen in good lighting.
-            </Text>
-          </View>
-
           <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>Important Limitation</Text>
             <Text style={styles.warningText}>
-              <Text style={styles.disclaimerBold}>Screening Notice:</Text> This is a basic screening, not full clinical perimetry. 
-              Results do not constitute a medical diagnosis. Please consult an eye care professional for comprehensive visual field testing if you have concerns.
+              This test screens the CENTRAL visual field only (central 20°). It does NOT detect 
+              peripheral field loss, glaucoma, or other conditions affecting peripheral vision. 
+              Comprehensive perimetry is required for full visual field assessment.
             </Text>
           </View>
 
@@ -210,80 +205,110 @@ export default function VisualFieldTestScreen() {
   }
 
   if (step === 'test') {
-    const testAreaSize = Math.min(Dimensions.get('window').width - 80, 350)
-
     return (
-      <View style={styles.testContainer}>
+      <View style={styles.container}>
         <View style={styles.testCard}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
-              Testing {currentEye === 'left' ? 'Left' : 'Right'} Eye - Trial {currentTrial + 1} of {testPositions.length}
+              Testing {currentEye === 'right' ? 'Right' : 'Left'} Eye
             </Text>
           </View>
 
           <Text style={styles.testTitle}>
-            Cover your {currentEye === 'left' ? 'right' : 'left'} eye
+            Cover your {currentEye === 'right' ? 'left' : 'right'} eye
           </Text>
           <Text style={styles.testSubtitle}>
-            Keep your gaze on the center dot. Tap when you see a flash.
+            Keep your eyes on the red center dot. Observe the entire grid.
           </Text>
 
-          <View style={[styles.testArea, { width: testAreaSize, height: testAreaSize }]}>
-            {/* Central fixation point */}
-            <View style={styles.centralDot} />
-
-            {/* Stimulus */}
-            {showStimulus && stimulusPosition && (
-              <View 
-                style={[
-                  styles.stimulus,
-                  {
-                    left: `${stimulusPosition.x}%`,
-                    top: `${stimulusPosition.y}%`,
-                  }
-                ]}
-              />
-            )}
+          <View style={styles.gridContainer}>
+            <AmslerGrid size={280} />
           </View>
 
-          <View style={styles.responseButtons}>
-            <TouchableOpacity
-              style={[styles.responseButton, styles.sawItButton, !waitingForResponse && styles.disabledButton]}
-              onPress={() => handleResponse(true)}
-              disabled={!waitingForResponse}
-            >
-              <Text style={styles.responseButtonText}>Saw It ✓</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.responseButton, styles.missedItButton, !waitingForResponse && styles.disabledButton]}
-              onPress={() => handleResponse(false)}
-              disabled={!waitingForResponse}
-            >
-              <Text style={styles.responseButtonText}>Missed It ✗</Text>
-            </TouchableOpacity>
-          </View>
-
-          {!waitingForResponse && (
-            <Text style={styles.helpText}>
-              Next flash coming soon... Keep your eyes on the center dot!
-            </Text>
-          )}
-
-          <View style={styles.progress}>
-            <Text style={styles.progressText}>
-              Progress: {responses.filter(r => r.eye === currentEye).length} / {testPositions.length}
-            </Text>
-            <View style={styles.progressBar}>
-              <View 
-                style={[
-                  styles.progressFill,
-                  { width: `${(responses.filter(r => r.eye === currentEye).length / testPositions.length) * 100}%` }
-                ]}
-              />
-            </View>
-          </View>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={handleContinueToReport}
+          >
+            <Text style={styles.primaryButtonText}>Continue to Report</Text>
+          </TouchableOpacity>
         </View>
       </View>
+    )
+  }
+
+  if (step === 'report') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.card}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              Report for {currentEye === 'right' ? 'Right' : 'Left'} Eye
+            </Text>
+          </View>
+
+          <Text style={styles.testTitle}>Did you notice any abnormalities?</Text>
+          <Text style={styles.testSubtitle}>
+            Select all that apply
+          </Text>
+
+          <View style={styles.issueButtonsContainer}>
+            <TouchableOpacity
+              style={styles.issueButton}
+              onPress={() => handleReportIssue('missing')}
+            >
+              <Text style={styles.issueButtonText}>Missing Areas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.issueButton}
+              onPress={() => handleReportIssue('distorted')}
+            >
+              <Text style={styles.issueButtonText}>Distorted Lines</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.issueButton}
+              onPress={() => handleReportIssue('blurry')}
+            >
+              <Text style={styles.issueButtonText}>Blurry Areas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.issueButton}
+              onPress={() => handleReportIssue('dark')}
+            >
+              <Text style={styles.issueButtonText}>Dark Areas</Text>
+            </TouchableOpacity>
+          </View>
+
+          {issues.length > 0 && (
+            <View style={styles.issuesReported}>
+              <Text style={styles.issuesReportedText}>
+                {issues.length} issue(s) reported
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[styles.primaryButton, styles.noIssuesButton]}
+            onPress={handleNoIssues}
+          >
+            <Text style={styles.primaryButtonText}>
+              No Abnormalities - Grid Looks Normal
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={finishEye}
+            disabled={issues.length === 0}
+          >
+            <Text style={styles.secondaryButtonText}>
+              Done Reporting for This Eye
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     )
   }
 
@@ -296,42 +321,40 @@ export default function VisualFieldTestScreen() {
           {saving ? 'Saving results...' : 'Results saved'}
         </Text>
 
-        <View style={styles.resultMain}>
-          <Text style={styles.resultLabel}>Assessment</Text>
-          <Text style={styles.resultScore}>{result.assessment}</Text>
-        </View>
-
         <View style={styles.resultGrid}>
           <View style={styles.resultItem}>
-            <Text style={styles.resultItemLabel}>Left Eye</Text>
-            <Text style={styles.resultItemValue}>{result.leftEye.percentage}%</Text>
-            <Text style={styles.resultItemSubtext}>
-              {result.leftEye.detected}/{result.leftEye.total} detected
+            <Text style={styles.resultItemLabel}>Right Eye (OD)</Text>
+            <Text style={styles.resultItemValue}>
+              {result.rightEye.hasAbnormalities ? 'Abnormalities Detected' : 'Normal'}
             </Text>
-            {result.leftEye.missedZones.length > 0 && (
-              <Text style={styles.missedZonesText}>
-                Missed: {result.leftEye.missedZones.join(', ')}
-              </Text>
-            )}
+            <Text style={styles.resultItemSubtext}>
+              {result.rightEye.issues.length} issue(s)
+            </Text>
           </View>
           <View style={styles.resultItem}>
-            <Text style={styles.resultItemLabel}>Right Eye</Text>
-            <Text style={styles.resultItemValue}>{result.rightEye.percentage}%</Text>
-            <Text style={styles.resultItemSubtext}>
-              {result.rightEye.detected}/{result.rightEye.total} detected
+            <Text style={styles.resultItemLabel}>Left Eye (OS)</Text>
+            <Text style={styles.resultItemValue}>
+              {result.leftEye.hasAbnormalities ? 'Abnormalities Detected' : 'Normal'}
             </Text>
-            {result.rightEye.missedZones.length > 0 && (
-              <Text style={styles.missedZonesText}>
-                Missed: {result.rightEye.missedZones.join(', ')}
-              </Text>
-            )}
+            <Text style={styles.resultItemSubtext}>
+              {result.leftEye.issues.length} issue(s)
+            </Text>
           </View>
+        </View>
+
+        <View style={styles.interpretationBox}>
+          <Text style={styles.interpretationTitle}>Right Eye Interpretation</Text>
+          <Text style={styles.interpretationText}>{result.rightInterpretation}</Text>
+        </View>
+
+        <View style={styles.interpretationBox}>
+          <Text style={styles.interpretationTitle}>Left Eye Interpretation</Text>
+          <Text style={styles.interpretationText}>{result.leftInterpretation}</Text>
         </View>
 
         <View style={styles.disclaimer}>
           <Text style={styles.disclaimerText}>
-            <Text style={styles.disclaimerBold}>Note:</Text> This is a basic screening result, not a comprehensive visual field test. 
-            Missing peripheral stimuli may indicate potential vision concerns. Please consult an eye care professional for a full evaluation if concerns are detected.
+            <Text style={styles.disclaimerBold}>Important Limitation:</Text> {result.limitations}
           </Text>
         </View>
 
@@ -352,11 +375,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EEF2FF',
   },
-  testContainer: {
-    flex: 1,
-    backgroundColor: '#EEF2FF',
-    padding: 20,
-  },
   card: {
     backgroundColor: 'white',
     margin: 20,
@@ -371,8 +389,9 @@ const styles = StyleSheet.create({
   testCard: {
     flex: 1,
     backgroundColor: 'white',
+    margin: 20,
     borderRadius: 16,
-    padding: 20,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -397,45 +416,57 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  infoBox: {
+    backgroundColor: '#DBEAFE',
+    borderWidth: 1,
+    borderColor: '#93C5FD',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E3A8A',
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#1E40AF',
+    lineHeight: 20,
+  },
   section: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   text: {
     fontSize: 14,
     color: '#374151',
     marginBottom: 8,
-    lineHeight: 20,
-  },
-  disclaimer: {
-    backgroundColor: '#DBEAFE',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  disclaimerText: {
-    fontSize: 12,
-    color: '#1E40AF',
-    lineHeight: 18,
-  },
-  disclaimerBold: {
-    fontWeight: 'bold',
   },
   warningBox: {
     backgroundColor: '#FEF3C7',
-    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
     borderRadius: 12,
+    padding: 16,
     marginBottom: 24,
   },
-  warningText: {
-    fontSize: 12,
+  warningTitle: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#92400E',
-    lineHeight: 18,
+    marginBottom: 8,
+  },
+  warningText: {
+    fontSize: 13,
+    color: '#92400E',
+    lineHeight: 20,
   },
   primaryButton: {
     backgroundColor: '#4F46E5',
@@ -471,102 +502,53 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#4F46E5',
     fontWeight: '600',
-    fontSize: 11,
-    textAlign: 'center',
   },
   testTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#1F2937',
     textAlign: 'center',
     marginBottom: 8,
   },
   testSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  testArea: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    alignSelf: 'center',
-    marginBottom: 20,
-    position: 'relative',
+  gridContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  centralDot: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    backgroundColor: '#EF4444',
-    borderRadius: 6,
-    left: '50%',
-    top: '50%',
-    marginLeft: -6,
-    marginTop: -6,
-  },
-  stimulus: {
-    position: 'absolute',
-    width: 25,
-    height: 25,
-    backgroundColor: 'white',
-    borderRadius: 12.5,
-    marginLeft: -12.5,
-    marginTop: -12.5,
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-  responseButtons: {
-    flexDirection: 'row',
+  issueButtonsContainer: {
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 24,
   },
-  responseButton: {
-    flex: 1,
+  issueButton: {
+    backgroundColor: '#F59E0B',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
-  sawItButton: {
-    backgroundColor: '#10B981',
-  },
-  missedItButton: {
-    backgroundColor: '#EF4444',
-  },
-  disabledButton: {
-    backgroundColor: '#D1D5DB',
-  },
-  responseButtonText: {
+  issueButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
-  helpText: {
-    fontSize: 11,
-    color: '#6B7280',
-    textAlign: 'center',
+  issuesReported: {
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 12,
   },
-  progress: {
-    marginTop: 12,
+  issuesReportedText: {
+    fontSize: 14,
+    color: '#92400E',
+    textAlign: 'center',
+    fontWeight: '600',
   },
-  progressText: {
-    color: '#6B7280',
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4F46E5',
+  noIssuesButton: {
+    backgroundColor: '#10B981',
   },
   resultEmoji: {
     fontSize: 64,
@@ -586,25 +568,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
   },
-  resultMain: {
-    backgroundColor: '#EEF2FF',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  resultLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  resultScore: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4F46E5',
-    textAlign: 'center',
-  },
   resultGrid: {
     flexDirection: 'row',
     gap: 12,
@@ -623,19 +586,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resultItemValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#1F2937',
     marginBottom: 4,
   },
   resultItemSubtext: {
     fontSize: 11,
     color: '#6B7280',
-    marginBottom: 4,
   },
-  missedZonesText: {
-    fontSize: 10,
-    color: '#DC2626',
-    marginTop: 4,
+  interpretationBox: {
+    backgroundColor: '#F3E8FF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  interpretationTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7C3AED',
+    marginBottom: 8,
+  },
+  interpretationText: {
+    fontSize: 13,
+    color: '#6B21A8',
+    lineHeight: 20,
+  },
+  disclaimer: {
+    backgroundColor: '#FEE2E2',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: '#991B1B',
+    lineHeight: 18,
+  },
+  disclaimerBold: {
+    fontWeight: 'bold',
   },
 })

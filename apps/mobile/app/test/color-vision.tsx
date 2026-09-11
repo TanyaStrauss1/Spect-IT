@@ -1,37 +1,18 @@
 /**
- * Color Vision Screening Test - Mobile
- * 
- * Uses generated pseudoisochromatic plates (Ishihara-style)
- * NOT using copyrighted Ishihara plates - these are original generated plates
+ * Clinical Color Vision Screening Test - Mobile
+ * Pseudoisochromatic plates with confusion-line methodology
  */
 
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
 import { router } from 'expo-router'
-import Svg, { Circle } from 'react-native-svg'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
-
-interface ColorPlate {
-  id: number
-  correctAnswer: string
-  type: 'normal' | 'protanopia' | 'deuteranopia' | 'control'
-  description: string
-}
-
-const testPlates: ColorPlate[] = [
-  { id: 1, correctAnswer: '12', type: 'control', description: 'Control plate - visible to all' },
-  { id: 2, correctAnswer: '8', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 3, correctAnswer: '6', type: 'protanopia', description: 'Protan deficiency screening' },
-  { id: 4, correctAnswer: '45', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 5, correctAnswer: '5', type: 'deuteranopia', description: 'Deutan deficiency screening' },
-  { id: 6, correctAnswer: '73', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 7, correctAnswer: '2', type: 'normal', description: 'Red-green deficiency screening' },
-  { id: 8, correctAnswer: '16', type: 'control', description: 'Control plate - visible to all' },
-]
+import { PseudoisochromaticPlate } from '../../components/stimuli/PseudoisochromaticPlate'
+import { PSEUDOISOCHROMATIC_PLATES, type PlateConfig } from '@spect-it/cv'
 
 export default function ColorVisionTestScreen() {
-  const [currentPlate, setCurrentPlate] = useState(0)
+  const [currentPlateIndex, setCurrentPlateIndex] = useState(0)
   const [userInput, setUserInput] = useState('')
   const [responses, setResponses] = useState<any[]>([])
   const [completed, setCompleted] = useState(false)
@@ -55,75 +36,92 @@ export default function ColorVisionTestScreen() {
   const handleSubmit = () => {
     if (!userInput.trim()) return
 
-    const plate = testPlates[currentPlate]
-    const isCorrect = userInput.trim() === plate.correctAnswer
+    const plate = PSEUDOISOCHROMATIC_PLATES[currentPlateIndex]
+    const isCorrect = userInput.trim() === plate.digit
     
     const newResponses = [...responses, {
       plateId: plate.id,
-      correctAnswer: plate.correctAnswer,
+      correctAnswer: plate.digit,
       userAnswer: userInput.trim(),
       correct: isCorrect,
-      type: plate.type
+      type: plate.type,
+      description: plate.description
     }]
     setResponses(newResponses)
     setUserInput('')
 
-    if (currentPlate < testPlates.length - 1) {
-      setCurrentPlate(currentPlate + 1)
+    if (currentPlateIndex < PSEUDOISOCHROMATIC_PLATES.length - 1) {
+      setCurrentPlateIndex(currentPlateIndex + 1)
     } else {
       finishTest(newResponses)
     }
   }
 
   const handleCannotSee = () => {
-    const plate = testPlates[currentPlate]
+    const plate = PSEUDOISOCHROMATIC_PLATES[currentPlateIndex]
     
     const newResponses = [...responses, {
       plateId: plate.id,
-      correctAnswer: plate.correctAnswer,
+      correctAnswer: plate.digit,
       userAnswer: 'CANNOT_SEE',
       correct: false,
-      type: plate.type
+      type: plate.type,
+      description: plate.description
     }]
     setResponses(newResponses)
     setUserInput('')
 
-    if (currentPlate < testPlates.length - 1) {
-      setCurrentPlate(currentPlate + 1)
+    if (currentPlateIndex < PSEUDOISOCHROMATIC_PLATES.length - 1) {
+      setCurrentPlateIndex(currentPlateIndex + 1)
     } else {
       finishTest(newResponses)
     }
   }
 
   const finishTest = async (finalResponses: any[]) => {
-    const controlCorrect = finalResponses.filter(r => r.type === 'control' && r.correct).length
-    const controlTotal = finalResponses.filter(r => r.type === 'control').length
-    const normalCorrect = finalResponses.filter(r => r.type === 'normal' && r.correct).length
-    const normalTotal = finalResponses.filter(r => r.type === 'normal').length
+    const controlResponses = finalResponses.filter(r => r.type === 'control')
+    const protanResponses = finalResponses.filter(r => r.type === 'protan')
+    const deutanResponses = finalResponses.filter(r => r.type === 'deutan')
+    
+    const controlCorrect = controlResponses.filter(r => r.correct).length
+    const protanCorrect = protanResponses.filter(r => r.correct).length
+    const deutanCorrect = deutanResponses.filter(r => r.correct).length
+    
     const totalCorrect = finalResponses.filter(r => r.correct).length
     
     let screeningResult = 'Normal color vision'
     let recommendations = 'Your color vision appears normal based on this screening.'
+    let category: 'PASS' | 'BORDERLINE' | 'REFER' = 'PASS'
     
-    if (controlCorrect < controlTotal) {
+    if (controlCorrect < controlResponses.length) {
       screeningResult = 'Test inconclusive'
       recommendations = 'Control plates were not read correctly. This may indicate difficulty with the test format rather than color vision deficiency. Please consult an eye care professional.'
-    } else if (normalCorrect === 0) {
-      screeningResult = 'Possible red-green color vision deficiency detected'
-      recommendations = 'This screening suggests you may have difficulty distinguishing red and green colors. Please consult an eye care professional for comprehensive testing.'
-    } else if (normalCorrect < normalTotal / 2) {
+      category = 'REFER'
+    } else if (protanCorrect === 0) {
+      screeningResult = 'Possible protan-type color vision deficiency detected'
+      recommendations = 'This screening suggests you may have protanopia or protanomaly (red deficiency). Please consult an eye care professional for comprehensive testing with standardized clinical tests.'
+      category = 'REFER'
+    } else if (deutanCorrect === 0) {
+      screeningResult = 'Possible deutan-type color vision deficiency detected'
+      recommendations = 'This screening suggests you may have deuteranopia or deuteranomaly (green deficiency). Please consult an eye care professional for comprehensive testing with standardized clinical tests.'
+      category = 'REFER'
+    } else if (totalCorrect < finalResponses.length * 0.7) {
       screeningResult = 'Possible color vision deficiency detected'
       recommendations = 'This screening suggests you may have some difficulty with color discrimination. Please consult an eye care professional for comprehensive testing.'
+      category = 'BORDERLINE'
     }
 
     const testResult = {
       screeningResult,
       recommendations,
+      category,
       platesCorrect: totalCorrect,
       platesTotal: finalResponses.length,
       controlPlatesCorrect: controlCorrect,
-      normalPlatesCorrect: normalCorrect,
-      responses: finalResponses
+      protanPlatesCorrect: protanCorrect,
+      deutanPlatesCorrect: deutanCorrect,
+      responses: finalResponses,
+      methodology: 'Confusion-line pseudoisochromatic plates with protan/deutan specificity'
     }
 
     setResult(testResult)
@@ -137,7 +135,7 @@ export default function ColorVisionTestScreen() {
           .insert({
             user_id: user.id,
             user_email: user.email,
-            test_type: 'Color Vision',
+            test_type: 'Color Vision (Clinical)',
             test_name: 'Pseudoisochromatic Plate Test',
             test_data: testResult,
             score: totalCorrect,
@@ -162,34 +160,33 @@ export default function ColorVisionTestScreen() {
         <View style={styles.instructionsCard}>
           <Text style={styles.emoji}>🎨</Text>
           <Text style={styles.title}>Color Vision Screening</Text>
-          <Text style={styles.subtitle}>Test your ability to distinguish colors</Text>
+          <Text style={styles.subtitle}>Pseudoisochromatic Plate Test</Text>
 
           <View style={styles.infoBox}>
-            <Text style={styles.infoTitle}>Important Information</Text>
+            <Text style={styles.infoTitle}>Clinical Methodology</Text>
             <Text style={styles.infoText}>
-              This is a <Text style={styles.bold}>screening test</Text>, not a diagnostic tool. 
-              It uses generated pseudoisochromatic plates similar to Ishihara plates.
-            </Text>
-            <Text style={styles.infoText}>
-              Results should be confirmed by an eye care professional using standardized clinical tests.
+              This test uses confusion-line pseudoisochromatic plates to screen for 
+              red-green color vision deficiencies. Plates are designed with specific hues 
+              that appear different to normal trichromats but similar to color-deficient viewers.
             </Text>
           </View>
 
           <View style={styles.instructionsSection}>
             <Text style={styles.instructionsTitle}>Instructions:</Text>
-            <Text style={styles.instructionItem}>1. Ensure you're in good lighting conditions</Text>
+            <Text style={styles.instructionItem}>1. Ensure you're in good, even lighting conditions</Text>
             <Text style={styles.instructionItem}>2. Remove any tinted glasses (clear glasses are fine)</Text>
             <Text style={styles.instructionItem}>3. Look at each plate and identify the number you see</Text>
-            <Text style={styles.instructionItem}>4. Type the number(s) you see, or tap "Cannot See" if you cannot identify a number</Text>
-            <Text style={styles.instructionItem}>5. You'll see 8 plates in total</Text>
-            <Text style={styles.instructionItem}>6. Take your time with each plate</Text>
+            <Text style={styles.instructionItem}>4. Type the number(s) you see, or tap "Cannot See" if no number is visible</Text>
+            <Text style={styles.instructionItem}>5. You'll see {PSEUDOISOCHROMATIC_PLATES.length} plates total</Text>
+            <Text style={styles.instructionItem}>6. Take 3-5 seconds per plate - don't strain</Text>
           </View>
 
           <View style={styles.warningBox}>
-            <Text style={styles.warningTitle}>Test Environment</Text>
+            <Text style={styles.warningTitle}>Important Note</Text>
             <Text style={styles.warningText}>
-              For best results, take this test on a device with good color accuracy. 
-              Results may vary on different screens or in poor lighting.
+              This is a screening tool, not a diagnostic test. Results should be confirmed 
+              by an eye care professional using standardized clinical tests like the Ishihara 
+              or Farnsworth D-15.
             </Text>
           </View>
 
@@ -214,11 +211,14 @@ export default function ColorVisionTestScreen() {
           <View style={styles.resultMain}>
             <Text style={styles.resultLabel}>Screening Result</Text>
             <Text style={styles.resultScore}>{result.screeningResult}</Text>
+            <Text style={[styles.categoryBadge, styles[`badge${result.category}`]]}>
+              {result.category}
+            </Text>
           </View>
 
           <View style={styles.resultGrid}>
             <View style={styles.resultItem}>
-              <Text style={styles.resultItemLabel}>Plates Correct</Text>
+              <Text style={styles.resultItemLabel}>Total Correct</Text>
               <Text style={styles.resultItemValue}>{result.platesCorrect}/{result.platesTotal}</Text>
             </View>
             <View style={styles.resultItem}>
@@ -234,9 +234,9 @@ export default function ColorVisionTestScreen() {
 
           <View style={styles.disclaimer}>
             <Text style={styles.disclaimerText}>
-              <Text style={styles.disclaimerBold}>Important:</Text> This is a screening result, not a medical diagnosis. 
+              <Text style={styles.disclaimerBold}>Screening Notice:</Text> This is a screening result, not a medical diagnosis. 
               Color vision deficiency can only be definitively diagnosed by a qualified eye care 
-              professional using standardized clinical tests. If you have concerns, please consult 
+              professional using standardized clinical tests. If concerns are detected, please consult 
               an optometrist or ophthalmologist.
             </Text>
           </View>
@@ -259,7 +259,7 @@ export default function ColorVisionTestScreen() {
     )
   }
 
-  const plate = testPlates[currentPlate]
+  const plate = PSEUDOISOCHROMATIC_PLATES[currentPlateIndex]
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -267,19 +267,19 @@ export default function ColorVisionTestScreen() {
         <View style={styles.header}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
-              Plate {currentPlate + 1} of {testPlates.length}
+              Plate {currentPlateIndex + 1} of {PSEUDOISOCHROMATIC_PLATES.length}
             </Text>
           </View>
           <Text style={styles.instruction}>What number do you see?</Text>
         </View>
 
         <View style={styles.plateContainer}>
-          <ColorPlateVisualization 
-            plateId={plate.id}
-            number={plate.correctAnswer}
-            type={plate.type}
+          <PseudoisochromaticPlate 
+            config={plate}
+            diameter={280}
+            dotsCount={2000}
           />
-          <Text style={styles.plateNote}>Generated pseudoisochromatic plate</Text>
+          <Text style={styles.plateNote}>{plate.type} plate</Text>
         </View>
 
         <View style={styles.inputContainer}>
@@ -311,174 +311,19 @@ export default function ColorVisionTestScreen() {
 
         <View style={styles.progress}>
           <Text style={styles.progressText}>
-            Progress: {responses.length} / {testPlates.length}
+            Progress: {responses.length} / {PSEUDOISOCHROMATIC_PLATES.length}
           </Text>
           <View style={styles.progressBar}>
             <View 
               style={[
                 styles.progressFill,
-                { width: `${(responses.length / testPlates.length) * 100}%` }
+                { width: `${(responses.length / PSEUDOISOCHROMATIC_PLATES.length) * 100}%` }
               ]}
             />
           </View>
         </View>
       </View>
     </ScrollView>
-  )
-}
-
-/**
- * ColorPlateVisualization Component
- * Generates pseudoisochromatic plates using SVG
- * These are NOT copyrighted Ishihara plates - they are original generated plates
- */
-interface ColorPlateVisualizationProps {
-  plateId: number
-  number: string
-  type: 'normal' | 'protanopia' | 'deuteranopia' | 'control'
-}
-
-function ColorPlateVisualization({ plateId, number, type }: ColorPlateVisualizationProps) {
-  const size = 300
-  const circleRadius = 6
-  const seed = plateId * 1000
-
-  const seededRandom = (index: number) => {
-    const x = Math.sin(seed + index) * 10000
-    return x - Math.floor(x)
-  }
-
-  const getColorPalette = () => {
-    switch (type) {
-      case 'control':
-        return {
-          numberColors: ['#FF0000', '#D40000', '#FF2020'],
-          backgroundColors: ['#00AA00', '#00CC00', '#00DD00', '#009900']
-        }
-      case 'protanopia':
-        return {
-          numberColors: ['#CC6600', '#DD7700', '#EE8800'],
-          backgroundColors: ['#88AA00', '#99BB00', '#77AA22', '#668811']
-        }
-      case 'deuteranopia':
-        return {
-          numberColors: ['#DD6644', '#CC5533', '#EE7755'],
-          backgroundColors: ['#88AA66', '#99BB77', '#77AA55', '#6699AA']
-        }
-      case 'normal':
-      default:
-        return {
-          numberColors: ['#DD5500', '#CC4400', '#EE6600'],
-          backgroundColors: ['#88BB44', '#99CC55', '#77AA33', '#669922']
-        }
-    }
-  }
-
-  const palette = getColorPalette()
-
-  const isPartOfNumber = (x: number, y: number) => {
-    const centerX = size / 2
-    const centerY = size / 2
-    const relX = (x - centerX) / 22
-    const relY = (y - centerY) / 22
-
-    if (number === '12') {
-      if (relX >= -3 && relX <= -1 && relY >= -2.5 && relY <= 2.5) return true
-      if (relX >= 0.5 && relX <= 3 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-    } else if (number === '8') {
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if ((Math.abs(relX) >= 1.5 && Math.abs(relX) <= 2.5) && 
-          Math.abs(relY) <= 2.5) return true
-    } else if (number === '6') {
-      if ((Math.abs(relX) >= 1.5 && Math.abs(relX) <= 2.5) && relY <= 2.5) return true
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-    } else if (number === '45') {
-      if (relX >= -3.5 && relX <= -2 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= -3.5 && relX <= -1 && relY >= -0.5 && relY <= 0.5) return true
-      if (relX >= -2.5 && relX <= -1.5 && relY >= -2.5 && relY <= 2.5) return true
-      if (relX >= 0.5 && relX <= 3 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= 0.5 && relX <= 1.5 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= 2 && relX <= 3 && relY >= 0 && relY <= 2.5) return true
-    } else if (number === '5') {
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= -2 && relX <= -1 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= 1 && relX <= 2 && relY >= 0 && relY <= 2.5) return true
-    } else if (number === '73') {
-      if (relX >= -3.5 && relX <= -1 && relY >= -2.5 && relY <= -1.5) return true
-      if (relX >= -2.5 && relX <= -1.5 && relY >= -2.5 && relY <= 2.5) return true
-      if (relX >= 0.5 && relX <= 3 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= 2 && relX <= 3 && Math.abs(relY) <= 2.5) return true
-    } else if (number === '2') {
-      if (Math.abs(relX) <= 2 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-      if (relX >= 1 && relX <= 2 && relY >= -2.5 && relY <= 0) return true
-      if (relX >= -2 && relX <= -1 && relY >= 0 && relY <= 2.5) return true
-    } else if (number === '16') {
-      if (relX >= -3 && relX <= -1 && relY >= -2.5 && relY <= 2.5) return true
-      if ((Math.abs(relX - 1.5) >= 1 && Math.abs(relX - 1.5) <= 2) && relY <= 2.5) return true
-      if (Math.abs(relX - 1.5) <= 1.5 && 
-          ((relY >= -2.5 && relY <= -1.5) || 
-           (relY >= -0.5 && relY <= 0.5) || 
-           (relY >= 1.5 && relY <= 2.5))) return true
-    }
-
-    return false
-  }
-
-  const circles: any[] = []
-  const numCircles = 300
-
-  for (let i = 0; i < numCircles; i++) {
-    const angle = seededRandom(i * 2) * Math.PI * 2
-    const radius = Math.sqrt(seededRandom(i * 2 + 1)) * (size * 0.45)
-    const cx = size / 2 + Math.cos(angle) * radius
-    const cy = size / 2 + Math.sin(angle) * radius
-    
-    const inNumber = isPartOfNumber(cx, cy)
-    const colors = inNumber ? palette.numberColors : palette.backgroundColors
-    const color = colors[Math.floor(seededRandom(i * 3) * colors.length)]
-    const r = circleRadius * (0.7 + seededRandom(i * 4) * 0.6)
-    const opacity = 0.8 + seededRandom(i * 5) * 0.2
-    
-    circles.push(
-      <Circle
-        key={i}
-        cx={cx}
-        cy={cy}
-        r={r}
-        fill={color}
-        opacity={opacity}
-      />
-    )
-  }
-
-  return (
-    <View style={styles.svgContainer}>
-      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Circle cx={size/2} cy={size/2} r={size/2} fill="#F5F5DC" />
-        {circles}
-      </Svg>
-    </View>
   )
 }
 
@@ -536,10 +381,7 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 13,
     color: '#1E40AF',
-    marginBottom: 8,
-  },
-  bold: {
-    fontWeight: 'bold',
+    lineHeight: 20,
   },
   instructionsSection: {
     marginBottom: 20,
@@ -573,6 +415,7 @@ const styles = StyleSheet.create({
   warningText: {
     fontSize: 13,
     color: '#92400E',
+    lineHeight: 20,
   },
   startButton: {
     backgroundColor: '#9333EA',
@@ -618,20 +461,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  svgContainer: {
-    borderRadius: 150,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   plateNote: {
     fontSize: 11,
     color: '#6B7280',
     textAlign: 'center',
     marginTop: 12,
+    textTransform: 'capitalize',
   },
   inputContainer: {
     gap: 12,
@@ -724,10 +559,31 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   resultScore: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#9333EA',
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  badgePASS: {
+    backgroundColor: '#D1FAE5',
+    color: '#065F46',
+  },
+  badgeBORDERLINE: {
+    backgroundColor: '#FEF3C7',
+    color: '#92400E',
+  },
+  badgeREFER: {
+    backgroundColor: '#FEE2E2',
+    color: '#991B1B',
   },
   resultGrid: {
     flexDirection: 'row',
@@ -768,6 +624,7 @@ const styles = StyleSheet.create({
   recommendationText: {
     fontSize: 13,
     color: '#6B21A8',
+    lineHeight: 20,
   },
   disclaimer: {
     backgroundColor: '#DBEAFE',
@@ -779,6 +636,7 @@ const styles = StyleSheet.create({
   disclaimerText: {
     fontSize: 12,
     color: '#1E40AF',
+    lineHeight: 18,
   },
   disclaimerBold: {
     fontWeight: 'bold',

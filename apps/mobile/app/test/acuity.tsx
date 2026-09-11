@@ -1,76 +1,83 @@
 /**
  * Clinical Visual Acuity Test - Mobile
- * 
- * ETDRS/LogMAR standard with Sloan letters, per-eye testing, calibration-based angular sizing
+ * ETDRS/LogMAR methodology with Sloan optotypes
  */
 
 import { useState, useEffect } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
-import {
-  createVisualAcuityTest,
-  createCalibrator,
-  type VisualAcuityTest,
-  type ScreenCalibrator,
-  type ETDRSLine,
-  type LetterResponse,
-  type LineResponse,
+import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
+import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
+import { 
+  createVisualAcuityTest, 
+  type ETDRSLine, 
+  type LineResponse, 
   type EyeResult,
+  type Eye,
+  type CalibrationData,
+  ScreenCalibrator 
 } from '@spect-it/cv'
-
-type Eye = 'right' | 'left'
 
 export default function AcuityTestScreen() {
   const { user, loading: authLoading } = useAuth()
-  const [test] = useState(() => createVisualAcuityTest({ startLogMAR: 0.5 }))
-  const [calibrator] = useState(() => createCalibrator())
-  
-  const [showInstructions, setShowInstructions] = useState(true)
+  const [needsCalibration, setNeedsCalibration] = useState(true)
+  const [calibration, setCalibration] = useState<CalibrationData | null>(null)
+  const [calibrator, setCalibrator] = useState<ScreenCalibrator | null>(null)
   const [currentEye, setCurrentEye] = useState<Eye>('right')
   const [currentLineIndex, setCurrentLineIndex] = useState(0)
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0)
-  const [userInput, setUserInput] = useState('')
   const [lineResponses, setLineResponses] = useState<LineResponse[]>([])
   const [rightEyeResult, setRightEyeResult] = useState<EyeResult | null>(null)
   const [leftEyeResult, setLeftEyeResult] = useState<EyeResult | null>(null)
-  const [isComplete, setIsComplete] = useState(false)
+  const [completed, setCompleted] = useState(false)
+  const [userInput, setUserInput] = useState('')
   const [saving, setSaving] = useState(false)
-
+  
+  const test = createVisualAcuityTest({ startLogMAR: 0.5, stopOnMissedLine: false })
   const chartLines = test.getChartLines()
-  const calibration = calibrator.getCalibration() || calibrator.getDefaultCalibration()
 
   useEffect(() => {
     if (authLoading) return
     
     if (!user) {
       router.replace('/auth/signin')
+      return
+    }
+    
+    // Check for existing calibration
+    const cal = new ScreenCalibrator()
+    setCalibrator(cal)
+    
+    if (cal.isReady()) {
+      const existingCal = cal.getCalibration() || cal.getDefaultCalibration()
+      setCalibration(existingCal)
+      setNeedsCalibration(false)
     }
   }, [user, authLoading])
-
-  const startTest = () => {
-    setShowInstructions(false)
+  
+  const handleCalibrationComplete = (cal: CalibrationData) => {
+    setCalibration(cal)
+    setNeedsCalibration(false)
+  }
+  
+  const handleCalibrationSkip = () => {
+    if (calibrator) {
+      calibrator.markSkipped()
+      const defaultCal = calibrator.getDefaultCalibration()
+      setCalibration(defaultCal)
+      setNeedsCalibration(false)
+    }
   }
 
-  const currentLine = chartLines[currentLineIndex]
-  
-  // Calculate letter size based on calibration
-  const letterSizePx = currentLine 
-    ? calibrator.calculateETDRSLetterSize(currentLine.logMAR) || 60
-    : 60
+  const handleSubmit = () => {
+    if (!userInput.trim()) return
 
-  const handleLetterSubmit = () => {
-    if (!currentLine) return
-
+    const currentLine = chartLines[currentLineIndex]
     const letter = currentLine.letters[currentLetterIndex]
     const correct = test.checkResponse(letter, userInput)
-    
-    const response: LetterResponse = {
-      letter,
-      userResponse: userInput.trim().toUpperCase(),
-      correct,
-    }
+    const response = { letter, userResponse: userInput.trim().toUpperCase(), correct }
 
     // Add to current line's responses
     const currentLineLetters = lineResponses[currentLineIndex]?.letters || []
@@ -131,8 +138,8 @@ export default function AcuityTestScreen() {
   }
 
   const finishTest = async (rightEye: EyeResult, leftEye: EyeResult) => {
-    const result = test.createResult(calibration, rightEye, leftEye)
-    setIsComplete(true)
+    const result = test.createResult(calibration!, rightEye, leftEye)
+    setCompleted(true)
 
     if (user) {
       setSaving(true)
@@ -143,18 +150,11 @@ export default function AcuityTestScreen() {
             user_id: user.id,
             test_type: 'Visual Acuity (Clinical)',
             test_data: result,
-            results: {
-              rightEye: {
-                snellen: rightEye.finalSnellen,
-                logMAR: rightEye.finalLogMAR,
-                category: rightEye.category,
-              },
-              leftEye: {
-                snellen: leftEye.finalSnellen,
-                logMAR: leftEye.finalLogMAR,
-                category: leftEye.category,
-              },
+            results: { 
+              rightEye, 
+              leftEye, 
               methodology: result.methodology,
+              calibration: calibration
             },
           })
 
@@ -169,53 +169,19 @@ export default function AcuityTestScreen() {
       }
     }
   }
-
-  if (showInstructions) {
+  
+  if (needsCalibration) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.instructionsCard}>
-          <Text style={styles.emoji}>👁️</Text>
-          <Text style={styles.title}>Visual Acuity Test</Text>
-          <Text style={styles.subtitle}>ETDRS/LogMAR Clinical Standard</Text>
-
-          <View style={styles.infoBox}>
-            <Text style={styles.infoTitle}>About This Test</Text>
-            <Text style={styles.infoText}>
-              This test uses the ETDRS (Early Treatment Diabetic Retinopathy Study) chart with Sloan letters - 
-              the gold standard for clinical visual acuity assessment.
-            </Text>
-          </View>
-
-          <View style={styles.instructionsSection}>
-            <Text style={styles.instructionsTitle}>Instructions:</Text>
-            <Text style={styles.instructionItem}>1. Test each eye separately (you'll be prompted)</Text>
-            <Text style={styles.instructionItem}>2. Cover the opposite eye completely</Text>
-            <Text style={styles.instructionItem}>3. Read each letter as it appears</Text>
-            <Text style={styles.instructionItem}>4. Letters get smaller as you progress</Text>
-            <Text style={styles.instructionItem}>5. Sloan letters used: C D H K N O R S V Z</Text>
-          </View>
-
-          <View style={styles.warningBox}>
-            <Text style={styles.warningTitle}>⚠️ Important</Text>
-            <Text style={styles.warningText}>
-              • Hold device at comfortable reading distance{'\n'}
-              • Ensure good lighting{'\n'}
-              • This is a screening, not a diagnosis{'\n'}
-              • Consult an eye care professional for comprehensive testing
-            </Text>
-          </View>
-
-          <TouchableOpacity style={styles.startButton} onPress={startTest}>
-            <Text style={styles.startButtonText}>Start Test</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <CalibrationScreen 
+        onComplete={handleCalibrationComplete} 
+        onSkip={handleCalibrationSkip}
+      />
     )
   }
 
-  if (isComplete && rightEyeResult && leftEyeResult) {
+  if (completed && rightEyeResult && leftEyeResult) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.container}>
         <View style={styles.resultCard}>
           <Text style={styles.resultEmoji}>✓</Text>
           <Text style={styles.resultTitle}>Test Complete!</Text>
@@ -227,12 +193,7 @@ export default function AcuityTestScreen() {
             <Text style={styles.resultLabel}>Right Eye (OD)</Text>
             <Text style={styles.resultScore}>{rightEyeResult.finalSnellen}</Text>
             <Text style={styles.resultSmall}>logMAR: {rightEyeResult.finalLogMAR.toFixed(2)}</Text>
-            <Text style={[
-              styles.resultCategory,
-              rightEyeResult.category === 'PASS' ? styles.categoryPass :
-              rightEyeResult.category === 'BORDERLINE' ? styles.categoryBorderline :
-              styles.categoryRefer
-            ]}>
+            <Text style={[styles.categoryBadge, styles[`badge${rightEyeResult.category}`]]}>
               {rightEyeResult.category}
             </Text>
           </View>
@@ -241,21 +202,16 @@ export default function AcuityTestScreen() {
             <Text style={styles.resultLabel}>Left Eye (OS)</Text>
             <Text style={styles.resultScore}>{leftEyeResult.finalSnellen}</Text>
             <Text style={styles.resultSmall}>logMAR: {leftEyeResult.finalLogMAR.toFixed(2)}</Text>
-            <Text style={[
-              styles.resultCategory,
-              leftEyeResult.category === 'PASS' ? styles.categoryPass :
-              leftEyeResult.category === 'BORDERLINE' ? styles.categoryBorderline :
-              styles.categoryRefer
-            ]}>
+            <Text style={[styles.categoryBadge, styles[`badge${leftEyeResult.category}`]]}>
               {leftEyeResult.category}
             </Text>
           </View>
 
           <View style={styles.disclaimer}>
             <Text style={styles.disclaimerText}>
-              <Text style={styles.disclaimerBold}>Screening Result:</Text> This is a screening test using 
-              ETDRS methodology with letter-by-letter scoring, not a medical diagnosis. Please consult an 
-              eye care professional for comprehensive examination and prescription.
+              <Text style={styles.disclaimerBold}>Screening Result:</Text> ETDRS/LogMAR methodology with 
+              Sloan optotypes and per-eye testing. This is a screening, not a medical diagnosis. 
+              Consult an eye care professional for comprehensive evaluation.
             </Text>
           </View>
 
@@ -277,6 +233,11 @@ export default function AcuityTestScreen() {
     )
   }
 
+  const currentLine = chartLines[currentLineIndex]
+  const currentLetter = currentLine?.letters[currentLetterIndex]
+  const letterSizePx = calibrator?.calculateETDRSLetterSize(currentLine?.logMAR || 0.5) || 60
+  const strokeWidthPx = Math.round(letterSizePx / 5)
+
   return (
     <View style={styles.container}>
       <View style={styles.testCard}>
@@ -292,12 +253,19 @@ export default function AcuityTestScreen() {
           <Text style={styles.instructionSmall}>
             Letter {currentLetterIndex + 1} of {currentLine?.letters.length || 5}
           </Text>
+          <Text style={styles.lineInfo}>
+            Line {currentLineIndex + 1} / {chartLines.length} - {currentLine?.snellen}
+          </Text>
         </View>
 
         <View style={styles.lettersContainer}>
-          <Text style={[styles.letters, { fontSize: Math.min(letterSizePx, 120) }]}>
-            {currentLine?.letters[currentLetterIndex] || ''}
-          </Text>
+          {currentLetter && (
+            <SloanOptotype 
+              letter={currentLetter}
+              strokeWidthPx={strokeWidthPx}
+              color="#000000"
+            />
+          )}
         </View>
 
         <View style={styles.inputContainer}>
@@ -309,12 +277,12 @@ export default function AcuityTestScreen() {
             autoCapitalize="characters"
             autoFocus
             maxLength={1}
-            onSubmitEditing={handleLetterSubmit}
+            onSubmitEditing={handleSubmit}
           />
 
           <TouchableOpacity
             style={[styles.submitButton, !userInput && styles.submitButtonDisabled]}
-            onPress={handleLetterSubmit}
+            onPress={handleSubmit}
             disabled={!userInput}
           >
             <Text style={styles.submitButtonText}>Submit ({currentLetterIndex + 1}/{currentLine?.letters.length})</Text>
@@ -323,7 +291,7 @@ export default function AcuityTestScreen() {
 
         <View style={styles.progress}>
           <Text style={styles.progressText}>
-            Progress: Line {currentLineIndex + 1} / {chartLines.length}
+            Line Progress: {currentLineIndex + 1} / {chartLines.length}
           </Text>
           <View style={styles.progressBar}>
             <View 
@@ -347,98 +315,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
-  },
-  instructionsCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  emoji: {
-    fontSize: 64,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  infoBox: {
-    backgroundColor: '#DBEAFE',
-    borderWidth: 1,
-    borderColor: '#93C5FD',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E3A8A',
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 13,
-    color: '#1E40AF',
-    lineHeight: 20,
-  },
-  instructionsSection: {
-    marginBottom: 20,
-  },
-  instructionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-  },
-  instructionItem: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
-    paddingLeft: 4,
-  },
-  warningBox: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FCD34D',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  warningTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#92400E',
-    marginBottom: 8,
-  },
-  warningText: {
-    fontSize: 13,
-    color: '#92400E',
-    lineHeight: 20,
-  },
-  startButton: {
-    backgroundColor: '#4F46E5',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  startButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
   },
   testCard: {
     flex: 1,
@@ -477,6 +353,12 @@ const styles = StyleSheet.create({
   instructionSmall: {
     fontSize: 14,
     color: '#6B7280',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  lineInfo: {
+    fontSize: 12,
+    color: '#9CA3AF',
   },
   lettersContainer: {
     flex: 1,
@@ -484,11 +366,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 24,
     minHeight: 150,
-  },
-  letters: {
-    fontWeight: 'bold',
-    letterSpacing: 4,
-    color: '#1F2937',
   },
   inputContainer: {
     gap: 12,
@@ -540,6 +417,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
+    marginBottom: 20,
   },
   resultEmoji: {
     fontSize: 64,
@@ -574,25 +452,32 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     color: '#4F46E5',
+    marginBottom: 4,
   },
   resultSmall: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  resultCategory: {
     fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    fontSize: 12,
     fontWeight: '600',
-    marginTop: 8,
+    textTransform: 'uppercase',
   },
-  categoryPass: {
-    color: '#059669',
+  badgePASS: {
+    backgroundColor: '#D1FAE5',
+    color: '#065F46',
   },
-  categoryBorderline: {
-    color: '#D97706',
+  badgeBORDERLINE: {
+    backgroundColor: '#FEF3C7',
+    color: '#92400E',
   },
-  categoryRefer: {
-    color: '#DC2626',
+  badgeREFER: {
+    backgroundColor: '#FEE2E2',
+    color: '#991B1B',
   },
   disclaimer: {
     backgroundColor: '#DBEAFE',
