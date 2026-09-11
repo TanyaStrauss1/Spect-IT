@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import { useJourney } from '@/lib/journey/useJourney'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
 import SloanOptotype from '@/components/SloanOptotype'
 import { 
@@ -27,6 +28,7 @@ export default function PrescriptionTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
+  const { markTestComplete } = useJourney()
   const [test] = useState(() => createPrescriptionScreeningTest())
   const [acuityTest] = useState(() => createVisualAcuityTest({ startLogMAR: 0.5 }))
   
@@ -138,6 +140,9 @@ export default function PrescriptionTestPage() {
   const finishTest = async (right: PinholeResult, left: PinholeResult) => {
     const result = test.createResult(calibration, right, left, null)
     setStep('result')
+
+    // Mark test as complete in journey
+    markTestComplete('prescription')
 
     if (user) {
       setSaving(true)

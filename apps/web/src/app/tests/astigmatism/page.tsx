@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
+import { useJourney } from '@/lib/journey/useJourney'
 import EnhancedClockDial from '@/components/EnhancedClockDial'
 import { createAstigmatismTest, type ClockPosition, type EyeAstigmatismResult } from '@spect-it/cv'
 
@@ -17,6 +18,7 @@ type Eye = 'right' | 'left'
 export default function AstigmatismTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { markTestComplete } = useJourney()
   const [test] = useState(() => createAstigmatismTest())
   const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
   const [currentEye, setCurrentEye] = useState<Eye>('right')
@@ -57,6 +59,9 @@ export default function AstigmatismTestPage() {
   const finishTest = async (right: EyeAstigmatismResult, left: EyeAstigmatismResult) => {
     const result = test.createResult(undefined, right, left)
     setStep('result')
+
+    // Mark test as complete in journey
+    markTestComplete('astigmatism')
 
     if (user) {
       setSaving(true)

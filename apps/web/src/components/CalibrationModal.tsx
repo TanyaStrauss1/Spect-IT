@@ -2,7 +2,7 @@
  * Calibration Modal Component
  * 
  * Credit card-based screen calibration for clinical vision tests.
- * Enhanced with live letter preview and distance presets.
+ * Enhanced with live letter preview, distance presets, validation, and re-check prompts.
  */
 
 'use client'
@@ -25,6 +25,43 @@ const DISTANCE_PRESETS = [
   { cm: 600, label: '6 m', description: 'Clinical standard' },
 ]
 
+// Validation ranges
+const PX_PER_MM_MIN = 2.0  // ~50 DPI
+const PX_PER_MM_MAX = 12.0 // ~300 DPI
+const DISTANCE_MIN = 30    // 30 cm
+const DISTANCE_MAX = 600   // 6 meters
+const RECHECK_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
+
+function validateCalibration(pxPerMm: number, distanceCm: number): string[] {
+  const warnings: string[] = []
+  
+  if (pxPerMm < PX_PER_MM_MIN || pxPerMm > PX_PER_MM_MAX) {
+    warnings.push(`Screen size value seems unusual (${pxPerMm.toFixed(2)} px/mm). Please verify with a physical card.`)
+  }
+  
+  if (distanceCm < DISTANCE_MIN) {
+    warnings.push(`Viewing distance is very close (${distanceCm} cm). For accurate results, sit at least 50-60 cm away.`)
+  }
+  
+  if (distanceCm > DISTANCE_MAX) {
+    warnings.push(`Viewing distance is very far (${distanceCm} cm). This may affect test accuracy.`)
+  }
+  
+  // Check if PPI is reasonable
+  const ppi = pxPerMm * 25.4
+  if (ppi < 70 || ppi > 400) {
+    warnings.push(`Calculated screen density (${Math.round(ppi)} PPI) seems unusual. Double-check your measurements.`)
+  }
+  
+  return warnings
+}
+
+function needsRecheck(): boolean {
+  const timestamp = localStorage.getItem('spectit_calibration_timestamp')
+  if (!timestamp) return true
+  return (Date.now() - parseInt(timestamp)) > RECHECK_INTERVAL_MS
+}
+
 export default function CalibrationModal({
   isOpen,
   onClose,
@@ -36,16 +73,31 @@ export default function CalibrationModal({
   const [pxPerMm, setPxPerMm] = useState(calibrator.getPxPerMm() || 3.8)
   const [distanceCm, setDistanceCm] = useState(calibrator.getDistanceCm() || config.defaultDistance)
   const [showSkipWarning, setShowSkipWarning] = useState(false)
+  const [warnings, setWarnings] = useState<string[]>([])
+  const [showRecheckPrompt, setShowRecheckPrompt] = useState(false)
 
   useEffect(() => {
     const currentPx = calibrator.getPxPerMm()
     const currentDist = calibrator.getDistanceCm()
     if (currentPx) setPxPerMm(currentPx)
     if (currentDist) setDistanceCm(currentDist)
+
+    // Check if re-check is needed
+    if (calibrator.isReady() && needsRecheck()) {
+      setShowRecheckPrompt(true)
+    }
   }, [calibrator])
+
+  useEffect(() => {
+    // Update warnings when values change
+    setWarnings(validateCalibration(pxPerMm, distanceCm))
+  }, [pxPerMm, distanceCm])
 
   const handleSave = () => {
     calibrator.saveCalibration(pxPerMm, distanceCm)
+    // Save timestamp and validation flag
+    localStorage.setItem('spectit_calibration_timestamp', Date.now().toString())
+    localStorage.setItem('spectit_calibration_validated', '1')
     onComplete()
     onClose()
   }
@@ -113,6 +165,18 @@ export default function CalibrationModal({
           <div className={`h-1 flex-1 rounded ${step === 'preview' ? 'bg-indigo-600' : 'bg-gray-200'}`} />
         </div>
 
+        {/* Re-check Prompt */}
+        {showRecheckPrompt && (
+          <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-900 font-semibold mb-2">
+              🔄 Calibration Re-check Recommended
+            </p>
+            <p className="text-xs text-blue-800">
+              It's been over 30 days since your last calibration. Please verify your settings for continued accuracy.
+            </p>
+          </div>
+        )}
+
         {/* Card Size Step */}
         {step === 'card' && (
           <div className="space-y-6">
@@ -152,8 +216,8 @@ export default function CalibrationModal({
               </label>
               <input
                 type="range"
-                min="2"
-                max="8"
+                min={PX_PER_MM_MIN}
+                max={PX_PER_MM_MAX}
                 step="0.05"
                 value={pxPerMm}
                 onChange={(e) => setPxPerMm(parseFloat(e.target.value))}
@@ -165,6 +229,18 @@ export default function CalibrationModal({
                 <span>Larger</span>
               </div>
             </div>
+
+            {/* Validation Warnings */}
+            {warnings.length > 0 && (
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                <p className="text-sm text-yellow-900 font-semibold mb-2">⚠️ Please verify:</p>
+                <ul className="list-disc list-inside text-xs text-yellow-800 space-y-1">
+                  {warnings.map((warning, i) => (
+                    <li key={i}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
