@@ -14,7 +14,7 @@ import { createContrastSensitivityTest, type ContrastLetter, type ContrastLetter
 
 export default function ContrastTestPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
   const [test] = useState(() => createContrastSensitivityTest())
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
@@ -29,12 +29,13 @@ export default function ContrastTestPage() {
   const calibration = calibrator.getCalibration() || calibrator.getDefaultCalibration()
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) {
       router.push('/auth/signin')
       return
     }
     ensureCalibration(() => {})
-  }, [user])
+  }, [user, authLoading])
 
   const handleLetterSubmit = () => {
     if (!currentLevel || !userInput.trim()) return

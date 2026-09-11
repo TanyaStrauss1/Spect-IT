@@ -19,7 +19,7 @@ import {
 
 export default function ColorVisionTestPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [test] = useState(() => createColorVisionTest())
   const [currentPlateIndex, setCurrentPlateIndex] = useState(-1) // -1 = instructions
   const [userInput, setUserInput] = useState('')
@@ -31,10 +31,11 @@ export default function ColorVisionTestPage() {
   const currentPlate = plates[currentPlateIndex]
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) {
       router.push('/auth/signin')
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const startTest = () => {
     setCurrentPlateIndex(0)

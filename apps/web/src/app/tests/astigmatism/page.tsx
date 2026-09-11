@@ -15,7 +15,7 @@ type Eye = 'right' | 'left'
 
 export default function AstigmatismTestPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [test] = useState(() => createAstigmatismTest())
   const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
   const [currentEye, setCurrentEye] = useState<Eye>('right')
@@ -26,11 +26,12 @@ export default function AstigmatismTestPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) {
       router.push('/auth/signin')
       return
     }
-  }, [user, router])
+  }, [user, authLoading, router])
 
   useEffect(() => {
     if (step === 'test' && canvasRef.current) {

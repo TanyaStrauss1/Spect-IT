@@ -15,7 +15,7 @@ type Eye = 'right' | 'left'
 
 export default function PrescriptionTestPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [test] = useState(() => createPrescriptionScreeningTest())
   const [step, setStep] = useState<'intro' | 'uncorrected' | 'pinhole' | 'result'>('intro')
   const [currentEye, setCurrentEye] = useState<Eye>('right')
@@ -26,8 +26,9 @@ export default function PrescriptionTestPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) router.push('/auth/signin')
-  }, [user, router])
+  }, [user, authLoading, router])
 
   const handleSubmitEye = () => {
     const result = test.processPinholeResult(currentEye, uncorrectedLogMAR, pinholeLogMAR)
