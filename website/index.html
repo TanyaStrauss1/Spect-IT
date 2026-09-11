@@ -47,6 +47,8 @@
     <link rel="stylesheet" href="email-signup-styles.css">
     <link rel="stylesheet" href="lidar-styles.css">
     <link rel="stylesheet" href="spectit-enhanced.css">
+    <link rel="stylesheet" href="spectit-journey.css">
+    <link rel="stylesheet" href="spectit-results-summary.css">
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"MedicalWebPage","name":"Spect-IT","description":"Clinical-grade vision screening platform","url":"https://www.spect-it.com/","medicalAudience":{"@type":"Patient"},"publisher":{"@type":"Organization","name":"Spect-IT","url":"https://www.spect-it.com/"}}
     </script>
@@ -106,8 +108,8 @@
                 <h1>Precision eye care, <span class="grad-word">refined</span></h1>
                 <p class="hero-subtitle">Clinical-grade vision screening from home. Ten tests — acuity, colour, astigmatism, contrast and more — with results you can share with an optometrist. Screening only, not a diagnosis.</p>
                 <div class="hero-cta">
-                    <a href="#tests" class="btn btn-gradient">Begin your assessment</a>
-                    <a href="#how" class="btn btn-ghost">How it works</a>
+                    <button class="btn btn-gradient" onclick="SpectitJourney.openJourney()">Start guided journey</button>
+                    <a href="#tests" class="btn btn-ghost">Browse tests</a>
                 </div>
                 <div class="hero-features">
                     <div class="feature-item"><span class="feature-icon">◆</span><span>Clinically inspired</span></div>
@@ -574,6 +576,8 @@
     <script src="spectit-calibration.js"></script>
     <script src="spectit-booking.js?v=6.8"></script>
     <script src="spectit-export.js"></script>
+    <script src="spectit-journey.js"></script>
+    <script src="spectit-results-summary.js"></script>
     <script src="spectit-enhanced.js?v=6.8"></script>
     
     <!-- Initialize app with error handling -->

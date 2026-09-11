@@ -3406,6 +3406,11 @@ async function saveResult(result) {
     testHistory.push(result);
     localStorage.setItem('testHistory', JSON.stringify(testHistory));
     
+    // Track completed test in journey system
+    if (window.SpectitJourney && result.type) {
+        window.SpectitJourney.markTestComplete(result.type);
+    }
+    
     // Track completed test - map test types correctly
     let testType = result.type;
     if (!testType) {
