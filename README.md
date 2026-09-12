@@ -2,20 +2,47 @@
 
 Advanced Professional Eye Testing Platform with AI-powered vision assessments.
 
+## 🚀 Production Paths
+
+**Current Production Application:**
+- `apps/web/` — Next.js 15 web application (spect-it.com)
+  - Vision screening tests (acuity, color, contrast, astigmatism, visual field, refractive)
+  - User dashboard with longitudinal trends
+  - Clinical summary with PDF export
+  - Supabase authentication and data persistence
+
+- `apps/mobile/` — Expo React Native mobile app (iOS + Android)
+  - Same core tests as web
+  - Native mobile experience
+  - Syncs with Supabase backend
+
+- `packages/cv/` — Computer vision and test logic library
+  - Sloan optotype rendering (ETDRS protocol)
+  - Pseudoisochromatic plate generation
+  - Calibration utilities
+  - Scoring algorithms
+
+**⚠️ Deprecated:**
+- `website/` — Static HTML/CSS/JS (superseded by apps/web)
+  - Legacy code, NOT the live product
+  - Kept for reference only
+  - Do NOT expand or deploy from this directory
+
 ## 🏗️ Monorepo Structure
 
 ```
 spect-it/
 ├── apps/
-│   ├── web/           → Next.js 15 (Vision tests + Marketplace + Dashboard)
-│   └── mobile/        → Expo React Native (iOS + Android Vision Tests)
+│   ├── web/           → ✅ Next.js 15 (PRODUCTION)
+│   └── mobile/        → ✅ Expo React Native (PRODUCTION)
 │
 ├── packages/
-│   ├── ui/            → Shared UI component library (shadcn/ui + NativeBase)
-│   ├── cv/            → Computer vision + LiDAR utilities
+│   ├── ui/            → Shared UI component library
+│   ├── cv/            → ✅ Computer vision + test logic (PRODUCTION)
 │   ├── api/           → Supabase edge functions
 │   └── models/        → ML models (TensorFlow.js + ONNX)
 │
+├── website/           → ⚠️ DEPRECATED (legacy static site)
 └── turbo.json         → Turborepo configuration
 ```
 

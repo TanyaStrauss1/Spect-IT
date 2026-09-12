@@ -29,6 +29,7 @@ interface TestResult {
 export default function DashboardPage() {
   const [results, setResults] = useState<TestResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { calibrator, isCalibrated, isModalOpen, setIsModalOpen } = useCalibration()
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   const loadResults = async () => {
     if (!user) return
     
+    setError(null)
     try {
       const { data, error } = await supabase
         .from('test_results')
@@ -55,8 +57,9 @@ export default function DashboardPage() {
 
       if (error) throw error
       setResults(data || [])
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading results:', error)
+      setError(error.message || 'Failed to load test results. Please try refreshing the page.')
     } finally {
       setLoading(false)
     }
@@ -87,7 +90,36 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your results...</p>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+          <p className="mt-2 text-sm text-gray-500">Retrieving test results</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Dashboard</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="flex gap-3 justify-center">
+            <Button
+              onClick={() => {
+                setLoading(true)
+                loadResults()
+              }}
+              className="bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Try Again
+            </Button>
+            <Link href="/">
+              <Button variant="outline">
+                Go Home
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -119,13 +151,24 @@ export default function DashboardPage() {
           <div className="bg-white rounded-lg shadow-xl p-12 text-center">
             <div className="text-6xl mb-4">👁️</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No test results yet</h2>
-            <p className="text-gray-600 mb-6">Take your first vision screening to get started</p>
-            <Link
-              href="/tests/acuity"
-              className="inline-block bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-            >
-              Start Visual Acuity Test
-            </Link>
+            <p className="text-gray-600 mb-2">Take your first vision screening to get started</p>
+            <p className="text-sm text-gray-500 mb-6">
+              Your results, trends, and clinical summary will appear here after completing tests
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Link
+                href="/tests/acuity"
+                className="inline-block bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Start Visual Acuity Test
+              </Link>
+              <Link
+                href="/tests"
+                className="inline-block border-2 border-indigo-600 text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-indigo-50 transition-colors"
+              >
+                Browse All Tests
+              </Link>
+            </div>
           </div>
         ) : (
           <>
