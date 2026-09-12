@@ -9,6 +9,7 @@ import { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts'
 import type { TestResult } from '@/lib/results/clinical-summary'
 import { convertSnellenToLogMAR } from '@/lib/results/clinical-summary'
+import { TEST_TYPE_ID, filterResultsByType } from '@spect-it/cv'
 
 interface TrendsChartProps {
   results: TestResult[]
@@ -26,19 +27,13 @@ interface TrendDataPoint {
 
 export function TrendsChart({ results }: TrendsChartProps) {
   const { acuityTrends, contrastTrends, meaningfulChanges } = useMemo(() => {
-    // Extract acuity results (match saved test_type strings)
-    const acuityResults = results.filter(r => 
-      r.test_type === 'Visual Acuity (Clinical)' || 
-      r.test_type === 'Visual Acuity' || 
-      r.test_name === 'Visual Acuity'
-    ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    // Extract acuity results using canonical filter (backward compatible)
+    const acuityResults = filterResultsByType(results, TEST_TYPE_ID.VISUAL_ACUITY)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-    // Extract contrast results (match saved test_type strings)
-    const contrastResults = results.filter(r => 
-      r.test_type === 'Contrast Sensitivity (Clinical)' || 
-      r.test_type === 'Contrast Sensitivity' || 
-      r.test_name === 'Contrast Sensitivity'
-    ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    // Extract contrast results using canonical filter (backward compatible)
+    const contrastResults = filterResultsByType(results, TEST_TYPE_ID.CONTRAST_SENSITIVITY)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
     // Build acuity trend data
     const acuityTrends: TrendDataPoint[] = acuityResults.map(r => {
@@ -142,7 +137,7 @@ export function TrendsChart({ results }: TrendsChartProps) {
                 change.improved ? 'text-green-800' : 'text-amber-800'
               }`}>
                 {change.eye === 'left' ? 'Left eye (OS)' : 'Right eye (OD)'}: 
-                {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change).toFixed(2)} logMAR
+                {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change.change).toFixed(2)} logMAR
                 {' '}from {change.dates[0]} to {change.dates[1]}.
                 {!change.improved && ' Consider an eye exam.'}
               </p>
@@ -175,14 +170,10 @@ export function TrendsChart({ results }: TrendsChartProps) {
               <Tooltip 
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
-                formatter={(value: any, name: string) => {
-                  const numValue = typeof value === 'number' ? value : parseFloat(value)
-                  const snellenKey = name === 'Left Eye (OS)' ? 'leftSnellen' : 'rightSnellen'
-                  const snellen = (acuityTrends.find(t => 
-                    (name === 'Left Eye (OS)' && t.leftLogMAR === numValue) || 
-                    (name === 'Right Eye (OD)' && t.rightLogMAR === numValue)
-                  ) as any)?.[snellenKey]
-                  return [`${numValue.toFixed(2)} (${snellen || '?'})`, name]
+                formatter={(value: any) => {
+                  if (value === null || value === undefined) return ['?', ''];
+                  const numValue = typeof value === 'number' ? value : parseFloat(String(value))
+                  return [numValue.toFixed(2), '']
                 }}
               />
               <Legend />
@@ -234,7 +225,10 @@ export function TrendsChart({ results }: TrendsChartProps) {
               <Tooltip 
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 labelStyle={{ fontWeight: 'bold', marginBottom: '8px' }}
-                formatter={(value: any) => [`${parseFloat(value).toFixed(1)}%`, 'Score']}
+                formatter={(value: any) => {
+                  if (value === null || value === undefined) return ['?', ''];
+                  return [`${parseFloat(value).toFixed(1)}%`, 'Score']
+                }}
               />
               <Legend />
               <ReferenceLine y={70} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Normal range', position: 'right', fill: '#10b981', fontSize: 10 }} />

@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
 import { useJourney } from '@/lib/journey/useJourney'
 import InteractiveAmslerGrid from '@/components/InteractiveAmslerGrid'
-import { createVisualFieldTest, type GridIssue, type IssueType, type EyeVisualFieldResult } from '@spect-it/cv'
+import { createVisualFieldTest, TEST_TYPE_ID, type GridIssue, type IssueType, type EyeVisualFieldResult } from '@spect-it/cv'
 
 type Eye = 'right' | 'left'
 
@@ -54,14 +54,14 @@ export default function VisualFieldTestPage() {
     setStep('result')
 
     // Mark test as complete in journey
-    markTestComplete('visual-field')
+    markTestComplete(TEST_TYPE_ID.VISUAL_FIELD)
 
     if (user) {
       setSaving(true)
       try {
         await supabase.from('test_results').insert({
           user_id: user.id,
-          test_type: 'Visual Field (Clinical)',
+          test_type: TEST_TYPE_ID.VISUAL_FIELD,
           test_data: result,
           results: { rightEye: right, leftEye: left, methodology: result.methodology },
         })

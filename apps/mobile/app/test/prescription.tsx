@@ -12,6 +12,7 @@ import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
 import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
 import {
   createPrescriptionScreeningTest,
+  TEST_TYPE_ID,
   type Eye,
   type PinholeResult,
   type CalibrationData,
@@ -143,11 +144,11 @@ export default function PrescriptionTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } = await supabase
+        const { error } =         await supabase
           .from('test_results')
           .insert({
             user_id: user.id,
-            test_type: 'Prescription Screening (Clinical)',
+            test_type: TEST_TYPE_ID.PRESCRIPTION,
             test_data: testResult,
             score: 0,
             test_date: new Date().toISOString(),

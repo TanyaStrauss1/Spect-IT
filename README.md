@@ -124,9 +124,14 @@ The web app will be available at `http://localhost:3000`
 
 **Features:**
 - Supabase authentication (sign up / sign in / sign out)
-- Visual Acuity test (Snellen chart)
-- User dashboard with test history
-- Results saved to Supabase
+- Six clinical vision screening tests (acuity, contrast, color, astigmatism, visual field, refractive)
+- User dashboard with longitudinal trends
+- Clinical summary with PDF export
+- Screen calibration
+- Guided test journey
+
+**Vercel Deployment:**
+To deploy `apps/web` to Vercel from this monorepo, **set Root Directory to `apps/web`** in your Vercel project settings. See `apps/web/README.md` for detailed deployment instructions.
 
 ### Mobile App (Expo React Native)
 

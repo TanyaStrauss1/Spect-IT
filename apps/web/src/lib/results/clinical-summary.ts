@@ -3,6 +3,8 @@
  * Processes test results for clinical interpretation and PDF export
  */
 
+import { TEST_TYPE_ID, filterResultsByType, isTestType } from '@spect-it/cv'
+
 export interface TestResult {
   id: number
   test_type: string
@@ -93,9 +95,8 @@ export function extractAcuityResults(results: TestResult[]): {
   right?: EyeResult
   both?: EyeResult
 } {
-  const acuityResults = results.filter(r => 
-    r.test_type === 'Visual Acuity' || r.test_name === 'Visual Acuity'
-  )
+  // Use canonical filter (backward compatible with all legacy formats)
+  const acuityResults = filterResultsByType(results, TEST_TYPE_ID.VISUAL_ACUITY)
 
   const leftEyeTests = acuityResults.filter(r => 
     r.test_data?.eye === 'left' || r.results?.eye === 'left'
@@ -142,8 +143,8 @@ export function extractAcuityResults(results: TestResult[]): {
 export function generateClinicalSummary(results: TestResult[]): ClinicalSummary {
   const acuity = extractAcuityResults(results)
   
-  const latest = (type: string) => {
-    const filtered = results.filter(r => r.test_type === type || r.test_name === type)
+  const latest = (testTypeId: string) => {
+    const filtered = filterResultsByType(results, testTypeId as any)
     if (!filtered.length) return undefined
     return filtered.reduce((prev, current) => 
       new Date(current.created_at) > new Date(prev.created_at) ? current : prev
@@ -154,10 +155,10 @@ export function generateClinicalSummary(results: TestResult[]): ClinicalSummary 
     leftEye: acuity.left,
     rightEye: acuity.right,
     bothEyes: acuity.both,
-    colorVision: latest('Color Vision'),
-    contrast: latest('Contrast Sensitivity'),
-    astigmatism: latest('Astigmatism'),
-    prescription: latest('Prescription Measurement'),
-    visualField: latest('Visual Field')
+    colorVision: latest(TEST_TYPE_ID.COLOR_VISION),
+    contrast: latest(TEST_TYPE_ID.CONTRAST_SENSITIVITY),
+    astigmatism: latest(TEST_TYPE_ID.ASTIGMATISM),
+    prescription: latest(TEST_TYPE_ID.PRESCRIPTION),
+    visualField: latest(TEST_TYPE_ID.VISUAL_FIELD)
   }
 }

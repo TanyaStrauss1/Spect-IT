@@ -30,7 +30,7 @@ export {
   isModelLoaded,
   type ScreeningInputs,
   type ScreeningOutputs,
-  type ScreeningBackend,
+  // ScreeningBackend already exported above
 } from './screening/model-functional'
 
 // Validation utilities

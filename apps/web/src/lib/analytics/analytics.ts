@@ -5,15 +5,15 @@
 
 'use client'
 
-import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
-import { SpeedInsights } from '@vercel/speed-insights/next'
+// import { Analytics as VercelAnalytics } from '@vercel/analytics/react' // Disabled for now
+// import { SpeedInsights } from '@vercel/speed-insights/next' // Disabled for now
 
 // Custom analytics events
 export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
   if (typeof window !== 'undefined') {
     // Vercel Analytics
-    if (window.va) {
-      window.va('track', eventName, properties)
+    if ((window as any).va) {
+      (window as any).va('track', eventName, properties)
     }
     
     // Custom analytics (privacy-first)
@@ -53,6 +53,6 @@ export const trackTestCompletion = (testType: string, score: number, duration: n
   })
 }
 
-export const Analytics = VercelAnalytics
-export { SpeedInsights }
+export const Analytics = () => null // VercelAnalytics
+export const SpeedInsights = () => null
 

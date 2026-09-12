@@ -56,15 +56,40 @@ Get these from your Supabase project settings → API.
 
 This app is deployed to Vercel. The live production site is at **spect-it.com**.
 
-To deploy manually:
+### Vercel Configuration
+
+**⚠️ CRITICAL:** When deploying from this monorepo, set the **Root Directory** in Vercel to `apps/web`.
+
+1. **In Vercel Project Settings → General → Root Directory:**
+   - Set to: `apps/web`
+   - This ensures Vercel builds from the correct directory in the monorepo
+
+2. **Environment Variables (Settings → Environment Variables):**
+   - `NEXT_PUBLIC_SUPABASE_URL` → Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Your Supabase anon key
+
+3. **Build Settings (auto-detected from package.json):**
+   - Build Command: `npm run build` (runs Next.js build)
+   - Output Directory: `.next` (default Next.js output)
+   - Install Command: `npm install` (installs all dependencies including monorepo packages)
+
+### Manual Deployment via CLI
+
+To deploy manually from the command line:
 
 ```bash
 # Install Vercel CLI
 npm install -g vercel
 
-# Deploy
+# From the root of the monorepo, deploy the web app
+vercel --cwd apps/web --prod
+
+# Or navigate to apps/web first
+cd apps/web
 vercel --prod
 ```
+
+**Note:** When using the Vercel CLI from the root, the `--cwd apps/web` flag tells Vercel to treat `apps/web` as the project root.
 
 ## Tech Stack
 

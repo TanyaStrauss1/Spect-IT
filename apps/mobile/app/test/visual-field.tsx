@@ -11,6 +11,7 @@ import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
 import {
   createVisualFieldTest,
+  TEST_TYPE_ID,
   type GridPosition,
   type GridIssue,
   type EyeVisualFieldResult,
@@ -93,11 +94,11 @@ export default function VisualFieldTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } = await supabase
+        const { error } =         await supabase
           .from('test_results')
           .insert({
             user_id: user.id,
-            test_type: 'Visual Field (Clinical)',
+            test_type: TEST_TYPE_ID.VISUAL_FIELD,
             test_data: testResult,
             score: (rightEye.hasAbnormalities ? 0 : 1) + (leftEye.hasAbnormalities ? 0 : 1),
             test_date: new Date().toISOString(),

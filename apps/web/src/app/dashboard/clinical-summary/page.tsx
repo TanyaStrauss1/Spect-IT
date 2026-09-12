@@ -161,11 +161,6 @@ export default function ClinicalSummaryPage() {
               )}
             </div>
             <div className="flex gap-2 print:hidden">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Clinical Screening Summary</h1>
-              <p className="text-gray-600">Generated {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
-            </div>
-            <div className="flex gap-2 print:hidden">
               <Button
                 onClick={handlePrintPDF}
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white"

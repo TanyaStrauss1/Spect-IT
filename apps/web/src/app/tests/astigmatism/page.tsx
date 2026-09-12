@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { supabase } from '@/lib/supabase'
 import { useJourney } from '@/lib/journey/useJourney'
 import EnhancedClockDial from '@/components/EnhancedClockDial'
-import { createAstigmatismTest, type ClockPosition, type EyeAstigmatismResult } from '@spect-it/cv'
+import { createAstigmatismTest, TEST_TYPE_ID, type ClockPosition, type EyeAstigmatismResult } from '@spect-it/cv'
 
 type Eye = 'right' | 'left'
 
@@ -61,14 +61,14 @@ export default function AstigmatismTestPage() {
     setStep('result')
 
     // Mark test as complete in journey
-    markTestComplete('astigmatism')
+    markTestComplete(TEST_TYPE_ID.ASTIGMATISM)
 
     if (user) {
       setSaving(true)
       try {
         await supabase.from('test_results').insert({
           user_id: user.id,
-          test_type: 'Astigmatism (Clinical)',
+          test_type: TEST_TYPE_ID.ASTIGMATISM,
           test_data: result,
           results: { rightEye: right, leftEye: left, methodology: result.methodology },
         })

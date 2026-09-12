@@ -11,6 +11,20 @@
  * - Clinical vision tests (acuity, color, astigmatism, contrast, visual field, prescription)
  */
 
+// Test type schema (canonical identifiers)
+export {
+  TEST_TYPE_ID,
+  TEST_TYPE_DISPLAY,
+  TEST_TYPE_CLINICAL,
+  LEGACY_TEST_TYPES,
+  normalizeTestType,
+  getTestDisplayName,
+  getTestClinicalName,
+  isTestType,
+  filterResultsByType,
+  type TestTypeId,
+} from './test-types'
+
 export { LiDARDetector, type LiDARConfig, type DepthReading } from './lidar/lidar-detector'
 export { CameraDepthEstimator } from './depth/camera-depth-estimator'
 export { EyeLandmarkDetector } from './eye/eye-landmark-detector'

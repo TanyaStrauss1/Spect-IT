@@ -17,6 +17,7 @@ import {
   createVisualAcuityTest,
   ETDRS_CHART,
   calculateSloanStrokeWidth,
+  TEST_TYPE_ID,
   type VisualAcuityTest,
   type ETDRSLine,
   type LetterResponse,
@@ -153,7 +154,7 @@ export default function AcuityTestPage() {
     setIsComplete(true)
 
     // Mark test as complete in journey
-    markTestComplete('visual-acuity')
+    markTestComplete(TEST_TYPE_ID.VISUAL_ACUITY)
 
     // Save to Supabase
     if (user) {
@@ -163,7 +164,7 @@ export default function AcuityTestPage() {
           .from('test_results')
           .insert({
             user_id: user.id,
-            test_type: 'Visual Acuity (Clinical)',
+            test_type: TEST_TYPE_ID.VISUAL_ACUITY,
             test_data: result,
             results: {
               rightEye: rightEye,
