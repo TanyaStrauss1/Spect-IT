@@ -11,6 +11,7 @@ import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
 import { 
   createAstigmatismTest,
+  TEST_TYPE_ID,
   type ClockPosition,
   type EyeAstigmatismResult,
   type Eye,
@@ -78,11 +79,11 @@ export default function AstigmatismTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } = await supabase
+        const { error } =         await supabase
           .from('test_results')
           .insert({
             user_id: user.id,
-            test_type: 'Astigmatism (Clinical)',
+            test_type: TEST_TYPE_ID.ASTIGMATISM,
             test_data: testResult,
             score: (rightEye.hasAstigmatism ? 1 : 0) + (leftEye.hasAstigmatism ? 1 : 0),
             test_date: new Date().toISOString(),

@@ -12,6 +12,7 @@ import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
 import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
 import { 
   createVisualAcuityTest, 
+  TEST_TYPE_ID,
   type ETDRSLine, 
   type LineResponse, 
   type EyeResult,
@@ -144,13 +145,13 @@ export default function AcuityTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } = await supabase
+        const { error } =         await supabase
           .from('test_results')
           .insert({
             user_id: user.id,
-            test_type: 'Visual Acuity (Clinical)',
+            test_type: TEST_TYPE_ID.VISUAL_ACUITY,
             test_data: result,
-            results: { 
+            results: {
               rightEye, 
               leftEye, 
               methodology: result.methodology,
