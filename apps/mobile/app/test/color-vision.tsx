@@ -185,8 +185,8 @@ export default function ColorVisionTestScreen() {
             <Text style={styles.warningTitle}>Important Note</Text>
             <Text style={styles.warningText}>
               This is a screening tool, not a diagnostic test. Results should be confirmed 
-              by an eye care professional using standardized clinical tests like the Ishihara 
-              or Farnsworth D-15.
+              by an eye care professional using standardized clinical tests like Farnsworth D-15 
+              or clinical-grade pseudoisochromatic plates.
             </Text>
           </View>
 

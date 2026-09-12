@@ -23,7 +23,7 @@ const steps = [
   {
     number: '03',
     title: 'Complete clinical tests',
-    description: '10 tests using validated protocols: Sloan optotypes for acuity (WHO 80% pass), Ishihara-style plates for color, Amsler grid for macular health, contrast sensitivity, and more.',
+    description: '10 tests using validated protocols: Sloan optotypes for acuity (WHO 80% pass), confusion-line pseudoisochromatic plates for color, Amsler grid for macular health, contrast sensitivity, and more.',
     icon: '👁️'
   },
   {
@@ -44,7 +44,7 @@ const methodology = [
   {
     icon: '🎨',
     title: 'Color Vision',
-    description: 'Ishihara-style pseudoisochromatic plates for protan, deutan, and tritan deficiencies. Control plates invalidate unreliable results. Type-specific scoring for precision.',
+    description: 'Confusion-line pseudoisochromatic plates for protan, deutan, and tritan deficiencies. Control plates invalidate unreliable results. Type-specific scoring for precision.',
     color: 'border-green-500'
   },
   {

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { router } from 'expo-router'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
+import { useJourney } from '../../lib/journey/useJourney'
 
 interface TestResult {
   id: number
@@ -19,7 +21,9 @@ interface TestResult {
 export default function DashboardScreen() {
   const [results, setResults] = useState<TestResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [calibrationStatus, setCalibrationStatus] = useState<'calibrated' | 'skipped' | 'none'>('none')
   const { user, loading: authLoading } = useAuth()
+  const { progress, calculateProgress, getNextRecommendedTest } = useJourney()
 
   useEffect(() => {
     if (authLoading) return
@@ -29,6 +33,7 @@ export default function DashboardScreen() {
       return
     }
     loadResults()
+    checkCalibration()
   }, [user, authLoading])
 
   const loadResults = async () => {
@@ -50,6 +55,37 @@ export default function DashboardScreen() {
     }
   }
 
+  const checkCalibration = async () => {
+    try {
+      const pxPerMm = await AsyncStorage.getItem('spectit_px_per_mm')
+      const skipped = await AsyncStorage.getItem('spectit_calibration_skipped')
+      
+      if (pxPerMm) {
+        setCalibrationStatus('calibrated')
+      } else if (skipped === '1') {
+        setCalibrationStatus('skipped')
+      } else {
+        setCalibrationStatus('none')
+      }
+    } catch (e) {
+      console.error('Error checking calibration:', e)
+    }
+  }
+
+  const handleRecalibrate = () => {
+    Alert.alert(
+      'Recalibrate Screen',
+      'Accurate calibration improves test precision. Would you like to recalibrate?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Recalibrate', onPress: () => {
+          // Navigate to calibration screen (would need to be implemented)
+          Alert.alert('Info', 'Calibration screen coming soon. Run an acuity test to recalibrate.')
+        }}
+      ]
+    )
+  }
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -59,12 +95,37 @@ export default function DashboardScreen() {
     )
   }
 
+  const journeyProgress = calculateProgress()
+  const nextTest = getNextRecommendedTest()
+
   if (results.length === 0) {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Your Dashboard</Text>
           <Text style={styles.subtitle}>Track your vision screening progress</Text>
+        </View>
+
+        {/* Calibration Status */}
+        <View style={styles.calibrationBanner}>
+          <Text style={styles.calibrationIcon}>
+            {calibrationStatus === 'calibrated' ? '✅' : calibrationStatus === 'skipped' ? '⚠️' : '📏'}
+          </Text>
+          <View style={styles.calibrationContent}>
+            <Text style={styles.calibrationTitle}>
+              {calibrationStatus === 'calibrated' ? 'Calibrated' : calibrationStatus === 'skipped' ? 'Calibration Skipped' : 'Not Calibrated'}
+            </Text>
+            <Text style={styles.calibrationText}>
+              {calibrationStatus === 'calibrated' 
+                ? 'Screen calibration active for accurate tests'
+                : 'Calibrate for clinical-grade accuracy'}
+            </Text>
+          </View>
+          {calibrationStatus !== 'none' && (
+            <TouchableOpacity onPress={handleRecalibrate}>
+              <Text style={styles.calibrationLink}>Recalibrate</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.emptyState}>
@@ -88,6 +149,70 @@ export default function DashboardScreen() {
         <Text style={styles.title}>Your Dashboard</Text>
         <Text style={styles.subtitle}>Track your vision screening progress</Text>
       </View>
+
+      {/* Calibration Status */}
+      <View style={styles.calibrationBanner}>
+        <Text style={styles.calibrationIcon}>
+          {calibrationStatus === 'calibrated' ? '✅' : calibrationStatus === 'skipped' ? '⚠️' : '📏'}
+        </Text>
+        <View style={styles.calibrationContent}>
+          <Text style={styles.calibrationTitle}>
+            {calibrationStatus === 'calibrated' ? 'Calibrated' : calibrationStatus === 'skipped' ? 'Calibration Skipped' : 'Not Calibrated'}
+          </Text>
+          <Text style={styles.calibrationText}>
+            {calibrationStatus === 'calibrated' 
+              ? 'Screen calibration active for accurate tests'
+              : 'Calibrate for clinical-grade accuracy'}
+          </Text>
+        </View>
+        {calibrationStatus !== 'none' && (
+          <TouchableOpacity onPress={handleRecalibrate}>
+            <Text style={styles.calibrationLink}>Re-check</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Journey Progress */}
+      {journeyProgress.total > 0 && (
+        <View style={styles.journeyCard}>
+          <View style={styles.journeyHeader}>
+            <Text style={styles.journeyTitle}>🎯 Screening Journey</Text>
+            <Text style={styles.journeyProgress}>
+              {journeyProgress.completed}/{journeyProgress.total} tests
+            </Text>
+          </View>
+          
+          <View style={styles.progressBarContainer}>
+            <View style={[styles.progressBar, { width: `${journeyProgress.percentage}%` }]} />
+          </View>
+          
+          {nextTest && (
+            <View style={styles.nextTestCard}>
+              <Text style={styles.nextTestLabel}>Recommended Next</Text>
+              <Text style={styles.nextTestName}>{nextTest.icon} {nextTest.name}</Text>
+              <TouchableOpacity
+                style={styles.nextTestButton}
+                onPress={() => router.push(nextTest.route as any)}
+              >
+                <Text style={styles.nextTestButtonText}>Start Test →</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Clinical Summary Button */}
+      <TouchableOpacity
+        style={styles.clinicalSummaryButton}
+        onPress={() => router.push('/clinical-summary' as any)}
+      >
+        <Text style={styles.clinicalSummaryIcon}>🩺</Text>
+        <View style={styles.clinicalSummaryContent}>
+          <Text style={styles.clinicalSummaryTitle}>View Clinical Summary</Text>
+          <Text style={styles.clinicalSummaryText}>Per-eye breakdown & recommendations</Text>
+        </View>
+        <Text style={styles.clinicalSummaryArrow}>→</Text>
+      </TouchableOpacity>
 
       <View style={styles.statsCard}>
         <View style={styles.stat}>
@@ -210,6 +335,150 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     color: '#6B7280',
+  },
+  calibrationBanner: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  calibrationIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  calibrationContent: {
+    flex: 1,
+  },
+  calibrationTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  calibrationText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  calibrationLink: {
+    fontSize: 14,
+    color: '#4F46E5',
+    fontWeight: '600',
+  },
+  journeyCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  journeyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  journeyTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  journeyProgress: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4F46E5',
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#4F46E5',
+  },
+  nextTestCard: {
+    backgroundColor: '#EEF2FF',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  nextTestLabel: {
+    fontSize: 11,
+    color: '#6366F1',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  nextTestName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  nextTestButton: {
+    backgroundColor: '#4F46E5',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  nextTestButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  clinicalSummaryButton: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#818CF8',
+  },
+  clinicalSummaryIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  clinicalSummaryContent: {
+    flex: 1,
+  },
+  clinicalSummaryTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  clinicalSummaryText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  clinicalSummaryArrow: {
+    fontSize: 20,
+    color: '#4F46E5',
+    fontWeight: 'bold',
   },
   emptyState: {
     backgroundColor: 'white',
