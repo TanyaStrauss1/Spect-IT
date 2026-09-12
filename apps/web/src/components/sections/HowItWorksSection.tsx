@@ -23,7 +23,7 @@ const steps = [
   {
     number: '03',
     title: 'Complete clinical tests',
-    description: '10 tests using validated protocols: Sloan optotypes for acuity (WHO 80% pass), confusion-line pseudoisochromatic plates for color, Amsler grid for macular health, contrast sensitivity, and more.',
+    description: 'Six validated screening tests: Sloan optotypes for acuity (ETDRS protocol), confusion-line pseudoisochromatic plates (NOT Ishihara) for color, Amsler grid for macular health, contrast sensitivity (logCS), astigmatism screening, and refractive estimates.',
     icon: '👁️'
   },
   {
@@ -38,13 +38,13 @@ const methodology = [
   {
     icon: '📏',
     title: 'Visual Acuity',
-    description: 'Standard Sloan optotypes (C, D, E, F, H, K, N, O, P, R, S, T, V, Z) at WHO-compliant visual angles. 6/6 (20/20) = 5 arc minutes. 80% pass threshold (4/5 letters). LogMAR scoring for clinical reporting.',
+    description: 'Standard Sloan optotypes (C, D, H, K, N, O, R, S, V, Z) at WHO-compliant visual angles. 6/6 (20/20) = 5 arc minutes per stroke. ETDRS methodology with 5 letters per line. LogMAR scoring for clinical reporting.',
     color: 'border-indigo-500'
   },
   {
     icon: '🎨',
     title: 'Color Vision',
-    description: 'Confusion-line pseudoisochromatic plates for protan, deutan, and tritan deficiencies. Control plates invalidate unreliable results. Type-specific scoring for precision.',
+    description: 'Confusion-line pseudoisochromatic plates (NOT Ishihara) for protan and deutan deficiencies. Control plates mark unreliable tests as inconclusive. Procedurally generated dot fields (~2000 dots) ensure copyright-free testing.',
     color: 'border-green-500'
   },
   {
@@ -61,14 +61,14 @@ const methodology = [
   },
   {
     icon: '⊞',
-    title: 'Amsler Grid',
-    description: 'Central 10° macular screening for metamorphopsia, scotomas, and distortion. Per-eye testing with fixation monitoring. Critical for early AMD detection.',
+    title: 'Visual Field (Amsler Grid)',
+    description: 'Central 10° macular screening for metamorphopsia, scotomas, and distortion. Per-eye testing with fixation monitoring. Critical early indicator for macular conditions.',
     color: 'border-purple-500'
   },
   {
     icon: '🔍',
     title: 'Refractive Screening',
-    description: 'Combines acuity, duochrome, and astigmatism results to estimate sphere, cylinder, and axis. Screening only — not a dispensable prescription.',
+    description: 'Combines acuity, duochrome, and astigmatism results to estimate sphere, cylinder, and axis. Screening estimate only — NOT a diagnosis, clinical assessment, or dispensable prescription. Consult an optometrist for eyewear.',
     color: 'border-cyan-500'
   }
 ]

@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
+import { TrendsChart } from '@/components/dashboard/TrendsChart'
 
 interface TestResult {
   id: number
@@ -128,6 +129,9 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {/* Trends Chart */}
+            <TrendsChart results={results} />
+
             <div className="bg-white rounded-lg shadow-xl p-6 mb-8">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
