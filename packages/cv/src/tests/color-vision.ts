@@ -217,7 +217,7 @@ export class ColorVisionTest {
       case 'GENERAL_DEFECT':
         return 'Significant color vision deficiency detected. Recommend comprehensive color vision examination.'
       case 'INVALID':
-        return 'Test results invalid - control plates not passed. Ensure proper viewing conditions and display settings.'
+        return 'Test inconclusive — control plates not passed. This may indicate difficulty with the test format or display settings rather than color vision deficiency. Ensure proper viewing conditions and screen brightness, then retest or consult an eye care professional.'
       default:
         return 'Unable to classify color vision.'
     }

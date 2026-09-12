@@ -20,7 +20,7 @@ export interface PseudoisochromaticPlateProps {
 export function PseudoisochromaticPlate({ 
   config, 
   diameter = 300,
-  dotsCount = 2000,
+  dotsCount = 1500, // Reduced from 2000 for better mobile performance
   style 
 }: PseudoisochromaticPlateProps) {
   const dots = useMemo(

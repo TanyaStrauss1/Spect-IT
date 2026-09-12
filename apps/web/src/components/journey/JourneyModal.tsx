@@ -93,7 +93,8 @@ export function JourneyModal({ isOpen, onClose }: JourneyModalProps) {
             <Button
               size="sm"
               onClick={() => startTest(test)}
-              className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+              className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              aria-label={`Start ${test.name} test`}
             >
               Start
             </Button>
@@ -113,20 +114,25 @@ export function JourneyModal({ isOpen, onClose }: JourneyModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="journey-modal-title"
+    >
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 my-8">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Your Vision Screening Journey</h2>
+            <h2 id="journey-modal-title" className="text-3xl font-bold text-gray-900 mb-2">Your Vision Screening Journey</h2>
             <p className="text-gray-600">
               Complete a comprehensive suite of clinical-grade vision tests. Results are screening only — not a diagnosis.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-3xl leading-none font-light"
-            aria-label="Close"
+            className="text-gray-400 hover:text-gray-600 focus:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded text-3xl leading-none font-light p-2"
+            aria-label="Close journey modal"
           >
             ×
           </button>

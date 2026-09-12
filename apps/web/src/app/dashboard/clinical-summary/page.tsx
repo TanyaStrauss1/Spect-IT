@@ -16,6 +16,7 @@ import Link from 'next/link'
 export default function ClinicalSummaryPage() {
   const [results, setResults] = useState<TestResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [summary, setSummary] = useState<ClinicalSummary | null>(null)
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -33,6 +34,7 @@ export default function ClinicalSummaryPage() {
   const loadResults = async () => {
     if (!user) return
     
+    setError(null)
     try {
       const { data, error } = await supabase
         .from('test_results')
@@ -43,8 +45,9 @@ export default function ClinicalSummaryPage() {
       if (error) throw error
       setResults(data || [])
       setSummary(generateClinicalSummary(data || []))
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading results:', error)
+      setError(error.message || 'Failed to load clinical summary. Please try refreshing the page.')
     } finally {
       setLoading(false)
     }
@@ -78,6 +81,35 @@ export default function ClinicalSummaryPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your clinical summary...</p>
+          <p className="mt-2 text-sm text-gray-500">Analyzing test history</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Summary</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="flex gap-3 justify-center">
+            <Button
+              onClick={() => {
+                setLoading(true)
+                loadResults()
+              }}
+              className="bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              Try Again
+            </Button>
+            <Link href="/dashboard">
+              <Button variant="outline">
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -90,12 +122,22 @@ export default function ClinicalSummaryPage() {
           <div className="bg-white rounded-lg shadow-xl p-12 text-center">
             <div className="text-6xl mb-4">📊</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No Results Yet</h2>
-            <p className="text-gray-600 mb-6">Complete some vision tests to see your clinical summary</p>
-            <Link href="/tests">
-              <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                Browse Tests
-              </Button>
-            </Link>
+            <p className="text-gray-600 mb-2">Complete some vision tests to generate your clinical summary</p>
+            <p className="text-sm text-gray-500 mb-6">
+              The summary includes per-eye acuity, color vision, contrast sensitivity, and more
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Link href="/tests">
+                <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                  Browse Tests
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="outline">
+                  Back to Dashboard
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -103,11 +145,22 @@ export default function ClinicalSummaryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 print:bg-white print:py-0">
       <div className="container mx-auto max-w-5xl">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
-          <div className="flex justify-between items-start mb-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none print:mb-4">
+          <div className="flex justify-between items-start mb-4 print:mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 print:text-2xl">Spect-IT Clinical Screening Summary</h1>
+              <p className="text-gray-600 print:text-sm">
+                Generated {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
+                {' '}at {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              {user?.email && (
+                <p className="text-sm text-gray-500 mt-1">Account: {user.email}</p>
+              )}
+            </div>
+            <div className="flex gap-2 print:hidden">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Clinical Screening Summary</h1>
               <p className="text-gray-600">Generated {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}</p>
@@ -127,22 +180,76 @@ export default function ClinicalSummaryPage() {
               </Button>
             </div>
           </div>
-          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded print:border print:border-amber-500 print:mt-4">
             <p className="text-sm text-amber-800">
-              <strong>Important:</strong> This is a screening, not a diagnosis or dispensable prescription. 
-              Consult a licensed optometrist or ophthalmologist for clinical decisions.
+              <strong>Important Medical Disclaimer:</strong> This is a screening assessment for informational use only, NOT a medical diagnosis, clinical assessment, or dispensable eyewear prescription. 
+              Results must be confirmed by a licensed optometrist or ophthalmologist. Consult an eye care professional for clinical decisions, prescriptions, and comprehensive eye examinations.
+            </p>
+          </div>
+
+          {/* Calibration Info (print only) */}
+          <div className="hidden print:block mt-4 border-t pt-4">
+            <p className="text-xs text-gray-600">
+              <strong>Test Conditions:</strong> Screen-based testing with user-calibrated display. 
+              Calibration status: {localStorage.getItem('spectit_calibration_timestamp') 
+                ? `Calibrated ${Math.floor((Date.now() - parseInt(localStorage.getItem('spectit_calibration_timestamp')!)) / (1000 * 60 * 60 * 24))} days ago`
+                : 'Unknown'}
             </p>
           </div>
         </div>
 
-        {/* Visual Acuity Summary */}
+        {/* Visual Acuity Summary - Enhanced for Print */}
         {(summary.leftEye || summary.rightEye || summary.bothEyes) && (
-          <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none print:break-inside-avoid">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2 print:text-xl print:border-b print:pb-2">
               📏 Distance Vision (Visual Acuity)
             </h2>
+
+            {/* Per-Eye Table for Print */}
+            <div className="hidden print:block mb-6">
+              <table className="w-full border-collapse border border-gray-300 text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 p-2 text-left">Eye</th>
+                    <th className="border border-gray-300 p-2 text-left">Snellen</th>
+                    <th className="border border-gray-300 p-2 text-left">logMAR</th>
+                    <th className="border border-gray-300 p-2 text-left">Category</th>
+                    <th className="border border-gray-300 p-2 text-left">Test Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.rightEye && (
+                    <tr>
+                      <td className="border border-gray-300 p-2 font-semibold">Right (OD)</td>
+                      <td className="border border-gray-300 p-2">{summary.rightEye.snellen}</td>
+                      <td className="border border-gray-300 p-2">{summary.rightEye.logMAR?.toFixed(2)}</td>
+                      <td className="border border-gray-300 p-2">{summary.rightEye.interpretation?.category}</td>
+                      <td className="border border-gray-300 p-2">{new Date(summary.rightEye.date!).toLocaleDateString()}</td>
+                    </tr>
+                  )}
+                  {summary.leftEye && (
+                    <tr>
+                      <td className="border border-gray-300 p-2 font-semibold">Left (OS)</td>
+                      <td className="border border-gray-300 p-2">{summary.leftEye.snellen}</td>
+                      <td className="border border-gray-300 p-2">{summary.leftEye.logMAR?.toFixed(2)}</td>
+                      <td className="border border-gray-300 p-2">{summary.leftEye.interpretation?.category}</td>
+                      <td className="border border-gray-300 p-2">{new Date(summary.leftEye.date!).toLocaleDateString()}</td>
+                    </tr>
+                  )}
+                  {summary.bothEyes && (
+                    <tr>
+                      <td className="border border-gray-300 p-2 font-semibold">Both</td>
+                      <td className="border border-gray-300 p-2">{summary.bothEyes.snellen}</td>
+                      <td className="border border-gray-300 p-2">{summary.bothEyes.logMAR?.toFixed(2)}</td>
+                      <td className="border border-gray-300 p-2">{summary.bothEyes.interpretation?.category}</td>
+                      <td className="border border-gray-300 p-2">{new Date(summary.bothEyes.date!).toLocaleDateString()}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
             
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
+            <div className="grid md:grid-cols-3 gap-6 mb-6 print:hidden">
               {summary.leftEye && (
                 <div className="p-6 rounded-lg border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100">
                   <div className="text-sm font-bold text-purple-700 mb-2">Left Eye (OS)</div>
@@ -387,6 +494,49 @@ export default function ClinicalSummaryPage() {
           }
           .print\\:shadow-none {
             box-shadow: none !important;
+          }
+          .print\\:bg-white {
+            background: white !important;
+          }
+          .print\\:py-0 {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+          }
+          .print\\:mb-4 {
+            margin-bottom: 1rem !important;
+          }
+          .print\\:text-2xl {
+            font-size: 1.5rem !important;
+          }
+          .print\\:text-xl {
+            font-size: 1.25rem !important;
+          }
+          .print\\:text-sm {
+            font-size: 0.875rem !important;
+          }
+          .print\\:block {
+            display: block !important;
+          }
+          .print\\:border {
+            border-width: 1px !important;
+          }
+          .print\\:border-b {
+            border-bottom-width: 1px !important;
+          }
+          .print\\:pb-2 {
+            padding-bottom: 0.5rem !important;
+          }
+          .print\\:break-inside-avoid {
+            break-inside: avoid !important;
+          }
+          /* Footer on every page */
+          @page {
+            margin: 1.5cm;
+            @bottom-center {
+              content: "Spect-IT Screening Report — spect-it.com — NOT a diagnosis or prescription";
+              font-size: 8pt;
+              color: #6b7280;
+            }
           }
         }
       `}</style>
