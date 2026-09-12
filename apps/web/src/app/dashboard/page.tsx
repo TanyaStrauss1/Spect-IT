@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
+import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
 import { TrendsChart } from '@/components/dashboard/TrendsChart'
 
 interface TestResult {
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const { calibrator, isCalibrated, isModalOpen, setIsModalOpen } = useCalibration()
+  const { isOnboardingOpen, markOnboardingComplete, setIsOnboardingOpen } = useOnboarding()
 
   useEffect(() => {
     if (authLoading) return

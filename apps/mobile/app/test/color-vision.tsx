@@ -9,7 +9,12 @@ import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
 import { PseudoisochromaticPlate } from '../../components/stimuli/PseudoisochromaticPlate'
-import { PSEUDOISOCHROMATIC_PLATES, type PlateConfig } from '@spect-it/cv'
+import { 
+  createColorVisionTest,
+  TEST_TYPE_ID,
+  PSEUDOISOCHROMATIC_PLATES, 
+  type PlateConfig 
+} from '@spect-it/cv'
 
 export default function ColorVisionTestScreen() {
   const [currentPlateIndex, setCurrentPlateIndex] = useState(0)
@@ -130,12 +135,12 @@ export default function ColorVisionTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } = await supabase
+        const { error } =         await supabase
           .from('test_results')
           .insert({
             user_id: user.id,
             user_email: user.email,
-            test_type: 'Color Vision (Clinical)',
+            test_type: TEST_TYPE_ID.COLOR_VISION,
             test_name: 'Pseudoisochromatic Plate Test',
             test_data: testResult,
             score: totalCorrect,

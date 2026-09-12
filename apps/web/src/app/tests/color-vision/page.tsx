@@ -16,6 +16,7 @@ import PseudoisochromaticPlate from '@/components/PseudoisochromaticPlate'
 import {
   createColorVisionTest,
   PSEUDOISOCHROMATIC_PLATES,
+  TEST_TYPE_ID,
   type ColorPlate,
   type PlateResponse,
   type PlateConfig,
@@ -69,7 +70,7 @@ export default function ColorVisionTestPage() {
     setResult(testResult)
 
     // Mark test as complete in journey
-    markTestComplete('color-vision')
+    markTestComplete(TEST_TYPE_ID.COLOR_VISION)
 
     if (user) {
       setSaving(true)
@@ -78,7 +79,7 @@ export default function ColorVisionTestPage() {
           .from('test_results')
           .insert({
             user_id: user.id,
-            test_type: 'Color Vision (Clinical)',
+            test_type: TEST_TYPE_ID.COLOR_VISION,
             test_data: testResult,
             results: {
               classification: testResult.classification,

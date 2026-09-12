@@ -12,6 +12,7 @@ import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
 import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
 import {
   createContrastSensitivityTest,
+  TEST_TYPE_ID,
   type ContrastLevel,
   type ContrastTripletResponse,
   type CalibrationData,
@@ -110,11 +111,11 @@ export default function ContrastTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } = await supabase
+        const { error } =         await supabase
           .from('test_results')
           .insert({
             user_id: user.id,
-            test_type: 'Contrast Sensitivity (Clinical)',
+            test_type: TEST_TYPE_ID.CONTRAST_SENSITIVITY,
             test_data: testResult,
             score: Math.round(testResult.finalLogCS * 100),
             test_date: new Date().toISOString(),

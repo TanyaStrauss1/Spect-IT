@@ -16,6 +16,7 @@ import {
   createPrescriptionScreeningTest, 
   createVisualAcuityTest,
   calculateSloanStrokeWidth,
+  TEST_TYPE_ID,
   type PinholeResult,
   type SloanLetter,
   type ETDRSLine,
@@ -142,14 +143,14 @@ export default function PrescriptionTestPage() {
     setStep('result')
 
     // Mark test as complete in journey
-    markTestComplete('prescription')
+    markTestComplete(TEST_TYPE_ID.PRESCRIPTION)
 
     if (user) {
       setSaving(true)
       try {
         await supabase.from('test_results').insert({
           user_id: user.id,
-          test_type: 'Refractive Screening (Clinical)',
+          test_type: TEST_TYPE_ID.PRESCRIPTION,
           test_data: result,
           results: { rightEye: right, leftEye: left, recommendation: result.recommendation },
         })
@@ -327,35 +328,14 @@ export default function PrescriptionTestPage() {
     )
   }
 
+  // Fallback placeholder (should not normally be reached)
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 py-8 px-4">
       <div className="container mx-auto max-w-4xl">
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="inline-block bg-indigo-100 text-indigo-600 px-4 py-2 rounded-full font-semibold mb-4">
-              {currentEye === 'right' ? 'Right Eye (OD)' : 'Left Eye (OS)'} - {step === 'uncorrected' ? 'Uncorrected Vision' : 'With Pinhole'}
-            </div>
-            <h3 className="text-xl text-gray-600">Measure visual acuity</h3>
-            <p className="text-sm text-gray-500">(In full implementation, this would show actual acuity test)</p>
-          </div>
-          <div className="space-y-4 max-w-md mx-auto mb-6">
-            {step === 'uncorrected' ? (
-              <>
-                <label className="block">
-                  <span className="text-sm text-gray-700">Uncorrected LogMAR (simulated)</span>
-                  <input type="number" step="0.1" value={uncorrectedLogMAR} onChange={(e) => setUncorrectedLogMAR(parseFloat(e.target.value))} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </label>
-                <button onClick={() => setStep('pinhole')} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Continue to Pinhole</button>
-              </>
-            ) : (
-              <>
-                <label className="block">
-                  <span className="text-sm text-gray-700">Pinhole LogMAR (simulated)</span>
-                  <input type="number" step="0.1" value={pinholeLogMAR} onChange={(e) => setPinholeLogMAR(parseFloat(e.target.value))} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
-                </label>
-                <button onClick={handleSubmitEye} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Submit</button>
-              </>
-            )}
+            <h3 className="text-xl text-gray-600">Prescription Screening Test</h3>
+            <p className="text-sm text-gray-500">Loading...</p>
           </div>
         </div>
       </div>

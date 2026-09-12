@@ -15,6 +15,7 @@ import SloanOptotype from '@/components/SloanOptotype'
 import { 
   createContrastSensitivityTest, 
   calculateSloanStrokeWidth,
+  TEST_TYPE_ID,
   type ContrastLetter, 
   type ContrastLetterResponse, 
   type ContrastTripletResponse,
@@ -93,14 +94,14 @@ export default function ContrastTestPage() {
     setResult(testResult)
 
     // Mark test as complete in journey
-    markTestComplete('contrast')
+    markTestComplete(TEST_TYPE_ID.CONTRAST_SENSITIVITY)
 
     if (user) {
       setSaving(true)
       try {
         await supabase.from('test_results').insert({
           user_id: user.id,
-          test_type: 'Contrast Sensitivity (Clinical)',
+          test_type: TEST_TYPE_ID.CONTRAST_SENSITIVITY,
           test_data: testResult,
           results: { finalLogCS: testResult.finalLogCS, category: testResult.category },
         })
