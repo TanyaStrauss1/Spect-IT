@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useJourney } from '../../lib/journey/useJourney'
 import { TrendsSection } from '../../components/TrendsSection'
+import { OnboardingModal, useOnboarding } from '../../components/OnboardingModal'
 
 interface TestResult {
   id: number
@@ -25,6 +26,7 @@ export default function DashboardScreen() {
   const [calibrationStatus, setCalibrationStatus] = useState<'calibrated' | 'skipped' | 'none'>('none')
   const { user, loading: authLoading } = useAuth()
   const { progress, calculateProgress, getNextRecommendedTest } = useJourney()
+  const { isOnboardingOpen, markOnboardingComplete, setIsOnboardingOpen } = useOnboarding()
 
   useEffect(() => {
     if (authLoading) return
@@ -99,53 +101,58 @@ export default function DashboardScreen() {
   const journeyProgress = calculateProgress()
   const nextTest = getNextRecommendedTest()
 
-  if (results.length === 0) {
-    return (
-      <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Your Dashboard</Text>
-          <Text style={styles.subtitle}>Track your vision screening progress</Text>
-        </View>
-
-        {/* Calibration Status */}
-        <View style={styles.calibrationBanner}>
-          <Text style={styles.calibrationIcon}>
-            {calibrationStatus === 'calibrated' ? '✅' : calibrationStatus === 'skipped' ? '⚠️' : '📏'}
-          </Text>
-          <View style={styles.calibrationContent}>
-            <Text style={styles.calibrationTitle}>
-              {calibrationStatus === 'calibrated' ? 'Calibrated' : calibrationStatus === 'skipped' ? 'Calibration Skipped' : 'Not Calibrated'}
-            </Text>
-            <Text style={styles.calibrationText}>
-              {calibrationStatus === 'calibrated' 
-                ? 'Screen calibration active for accurate tests'
-                : 'Calibrate for clinical-grade accuracy'}
-            </Text>
-          </View>
-          {calibrationStatus !== 'none' && (
-            <TouchableOpacity onPress={handleRecalibrate}>
-              <Text style={styles.calibrationLink}>Recalibrate</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>👁️</Text>
-          <Text style={styles.emptyTitle}>No test results yet</Text>
-          <Text style={styles.emptyText}>Take your first vision screening to get started</Text>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push('/test/acuity')}
-          >
-            <Text style={styles.primaryButtonText}>Start Visual Acuity Test</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    )
-  }
-
   return (
-    <ScrollView style={styles.container}>
+    <>
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onComplete={markOnboardingComplete}
+        onSkip={markOnboardingComplete}
+      />
+
+      {/* Dashboard content */}
+      {results.length === 0 ? (
+        <ScrollView style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Your Dashboard</Text>
+            <Text style={styles.subtitle}>Track your vision screening progress</Text>
+          </View>
+
+          {/* Calibration Status */}
+          <View style={styles.calibrationBanner}>
+            <Text style={styles.calibrationIcon}>
+              {calibrationStatus === 'calibrated' ? '✅' : calibrationStatus === 'skipped' ? '⚠️' : '📏'}
+            </Text>
+            <View style={styles.calibrationContent}>
+              <Text style={styles.calibrationTitle}>
+                {calibrationStatus === 'calibrated' ? 'Calibrated' : calibrationStatus === 'skipped' ? 'Calibration Skipped' : 'Not Calibrated'}
+              </Text>
+              <Text style={styles.calibrationText}>
+                {calibrationStatus === 'calibrated' 
+                  ? 'Screen calibration active for accurate tests'
+                  : 'Calibrate for clinical-grade accuracy'}
+              </Text>
+            </View>
+            {calibrationStatus !== 'none' && (
+              <TouchableOpacity onPress={handleRecalibrate}>
+                <Text style={styles.calibrationLink}>Recalibrate</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>👁️</Text>
+            <Text style={styles.emptyTitle}>No test results yet</Text>
+            <Text style={styles.emptyText}>Take your first vision screening to get started</Text>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/test/acuity')}
+            >
+              <Text style={styles.primaryButtonText}>Start Visual Acuity Test</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      ) : (
+        <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Your Dashboard</Text>
         <Text style={styles.subtitle}>Track your vision screening progress</Text>
@@ -314,6 +321,8 @@ export default function DashboardScreen() {
         </Text>
       </View>
     </ScrollView>
+      )}
+    </>
   )
 }
 
