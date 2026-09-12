@@ -9,6 +9,7 @@ import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
 import { generateClinicalSummary, type TestResult, type ClinicalSummary } from '../../lib/results/clinical-summary'
+import { TrendsSection } from '../../components/TrendsSection'
 
 export default function ClinicalSummaryScreen() {
   const [results, setResults] = useState<TestResult[]>([])
@@ -48,12 +49,71 @@ export default function ClinicalSummaryScreen() {
   }
 
   const handleShare = async () => {
-    const text = `Spect-IT Vision Screening Report\n\nCompleted: ${new Date().toLocaleDateString()}\n\nNote: Screening only — not a diagnosis or prescription. Consult an optometrist for clinical decisions.`
+    // Build structured clinical summary text
+    let text = `SPECT-IT VISION SCREENING REPORT\n`
+    text += `Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}\n`
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`
+    
+    // Visual Acuity Results
+    if (summary?.leftEye || summary?.rightEye || summary?.bothEyes) {
+      text += `DISTANCE VISION (VISUAL ACUITY)\n\n`
+      
+      if (summary?.leftEye) {
+        text += `Left Eye (OS): ${summary.leftEye.snellen}\n`
+        if (summary.leftEye.interpretation) {
+          text += `  • Category: ${summary.leftEye.interpretation.category}\n`
+          text += `  • logMAR: ${summary.leftEye.logMAR?.toFixed(2)}\n`
+        }
+        text += `  • Tested: ${new Date(summary.leftEye.date!).toLocaleDateString()}\n\n`
+      }
+      
+      if (summary?.rightEye) {
+        text += `Right Eye (OD): ${summary.rightEye.snellen}\n`
+        if (summary.rightEye.interpretation) {
+          text += `  • Category: ${summary.rightEye.interpretation.category}\n`
+          text += `  • logMAR: ${summary.rightEye.logMAR?.toFixed(2)}\n`
+        }
+        text += `  • Tested: ${new Date(summary.rightEye.date!).toLocaleDateString()}\n\n`
+      }
+      
+      if (summary?.bothEyes) {
+        text += `Both Eyes: ${summary.bothEyes.snellen}\n`
+        if (summary.bothEyes.interpretation) {
+          text += `  • Category: ${summary.bothEyes.interpretation.category}\n`
+          text += `  • logMAR: ${summary.bothEyes.logMAR?.toFixed(2)}\n`
+        }
+        text += `  • Tested: ${new Date(summary.bothEyes.date!).toLocaleDateString()}\n\n`
+      }
+    }
+    
+    // Other tests
+    const otherTests = []
+    if (summary?.colorVision) otherTests.push(`Color Vision: ${summary.colorVision.test_data?.screeningResult || 'See report'}`)
+    if (summary?.contrast) otherTests.push(`Contrast Sensitivity: ${summary.contrast.test_data?.assessment || `${((summary.contrast.score || 0) * 100).toFixed(0)}% correct`}`)
+    if (summary?.astigmatism) otherTests.push(`Astigmatism: ${summary.astigmatism.test_data?.overallAssessment || 'See report'}`)
+    if (summary?.visualField) otherTests.push(`Visual Field: ${summary.visualField.test_data?.assessment || 'See report'}`)
+    if (summary?.prescription) otherTests.push(`Refractive Screening: Needs-correction detection — NOT a prescription`)
+    
+    if (otherTests.length > 0) {
+      text += `OTHER SCREENING TESTS\n\n`
+      otherTests.forEach(t => text += `• ${t}\n`)
+      text += `\n`
+    }
+    
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
+    text += `IMPORTANT DISCLAIMER\n\n`
+    text += `These results are screening assessments for informational purposes only — NOT medical diagnoses, clinical assessments, or dispensable prescriptions.\n\n`
+    text += `Consult a licensed optometrist or ophthalmologist for:\n`
+    text += `• Comprehensive eye examinations\n`
+    text += `• Clinical diagnoses and treatment\n`
+    text += `• Prescription eyewear (glasses or contacts)\n`
+    text += `• Professional medical advice\n\n`
+    text += `Spect-IT is a screening tool, not a medical device.\n`
     
     try {
       await Share.share({
         message: text,
-        title: 'Spect-IT Vision Screening'
+        title: 'Spect-IT Vision Screening Report'
       })
     } catch (error) {
       console.error('Error sharing:', error)
@@ -111,8 +171,11 @@ export default function ClinicalSummaryScreen() {
 
       {/* Share Button */}
       <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-        <Text style={styles.shareButtonText}>📤 Share Results</Text>
+        <Text style={styles.shareButtonText}>📤 Share Clinical Summary</Text>
       </TouchableOpacity>
+
+      {/* Vision Trends */}
+      <TrendsSection results={results} />
 
       {/* Visual Acuity Summary */}
       {(summary.leftEye || summary.rightEye || summary.bothEyes) && (
@@ -365,24 +428,25 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   disclaimer: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: '#FEF2F2',
     marginHorizontal: 20,
     padding: 16,
     borderRadius: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
+    borderLeftColor: '#DC2626',
     marginBottom: 12,
   },
   disclaimerTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#B45309',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: '#991B1B',
+    marginBottom: 6,
   },
   disclaimerText: {
-    fontSize: 12,
-    color: '#92400E',
-    lineHeight: 18,
+    fontSize: 13,
+    color: '#7F1D1D',
+    lineHeight: 20,
+    fontWeight: '500',
   },
   shareButton: {
     backgroundColor: '#4F46E5',

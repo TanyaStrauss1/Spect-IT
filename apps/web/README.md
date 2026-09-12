@@ -12,7 +12,7 @@ This is the primary web interface for Spect-IT vision screening platform. It pro
   - Contrast Sensitivity (low-contrast optotypes, logCS)
   - Astigmatism (radial fan, clock dial)
   - Visual Field (Amsler grid)
-  - Refractive Screening (sphere/cylinder estimates, NOT dispensable)
+  - Refractive Screening (pinhole vs uncorrected acuity — needs-correction detection, NOT a prescription)
 
 - **User Features:**
   - Supabase authentication (email/password)

@@ -23,7 +23,7 @@ const steps = [
   {
     number: '03',
     title: 'Complete clinical tests',
-    description: 'Six validated screening tests: Sloan optotypes for acuity (ETDRS protocol), confusion-line pseudoisochromatic plates (NOT Ishihara) for color, Amsler grid for macular health, contrast sensitivity (logCS), astigmatism screening, and refractive estimates.',
+    description: 'Six validated screening tests: Sloan optotypes for acuity (ETDRS protocol), confusion-line pseudoisochromatic plates (NOT Ishihara) for color, Amsler grid for macular health, contrast sensitivity (logCS), astigmatism screening, and refractive needs detection (pinhole vs uncorrected acuity).',
     icon: '👁️'
   },
   {
@@ -68,7 +68,7 @@ const methodology = [
   {
     icon: '🔍',
     title: 'Refractive Screening',
-    description: 'Combines acuity, duochrome, and astigmatism results to estimate sphere, cylinder, and axis. Screening estimate only — NOT a diagnosis, clinical assessment, or dispensable prescription. Consult an optometrist for eyewear.',
+    description: 'Compares uncorrected acuity to pinhole acuity to detect refractive blur — tells you if correction may help, NOT a prescription. Does NOT generate sphere, cylinder, or axis values. Results are NOT dispensable. Consult an optometrist for prescriptions and eyewear.',
     color: 'border-cyan-500'
   }
 ]

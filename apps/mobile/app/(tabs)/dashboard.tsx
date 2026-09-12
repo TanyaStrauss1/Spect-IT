@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useJourney } from '../../lib/journey/useJourney'
+import { TrendsSection } from '../../components/TrendsSection'
 
 interface TestResult {
   id: number
@@ -200,6 +201,9 @@ export default function DashboardScreen() {
           )}
         </View>
       )}
+
+      {/* Vision Trends */}
+      <TrendsSection results={results} />
 
       {/* Clinical Summary Button */}
       <TouchableOpacity

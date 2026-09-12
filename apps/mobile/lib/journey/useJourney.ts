@@ -73,7 +73,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     name: 'Refractive Screening',
     icon: '🔍',
     duration: '5-10 min',
-    why: 'Estimates sphere, cylinder & axis from your other test results',
+    why: 'Compares pinhole vs uncorrected acuity to detect if correction may help — NOT a prescription',
     requires: ['completed-acuity', 'completed-astigmatism'],
     category: 'summary',
     route: '/test/prescription'

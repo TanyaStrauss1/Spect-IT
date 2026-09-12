@@ -26,14 +26,18 @@ interface TrendDataPoint {
 
 export function TrendsChart({ results }: TrendsChartProps) {
   const { acuityTrends, contrastTrends, meaningfulChanges } = useMemo(() => {
-    // Extract acuity results
+    // Extract acuity results (match saved test_type strings)
     const acuityResults = results.filter(r => 
-      r.test_type === 'Visual Acuity' || r.test_name === 'Visual Acuity'
+      r.test_type === 'Visual Acuity (Clinical)' || 
+      r.test_type === 'Visual Acuity' || 
+      r.test_name === 'Visual Acuity'
     ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
-    // Extract contrast results
+    // Extract contrast results (match saved test_type strings)
     const contrastResults = results.filter(r => 
-      r.test_type === 'Contrast Sensitivity' || r.test_name === 'Contrast Sensitivity'
+      r.test_type === 'Contrast Sensitivity (Clinical)' || 
+      r.test_type === 'Contrast Sensitivity' || 
+      r.test_name === 'Contrast Sensitivity'
     ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
     // Build acuity trend data
