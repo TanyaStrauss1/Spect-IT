@@ -1,11 +1,10 @@
 /**
- * Guided Journey State Management
+ * Guided Journey State Management (React Native)
  * Tracks test completion progress, session resume, and recommended test order
  */
 
-'use client'
-
 import { useState, useEffect, useCallback } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export interface TestDefinition {
   id: string
@@ -27,7 +26,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     why: 'Baseline measurement of distance vision — the foundation for all other tests',
     requires: ['distance', 'lighting', 'glasses'],
     category: 'essential',
-    route: '/tests/acuity'
+    route: '/test/acuity'
   },
   {
     id: 'contrast',
@@ -37,7 +36,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     why: 'Assesses how well you see in low light or fog — critical for night driving',
     requires: ['distance', 'lighting', 'glasses'],
     category: 'essential',
-    route: '/tests/contrast'
+    route: '/test/contrast'
   },
   {
     id: 'color-vision',
@@ -47,7 +46,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     why: 'Detects color vision deficiencies using confusion-line pseudoisochromatic plates',
     requires: ['lighting'],
     category: 'recommended',
-    route: '/tests/color-vision'
+    route: '/test/color-vision'
   },
   {
     id: 'astigmatism',
@@ -57,7 +56,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     why: 'Identifies corneal irregularities that blur vision',
     requires: ['distance', 'lighting', 'glasses-off'],
     category: 'recommended',
-    route: '/tests/astigmatism'
+    route: '/test/astigmatism'
   },
   {
     id: 'visual-field',
@@ -67,7 +66,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     why: 'Checks peripheral vision and blind spots',
     requires: ['distance', 'lighting', 'occlusion'],
     category: 'advanced',
-    route: '/tests/visual-field'
+    route: '/test/visual-field'
   },
   {
     id: 'prescription',
@@ -77,7 +76,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     why: 'Estimates sphere, cylinder & axis from your other test results',
     requires: ['completed-acuity', 'completed-astigmatism'],
     category: 'summary',
-    route: '/tests/prescription'
+    route: '/test/prescription'
   }
 ]
 
@@ -139,7 +138,6 @@ interface JourneyProgress {
   lastUpdated: number
 }
 
-const SESSION_KEY = 'spectit_screening_session'
 const PROGRESS_KEY = 'spectit_test_progress'
 
 export function useJourney() {
@@ -149,62 +147,63 @@ export function useJourney() {
     lastUpdated: Date.now()
   })
 
-  // Load progress from localStorage
+  // Load progress from AsyncStorage
   useEffect(() => {
-    const stored = localStorage.getItem(PROGRESS_KEY)
-    if (stored) {
-      try {
+    loadProgress()
+  }, [])
+
+  const loadProgress = async () => {
+    try {
+      const stored = await AsyncStorage.getItem(PROGRESS_KEY)
+      if (stored) {
         const parsed = JSON.parse(stored)
         setProgress({
           completed: parsed.completed || [],
           inProgress: parsed.inProgress || null,
           lastUpdated: parsed.lastUpdated || Date.now()
         })
-      } catch (e) {
-        console.error('Error parsing journey progress:', e)
       }
+    } catch (e) {
+      console.error('Error loading journey progress:', e)
+    }
+  }
+
+  const saveProgress = useCallback(async (newProgress: JourneyProgress) => {
+    setProgress(newProgress)
+    try {
+      await AsyncStorage.setItem(PROGRESS_KEY, JSON.stringify(newProgress))
+    } catch (e) {
+      console.error('Error saving journey progress:', e)
     }
   }, [])
 
-  const saveProgress = useCallback((newProgress: JourneyProgress) => {
-    setProgress(newProgress)
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(newProgress))
-  }, [])
+  const markTestComplete = useCallback(async (testId: string) => {
+    const newProgress: JourneyProgress = {
+      completed: progress.completed.includes(testId) 
+        ? progress.completed 
+        : [...progress.completed, testId],
+      inProgress: null,
+      lastUpdated: Date.now()
+    }
+    await saveProgress(newProgress)
+  }, [progress, saveProgress])
 
-  const markTestComplete = useCallback((testId: string) => {
-    setProgress(prev => {
-      const completed = prev.completed.includes(testId) 
-        ? prev.completed 
-        : [...prev.completed, testId]
-      const newProgress = {
-        completed,
-        inProgress: null,
-        lastUpdated: Date.now()
-      }
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(newProgress))
-      return newProgress
-    })
-  }, [])
+  const markTestInProgress = useCallback(async (testId: string) => {
+    const newProgress: JourneyProgress = {
+      ...progress,
+      inProgress: testId,
+      lastUpdated: Date.now()
+    }
+    await saveProgress(newProgress)
+  }, [progress, saveProgress])
 
-  const markTestInProgress = useCallback((testId: string) => {
-    setProgress(prev => {
-      const newProgress = {
-        ...prev,
-        inProgress: testId,
-        lastUpdated: Date.now()
-      }
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(newProgress))
-      return newProgress
-    })
-  }, [])
-
-  const resetProgress = useCallback(() => {
-    const newProgress = {
+  const resetProgress = useCallback(async () => {
+    const newProgress: JourneyProgress = {
       completed: [],
       inProgress: null,
       lastUpdated: Date.now()
     }
-    saveProgress(newProgress)
+    await saveProgress(newProgress)
   }, [saveProgress])
 
   const getNextRecommendedTest = useCallback(() => {

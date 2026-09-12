@@ -17,6 +17,13 @@ export default function TabLayout() {
           tabBarIcon: () => '📊',
         }}
       />
+      <Tabs.Screen
+        name="clinical-summary"
+        options={{
+          title: 'Clinical Summary',
+          tabBarIcon: () => '🩺',
+        }}
+      />
     </Tabs>
   )
 }
