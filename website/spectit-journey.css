@@ -1,0 +1,258 @@
+/* ==========================================================================
+ * Spect-IT — Guided Journey Styles
+ * ========================================================================== */
+
+.journey-modal-card {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.journey-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+
+.journey-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 1rem 0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.journey-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.journey-progress-text {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  color: #4a5568;
+}
+
+.journey-next-test {
+  background: linear-gradient(135deg, #667eea15, #764ba215);
+  border: 2px solid #667eea;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.journey-next-test h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.3rem;
+  color: #667eea;
+}
+
+.journey-all-tests h3 {
+  margin: 1.5rem 0 1rem 0;
+  font-size: 1.2rem;
+  color: #2d3748;
+  border-left: 4px solid #667eea;
+  padding-left: 1rem;
+}
+
+.journey-test-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.journey-test-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.journey-test-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.journey-test-card.completed {
+  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  border-color: #48bb78;
+}
+
+.journey-test-card.in-progress {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #f59e0b;
+}
+
+.journey-test-card.featured {
+  background: white;
+  border-color: #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+.journey-test-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.journey-test-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.journey-test-info {
+  flex: 1;
+}
+
+.journey-test-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  color: #2d3748;
+}
+
+.journey-test-duration {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.test-status {
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.test-status.completed {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.test-status.in-progress {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.test-status.pending {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.journey-test-why {
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+.journey-test-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.journey-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Pre-test Checklist Styles */
+.checklist-items,
+.checklist-safety {
+  margin: 1.5rem 0;
+}
+
+.checklist-safety h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #c53030;
+  font-weight: 600;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.checklist-item:hover {
+  border-color: #667eea;
+  background: white;
+}
+
+.checklist-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.checklist-content {
+  flex: 1;
+}
+
+.checklist-text {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.checklist-detail {
+  font-size: 0.85rem;
+  color: #718096;
+  line-height: 1.4;
+}
+
+.checklist-checkbox {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .journey-test-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .journey-modal-card {
+    max-width: 100% !important;
+    margin: 0;
+    border-radius: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+
+  .journey-test-icon {
+    font-size: 2rem;
+  }
+
+  .journey-footer {
+    flex-direction: column;
+  }
+}

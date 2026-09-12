@@ -47,6 +47,8 @@
     <link rel="stylesheet" href="email-signup-styles.css">
     <link rel="stylesheet" href="lidar-styles.css">
     <link rel="stylesheet" href="spectit-enhanced.css">
+    <link rel="stylesheet" href="spectit-journey.css">
+    <link rel="stylesheet" href="spectit-results-summary.css">
     <script type="application/ld+json">
     {"@context":"https://schema.org","@type":"MedicalWebPage","name":"Spect-IT","description":"Clinical-grade vision screening platform","url":"https://www.spect-it.com/","medicalAudience":{"@type":"Patient"},"publisher":{"@type":"Organization","name":"Spect-IT","url":"https://www.spect-it.com/"}}
     </script>
@@ -104,10 +106,10 @@
             <div class="container">
                 <div class="premium-badge">Clinical-Grade Vision Screening</div>
                 <h1>Precision eye care, <span class="grad-word">refined</span></h1>
-                <p class="hero-subtitle">Clinical-grade vision screening from home. Ten tests — acuity, colour, astigmatism, contrast and more — with results you can share with an optometrist. Screening only, not a diagnosis.</p>
+                <p class="hero-subtitle">Clinical-grade vision screening from home. Ten tests — acuity, colour, astigmatism, contrast and more — with results you can share with an optometrist. <strong>Screening only, not a diagnosis or dispensable prescription.</strong></p>
                 <div class="hero-cta">
-                    <a href="#tests" class="btn btn-gradient">Begin your assessment</a>
-                    <a href="#how" class="btn btn-ghost">How it works</a>
+                    <button class="btn btn-gradient" onclick="SpectitJourney.openJourney()">Start guided journey</button>
+                    <a href="#tests" class="btn btn-ghost">Browse tests</a>
                 </div>
                 <div class="hero-features">
                     <div class="feature-item"><span class="feature-icon">◆</span><span>Clinically inspired</span></div>
@@ -130,24 +132,70 @@
             <div class="container">
                 <div class="section-heading reveal">
                     <span class="eyebrow">How it works</span>
-                    <h2>Your eye check in three simple steps</h2>
-                    <p>No appointment, no waiting room. Get meaningful insight into your vision in just a few minutes.</p>
+                    <h2>Clinical-grade screening in four steps</h2>
+                    <p>From calibration to results — here's how Spect-IT delivers accurate, repeatable vision screening.</p>
                 </div>
                 <div class="steps-grid">
                     <div class="step-card reveal">
                         <div class="step-num">1</div>
-                        <h3>Choose a test</h3>
-                        <p>Pick from ten professional assessments — from visual acuity and colour vision to astigmatism, contrast, macular health and depth perception.</p>
+                        <h3>Calibrate your screen</h3>
+                        <p>Use a credit card to calibrate screen size (pixels/mm) and set your viewing distance. This ensures optotypes appear at the correct physical size for clinical accuracy.</p>
                     </div>
                     <div class="step-card reveal d1">
                         <div class="step-num">2</div>
-                        <h3>Follow the guidance</h3>
-                        <p>Clear on-screen instructions and AI face-mapping guide you through each step for accurate, repeatable results.</p>
+                        <h3>Follow the guided journey</h3>
+                        <p>Our guided journey recommends test order and walks you through pre-test setup: distance, lighting, glasses on/off, occlusion. Progress is saved — resume anytime.</p>
                     </div>
                     <div class="step-card reveal d2">
                         <div class="step-num">3</div>
-                        <h3>Get instant results</h3>
-                        <p>See easy-to-read screening results, track changes over time, and find an eye-care specialist nearby if you need one.</p>
+                        <h3>Complete clinical tests</h3>
+                        <p>10 tests using validated protocols: Sloan optotypes for acuity (WHO 80% pass), Ishihara-style plates for color, Amsler grid for macular health, contrast sensitivity, stereo acuity, and more.</p>
+                    </div>
+                    <div class="step-card reveal d3">
+                        <div class="step-num">4</div>
+                        <h3>Get your summary & PDF</h3>
+                        <p>Receive a clinical results summary with logMAR scores, per-eye breakdown, and recommendations. Export as PDF to bring to your optometrist appointment.</p>
+                    </div>
+                </div>
+                
+                <div class="methodology-detail reveal" style="margin-top: 3rem; padding: 2rem; background: linear-gradient(135deg, #f7fafc, #edf2f7); border-radius: 16px; border: 2px solid #cbd5e0;">
+                    <h3 style="margin: 0 0 1.5rem 0; font-size: 1.3rem; color: #2d3748; text-align: center;">Clinical Methodology</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <div style="padding: 1.25rem; background: white; border-radius: 12px; border-left: 4px solid #667eea;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📏</div>
+                            <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1rem;">Visual Acuity</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">Standard Sloan optotypes (C, D, E, F, H, K, N, O, P, R, S, T, V, Z) at WHO-compliant visual angles. 6/6 (20/20) = 5 arc minutes. 80% pass threshold (4/5 letters). LogMAR scoring for clinical reporting.</p>
+                        </div>
+                        <div style="padding: 1.25rem; background: white; border-radius: 12px; border-left: 4px solid #10b981;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎨</div>
+                            <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1rem;">Color Vision</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">Ishihara-style pseudoisochromatic plates for protan, deutan, and tritan deficiencies. Control plates invalidate unreliable results. Type-specific scoring for precision.</p>
+                        </div>
+                        <div style="padding: 1.25rem; background: white; border-radius: 12px; border-left: 4px solid #f59e0b;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🌓</div>
+                            <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1rem;">Contrast Sensitivity</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">Pelli-Robson-inspired low-contrast optotypes assess vision in reduced lighting. Screens for cataracts, glaucoma, macular degeneration. LogCS scoring.</p>
+                        </div>
+                        <div style="padding: 1.25rem; background: white; border-radius: 12px; border-left: 4px solid #ef4444;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚫</div>
+                            <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1rem;">Astigmatism</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">Radial fan, cross-grid, and clock dial tests identify corneal irregularity and orientation. Results inform cylinder/axis estimates.</p>
+                        </div>
+                        <div style="padding: 1.25rem; background: white; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⊞</div>
+                            <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1rem;">Amsler Grid</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">Central 10° macular screening for metamorphopsia, scotomas, and distortion. Per-eye testing with fixation monitoring. Critical for early AMD detection.</p>
+                        </div>
+                        <div style="padding: 1.25rem; background: white; border-radius: 12px; border-left: 4px solid #06b6d4;">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</div>
+                            <h4 style="margin: 0 0 0.5rem 0; color: #2d3748; font-size: 1rem;">Refractive Screening</h4>
+                            <p style="margin: 0; font-size: 0.9rem; color: #4a5568; line-height: 1.5;">Combines acuity, duochrome, and astigmatism results to estimate sphere, cylinder, and axis. <strong>Screening only — not a dispensable prescription.</strong></p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; padding: 1.25rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+                        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6; color: #78350f;">
+                            <strong>Clinical Note:</strong> Spect-IT uses screen-based testing with calibrated physical sizing and validated protocols. All results are <strong>screening estimates for informational use</strong> — not medical diagnoses, clinical assessments, or dispensable prescriptions. For professional eye care and eyewear prescriptions, consult a licensed optometrist or ophthalmologist.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -159,7 +207,7 @@
                 <div class="section-heading reveal">
                     <span class="eyebrow">Vision tests</span>
                     <h2>Ten professional eye assessments</h2>
-                    <p class="section-subtitle" style="margin-bottom:0;">Comprehensive, clinically-inspired tools — free to try, right in your browser.</p>
+                    <p class="section-subtitle" style="margin-bottom:0;">Comprehensive, clinically-inspired screening tools — free to try, right in your browser. <strong>Screening only, not diagnosis or prescription.</strong></p>
                 </div>
                 
                 <div class="tests-grid">
@@ -167,7 +215,7 @@
                     <div class="test-card reveal" data-test="prescription">
                         <div class="test-icon">🔍</div>
                         <h3>Refractive Screening</h3>
-                        <p>Estimate sphere, cylinder &amp; axis from your acuity, duochrome &amp; astigmatism tests</p>
+                        <p>Estimate sphere, cylinder &amp; axis from your acuity, duochrome &amp; astigmatism tests. <strong>Not a dispensable prescription.</strong></p>
                         <div class="test-details">
                             <span class="test-duration">⏱️ 5-10 min</span>
                             <span class="test-accuracy">🎯 Screening estimate</span>
@@ -353,12 +401,12 @@
         <section id="results" class="results-section">
             <div class="container">
                 <h2>Test Results</h2>
-                <p class="section-subtitle" style="margin-bottom:1.5rem">Download or share your screening report for your optometrist.</p>
+                <p class="section-subtitle" style="margin-bottom:1.5rem">Download or share your screening report for your optometrist. <strong>Screening only — not a diagnosis or dispensable prescription.</strong></p>
                 <div id="premium-dashboard"></div>
                 <div id="results-container">
                     <div class="no-results">
                         <p>No screening results yet. Complete a test to see your results here.</p>
-                        <p class="results-disclaimer">Spect-IT results are a screening, not a diagnosis or a dispensable prescription.</p>
+                        <p class="results-disclaimer"><strong>Important:</strong> Spect-IT results are screening estimates for informational use — not a medical diagnosis, clinical assessment, or dispensable prescription. Always consult a licensed optometrist or ophthalmologist.</p>
                         <a href="#tests" class="btn btn-gradient">Start a screening test</a>
                     </div>
                 </div>
@@ -508,7 +556,7 @@
                 <div class="faq-list">
                     <details class="faq-item reveal" open>
                         <summary>Is Spect-IT a replacement for an eye exam?</summary>
-                        <div class="faq-body">No. Spect-IT is a powerful screening and self-monitoring tool for informational use. It is not a diagnosis or a final prescription. For clinical decisions, always consult a licensed eye-care professional — and we help you find one nearby.</div>
+                        <div class="faq-body">No. Spect-IT is a screening tool for self-monitoring and informational use — not a medical diagnosis, clinical assessment, or dispensable prescription. For professional eye care, eyewear prescriptions, and clinical decisions, always consult a licensed optometrist or ophthalmologist. We help you find one nearby.</div>
                     </details>
                     <details class="faq-item reveal">
                         <summary>How accurate are the tests?</summary>
@@ -549,7 +597,7 @@
     <footer>
         <div class="container">
             <p>Spect-IT © <span id="footer-year">2026</span> | Professional Eye Testing Platform</p>
-            <p class="disclaimer">For screening and informational use only. This is not a diagnosis or final prescription. Consult a licensed eye care professional.</p>
+            <p class="disclaimer">For screening and informational use only. Not a medical diagnosis, clinical assessment, or dispensable prescription. Consult a licensed optometrist or ophthalmologist for professional eye care.</p>
             <p class="disclaimer"><a href="privacy.html">Privacy Policy</a> | <a href="terms.html">Terms of Use</a></p>
         </div>
     </footer>
@@ -574,6 +622,8 @@
     <script src="spectit-calibration.js"></script>
     <script src="spectit-booking.js?v=6.8"></script>
     <script src="spectit-export.js"></script>
+    <script src="spectit-journey.js"></script>
+    <script src="spectit-results-summary.js"></script>
     <script src="spectit-enhanced.js?v=6.8"></script>
     
     <!-- Initialize app with error handling -->
