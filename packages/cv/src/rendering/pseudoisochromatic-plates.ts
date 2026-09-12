@@ -17,7 +17,7 @@ export interface PlateConfig {
   id: string
   type: 'control' | 'protan' | 'deutan'
   digit: string // The number visible to normal viewers
-  digitForDeficient?: string // Alternative number/path visible to deficient viewers (or null)
+  digitForDeficient?: string | null // Alternative number/path visible to deficient viewers (or null)
   backgroundHues: number[] // HSL hue values for background dots
   digitHues: number[] // HSL hue values for digit dots
   saturation: number // Saturation for all dots (0-100)
@@ -143,7 +143,7 @@ export interface ColorDot {
  * Digit path data - defines which dots belong to the digit
  * Using a simple grid-based system for digit rendering
  */
-const DIGIT_PATHS: Record<string, boolean[][]> = {
+const DIGIT_PATHS: Record<string, number[][]> = {
   '0': [
     [0,1,1,1,0],
     [1,0,0,0,1],
@@ -210,7 +210,7 @@ const DIGIT_PATHS: Record<string, boolean[][]> = {
 }
 
 // Composite digits (rendered side by side)
-function getDigitPath(digit: string): boolean[][] {
+function getDigitPath(digit: string): number[][] {
   if (digit.length === 1 && digit in DIGIT_PATHS) {
     return DIGIT_PATHS[digit]
   }
@@ -220,12 +220,12 @@ function getDigitPath(digit: string): boolean[][] {
     const d1 = DIGIT_PATHS[digit[0]]
     const d2 = DIGIT_PATHS[digit[1]]
     if (d1 && d2) {
-      return d1.map((row, i) => [...row, false, ...d2[i]]) // Add gap between digits
+      return d1.map((row, i) => [...row, 0, ...d2[i]]) // Add gap between digits
     }
   }
   
   // Default: empty path
-  return Array(7).fill(null).map(() => Array(5).fill(false))
+  return Array(7).fill(null).map(() => Array(5).fill(0))
 }
 
 /**

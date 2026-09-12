@@ -100,7 +100,7 @@ export class EyeLandmarkDetector {
       return {
         leftEye,
         rightEye,
-        confidence: face.box ? face.box.probability[0] : 0.9
+        confidence: 0.9
       }
     } catch (error) {
       console.error('Eye landmark detection error:', error)

@@ -320,7 +320,7 @@ export class ScreeningEngine {
     const model = await this.loadModel(config);
 
     // Prepare input tensor
-    const inputTensor = tf.tensor2d([Array.from(features)], config.inputShape);
+    const inputTensor = tf.tensor2d([Array.from(features)], config.inputShape as [number, number]);
 
     try {
       // Run prediction
@@ -336,6 +336,7 @@ export class ScreeningEngine {
       let cylinder = 0;
       let axis = 0;
       let confidence = 1.0;
+      let outputValidation: ReturnType<typeof validateRefractiveOutput> | undefined;
 
       if (output && !Array.isArray(output)) {
         const data = await (output as tf.Tensor).data();
@@ -356,7 +357,7 @@ export class ScreeningEngine {
         confidence = hasValidValues ? 0.95 : 0.5;
 
         // Validate output with structured validation
-        const outputValidation = validateRefractiveOutput(sphere, cylinder, axis, confidence);
+        outputValidation = validateRefractiveOutput(sphere, cylinder, axis, confidence);
         
         if (outputValidation.warnings.length > 0) {
           this.log('output_validation_warning', {
@@ -476,7 +477,7 @@ export class ScreeningEngine {
     const model = await this.loadModel(config);
 
     // Prepare input tensor
-    const inputTensor = tf.tensor2d([Array.from(features)], config.inputShape);
+    const inputTensor = tf.tensor2d([Array.from(features)], config.inputShape as [number, number]);
 
     try {
       // Run prediction
@@ -490,6 +491,7 @@ export class ScreeningEngine {
       // Decode output
       let distanceMeters = 0;
       let confidence = 1.0;
+      let outputValidation: ReturnType<typeof validateCalibrationOutput> | undefined;
 
       if (output && !Array.isArray(output)) {
         const data = await (output as tf.Tensor).data();
@@ -506,7 +508,7 @@ export class ScreeningEngine {
         }
 
         // Validate output with structured validation
-        const outputValidation = validateCalibrationOutput(distanceMeters, confidence);
+        outputValidation = validateCalibrationOutput(distanceMeters, confidence);
         
         if (outputValidation.warnings.length > 0) {
           this.log('output_validation_warning', {
