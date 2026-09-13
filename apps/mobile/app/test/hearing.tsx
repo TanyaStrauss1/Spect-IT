@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator, Slider } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native'
+import Slider from '@react-native-community/slider'
 import { router } from 'expo-router'
 import { Audio } from 'expo-av'
 import { useAuth } from '../../lib/auth/auth-context'
@@ -412,7 +413,7 @@ export default function HearingTestScreen() {
             </View>
 
             <Text style={styles.checkNote}>
-              Note: Mobile audio has limited stereo separation. Use headphones for best results.
+              Headphones are required for reliable left/right ear separation.
             </Text>
           </View>
 
