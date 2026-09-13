@@ -40,6 +40,41 @@ export function ParticipantProvider({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
 
+  const ensureSelfParticipant = useCallback(async () => {
+    if (!user) return null
+
+    try {
+      const { data: existing } = await supabase
+        .from('participants')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_self', true)
+        .single()
+
+      if (existing) return existing
+
+      const { data: newParticipant, error } = await supabase
+        .from('participants')
+        .insert({
+          user_id: user.id,
+          display_name: 'Me',
+          role: 'self',
+          is_self: true,
+          archived: false,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      console.log('Created default self participant for new user')
+      return newParticipant
+    } catch (error) {
+      console.error('Error ensuring self participant:', error)
+      return null
+    }
+  }, [user])
+
   const loadParticipants = useCallback(async () => {
     if (!user) {
       setParticipants([])
@@ -59,19 +94,26 @@ export function ParticipantProvider({ children }: { children: React.ReactNode })
 
       if (error) throw error
 
-      setParticipants(data || [])
+      let participantsList = data || []
 
-      // Restore active participant from localStorage or default to first/self
+      if (participantsList.length === 0) {
+        const selfParticipant = await ensureSelfParticipant()
+        if (selfParticipant) {
+          participantsList = [selfParticipant]
+        }
+      }
+
+      setParticipants(participantsList)
+
       const savedParticipantId = localStorage.getItem(ACTIVE_PARTICIPANT_KEY)
       let active = null
 
-      if (savedParticipantId && data) {
-        active = data.find(p => p.id === savedParticipantId) || null
+      if (savedParticipantId && participantsList.length > 0) {
+        active = participantsList.find(p => p.id === savedParticipantId) || null
       }
 
-      if (!active && data && data.length > 0) {
-        // Default to "self" participant or first one
-        active = data.find(p => p.is_self) || data[0]
+      if (!active && participantsList.length > 0) {
+        active = participantsList.find(p => p.is_self) || participantsList[0]
       }
 
       setActiveParticipantState(active)
@@ -80,7 +122,7 @@ export function ParticipantProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false)
     }
-  }, [user])
+  }, [user, ensureSelfParticipant])
 
   useEffect(() => {
     loadParticipants()
