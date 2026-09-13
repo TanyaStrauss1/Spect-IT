@@ -79,6 +79,13 @@ export default function HomeScreen() {
         >
           <Text style={styles.primaryButtonText}>🔬 Prescription Test</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.primaryButton, { backgroundColor: '#10B981' }]}
+          onPress={() => router.push('/test/hearing')}
+        >
+          <Text style={styles.primaryButtonText}>🎧 Hearing Screening</Text>
+        </TouchableOpacity>
         
         <TouchableOpacity
           style={styles.secondaryButton}
