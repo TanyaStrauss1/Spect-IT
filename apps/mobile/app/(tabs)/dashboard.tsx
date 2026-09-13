@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase'
 import { useJourney } from '../../lib/journey/useJourney'
 import { TrendsSection } from '../../components/TrendsSection'
 import { OnboardingModal, useOnboarding } from '../../components/OnboardingModal'
+import { ParticipantSwitcher } from '../../components/participants/ParticipantSwitcher'
 
 interface TestResult {
   id: number
@@ -130,8 +131,13 @@ export default function DashboardScreen() {
       {results.length === 0 ? (
         <ScrollView style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.title}>Your Dashboard</Text>
-            <Text style={styles.subtitle}>Track your vision screening progress</Text>
+            <View style={styles.headerTop}>
+              <View style={styles.headerTitles}>
+                <Text style={styles.title}>Your Dashboard</Text>
+                <Text style={styles.subtitle}>Track your vision screening progress</Text>
+              </View>
+              <ParticipantSwitcher />
+            </View>
           </View>
 
           {/* Calibration Status */}
@@ -156,23 +162,58 @@ export default function DashboardScreen() {
             )}
           </View>
 
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>👁️</Text>
-            <Text style={styles.emptyTitle}>No test results yet</Text>
-            <Text style={styles.emptyText}>Take your first vision screening to get started</Text>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => router.push('/test/acuity')}
-            >
-              <Text style={styles.primaryButtonText}>Start Visual Acuity Test</Text>
-            </TouchableOpacity>
-          </View>
+          {!activeParticipant && participants.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>👥</Text>
+              <Text style={styles.emptyTitle}>Add a Participant First</Text>
+              <Text style={styles.emptyText}>
+                Create a participant profile to start tracking vision screening results
+              </Text>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => router.push('/participants' as any)}
+              >
+                <Text style={styles.primaryButtonText}>Add Participant</Text>
+              </TouchableOpacity>
+            </View>
+          ) : !activeParticipant ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>👤</Text>
+              <Text style={styles.emptyTitle}>Select a Participant</Text>
+              <Text style={styles.emptyText}>
+                Choose who will be taking the vision screening tests
+              </Text>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => router.push('/participants' as any)}
+              >
+                <Text style={styles.primaryButtonText}>Manage Participants</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>👁️</Text>
+              <Text style={styles.emptyTitle}>No test results yet</Text>
+              <Text style={styles.emptyText}>Take your first vision screening to get started</Text>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => router.push('/test/acuity')}
+              >
+                <Text style={styles.primaryButtonText}>Start Visual Acuity Test</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       ) : (
         <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Your Dashboard</Text>
-        <Text style={styles.subtitle}>Track your vision screening progress</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerTitles}>
+            <Text style={styles.title}>Your Dashboard</Text>
+            <Text style={styles.subtitle}>Track your vision screening progress</Text>
+          </View>
+          <ParticipantSwitcher />
+        </View>
       </View>
 
       {/* Calibration Status */}
@@ -351,6 +392,15 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 60,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  headerTitles: {
+    flex: 1,
   },
   title: {
     fontSize: 32,
