@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useParticipants } from '@/lib/participants/participant-context'
 import { supabase } from '@/lib/supabase'
 import { useJourney } from '@/lib/journey/useJourney'
 import EnhancedClockDial from '@/components/EnhancedClockDial'
@@ -18,6 +19,7 @@ type Eye = 'right' | 'left'
 export default function AstigmatismTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
   const { markTestComplete } = useJourney()
   const [test] = useState(() => createAstigmatismTest())
   const [step, setStep] = useState<'intro' | 'test' | 'result'>('intro')
@@ -33,7 +35,12 @@ export default function AstigmatismTestPage() {
       router.push('/auth/signin')
       return
     }
-  }, [user, authLoading, router])
+    if (participants.length > 0 && !activeParticipant) {
+      alert('Please select a participant before starting the test')
+      router.push('/dashboard/participants')
+      return
+    }
+  }, [user, authLoading, router, participants, activeParticipant])
 
   const togglePosition = (position: ClockPosition) => {
     if (selectedPositions.includes(position)) {
@@ -66,12 +73,18 @@ export default function AstigmatismTestPage() {
     if (user) {
       setSaving(true)
       try {
-        await supabase.from('test_results').insert({
+        const testResultData: any = {
           user_id: user.id,
           test_type: TEST_TYPE_ID.ASTIGMATISM,
           test_data: result,
           results: { rightEye: right, leftEye: left, methodology: result.methodology },
-        })
+        }
+        
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
+        await supabase.from('test_results').insert(testResultData)
       } catch (error) {
         console.error('Error saving:', error)
       } finally {

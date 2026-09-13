@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
+import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
 import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
@@ -23,6 +24,7 @@ import {
 
 export default function AcuityTestScreen() {
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
   const [needsCalibration, setNeedsCalibration] = useState(true)
   const [calibration, setCalibration] = useState<CalibrationData | null>(null)
   const [calibrator, setCalibrator] = useState<ScreenCalibrator | null>(null)
@@ -47,6 +49,12 @@ export default function AcuityTestScreen() {
       return
     }
     
+    if (participants.length > 0 && !activeParticipant) {
+      Alert.alert('Select Participant', 'Please select a participant before starting the test')
+      router.replace('/')
+      return
+    }
+    
     // Check for existing calibration
     const cal = new ScreenCalibrator()
     setCalibrator(cal)
@@ -56,7 +64,7 @@ export default function AcuityTestScreen() {
       setCalibration(existingCal)
       setNeedsCalibration(false)
     }
-  }, [user, authLoading])
+  }, [user, authLoading, participants, activeParticipant])
   
   const handleCalibrationComplete = (cal: CalibrationData) => {
     setCalibration(cal)
@@ -145,19 +153,25 @@ export default function AcuityTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } =         await supabase
+        const testResultData: any = {
+          user_id: user.id,
+          test_type: TEST_TYPE_ID.VISUAL_ACUITY,
+          test_data: result,
+          results: {
+            rightEye, 
+            leftEye, 
+            methodology: result.methodology,
+            calibration: calibration
+          },
+        }
+
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
+        const { error } = await supabase
           .from('test_results')
-          .insert({
-            user_id: user.id,
-            test_type: TEST_TYPE_ID.VISUAL_ACUITY,
-            test_data: result,
-            results: {
-              rightEye, 
-              leftEye, 
-              methodology: result.methodology,
-              calibration: calibration
-            },
-          })
+          .insert(testResultData)
 
         if (error) {
           console.error('Error saving test result:', error)

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator
 import { router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../../lib/auth/auth-context'
+import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { useJourney } from '../../lib/journey/useJourney'
 import { TrendsSection } from '../../components/TrendsSection'
@@ -25,6 +26,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [calibrationStatus, setCalibrationStatus] = useState<'calibrated' | 'skipped' | 'none'>('none')
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants, loading: participantsLoading } = useParticipants()
   const { progress, calculateProgress, getNextRecommendedTest } = useJourney()
   const { isOnboardingOpen, markOnboardingComplete, setIsOnboardingOpen } = useOnboarding()
 
@@ -35,19 +37,34 @@ export default function DashboardScreen() {
       router.replace('/auth/signin')
       return
     }
-    loadResults()
+    
+    if (!participantsLoading) {
+      loadResults()
+    }
     checkCalibration()
-  }, [user, authLoading])
+  }, [user, authLoading, participantsLoading, activeParticipant])
 
   const loadResults = async () => {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('test_results')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+
+      // Filter by active participant if one is selected
+      if (activeParticipant) {
+        query = query.eq('participant_id', activeParticipant.id)
+      } else if (participants.length > 0) {
+        // If there are participants but none is active, show results for all participants
+        const participantIds = participants.map(p => p.id)
+        query = query.in('participant_id', participantIds)
+      } else {
+        // No participants, show user's direct results (legacy)
+        query = query.eq('user_id', user.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setResults(data || [])

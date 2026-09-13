@@ -10,6 +10,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useParticipants } from '@/lib/participants/participant-context'
 import { supabase } from '@/lib/supabase'
 import { useJourney } from '@/lib/journey/useJourney'
 import PseudoisochromaticPlate from '@/components/PseudoisochromaticPlate'
@@ -25,6 +26,7 @@ import {
 export default function ColorVisionTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
   const { markTestComplete } = useJourney()
   const [test] = useState(() => createColorVisionTest({ customPlates: PSEUDOISOCHROMATIC_PLATES }))
   const [currentPlateIndex, setCurrentPlateIndex] = useState(-1) // -1 = instructions
@@ -43,8 +45,14 @@ export default function ColorVisionTestPage() {
     if (authLoading) return
     if (!user) {
       router.push('/auth/signin')
+      return
     }
-  }, [user, authLoading, router])
+    if (participants.length > 0 && !activeParticipant) {
+      alert('Please select a participant before starting the test')
+      router.push('/dashboard/participants')
+      return
+    }
+  }, [user, authLoading, router, participants, activeParticipant])
 
   if (authLoading) {
     return (
@@ -86,18 +94,25 @@ export default function ColorVisionTestPage() {
     if (user) {
       setSaving(true)
       try {
+        const testResultData: any = {
+          user_id: user.id,
+          test_type: TEST_TYPE_ID.COLOR_VISION,
+          test_data: testResult,
+          results: {
+            classification: testResult.classification,
+            protanScore: testResult.protanScore,
+            deutanScore: testResult.deutanScore,
+            methodology: testResult.methodology,
+          },
+        }
+
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
         const { error } = await supabase
           .from('test_results')
-          .insert({
-            user_id: user.id,
-            test_type: TEST_TYPE_ID.COLOR_VISION,
-            test_data: testResult,
-            results: {
-              classification: testResult.classification,
-              protanScore: testResult.protanScore,
-              deutanScore: testResult.deutanScore,
-              methodology: testResult.methodology,
-            },
+          .insert(testResultData)
           })
 
         if (error) console.error('Error saving test result:', error)

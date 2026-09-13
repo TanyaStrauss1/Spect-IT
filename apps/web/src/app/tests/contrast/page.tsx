@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useParticipants } from '@/lib/participants/participant-context'
 import { supabase } from '@/lib/supabase'
 import { useJourney } from '@/lib/journey/useJourney'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
@@ -25,6 +26,7 @@ import {
 export default function ContrastTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
   const { markTestComplete } = useJourney()
   const [test] = useState(() => createContrastSensitivityTest())
@@ -59,8 +61,13 @@ export default function ContrastTestPage() {
       router.push('/auth/signin')
       return
     }
+    if (participants.length > 0 && !activeParticipant) {
+      alert('Please select a participant before starting the test')
+      router.push('/dashboard/participants')
+      return
+    }
     ensureCalibration(() => {})
-  }, [user, authLoading])
+  }, [user, authLoading, participants, activeParticipant, ensureCalibration])
 
   const handleLetterSubmit = () => {
     if (!currentLevel || !userInput.trim()) return
@@ -99,12 +106,18 @@ export default function ContrastTestPage() {
     if (user) {
       setSaving(true)
       try {
-        await supabase.from('test_results').insert({
+        const testResultData: any = {
           user_id: user.id,
           test_type: TEST_TYPE_ID.CONTRAST_SENSITIVITY,
           test_data: testResult,
           results: { finalLogCS: testResult.finalLogCS, category: testResult.category },
-        })
+        }
+        
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
+        await supabase.from('test_results').insert(testResultData)
       } catch (error) {
         console.error('Error saving:', error)
       } finally {

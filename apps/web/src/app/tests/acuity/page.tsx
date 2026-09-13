@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useParticipants } from '@/lib/participants/participant-context'
 import { supabase } from '@/lib/supabase'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
 import SloanOptotype from '@/components/SloanOptotype'
@@ -31,6 +32,7 @@ type Eye = 'right' | 'left'
 export default function AcuityTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
   const { markTestComplete } = useJourney()
   
@@ -54,7 +56,14 @@ export default function AcuityTestPage() {
       router.push('/auth/signin')
       return
     }
-  }, [user, authLoading, router])
+
+    // Check if there's an active participant
+    if (participants.length > 0 && !activeParticipant) {
+      alert('Please select a participant before starting the test')
+      router.push('/dashboard/participants')
+      return
+    }
+  }, [user, authLoading, router, participants, activeParticipant])
 
   const startTest = () => {
     const handleReady = () => {
@@ -162,18 +171,25 @@ export default function AcuityTestPage() {
     if (user) {
       setSaving(true)
       try {
+        const testResultData: any = {
+          user_id: user.id,
+          test_type: TEST_TYPE_ID.VISUAL_ACUITY,
+          test_data: result,
+          results: {
+            rightEye: rightEye,
+            leftEye: leftEye,
+            methodology: result.methodology,
+          },
+        }
+
+        // Add participant_id if there's an active participant
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
         const { error } = await supabase
           .from('test_results')
-          .insert({
-            user_id: user.id,
-            test_type: TEST_TYPE_ID.VISUAL_ACUITY,
-            test_data: result,
-            results: {
-              rightEye: rightEye,
-              leftEye: leftEye,
-              methodology: result.methodology,
-            },
-          })
+          .insert(testResultData)
 
         if (error) {
           console.error('Error saving test result:', error)

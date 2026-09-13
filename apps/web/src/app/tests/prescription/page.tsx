@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useParticipants } from '@/lib/participants/participant-context'
 import { supabase } from '@/lib/supabase'
 import { useJourney } from '@/lib/journey/useJourney'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
@@ -28,6 +29,7 @@ type TestPhase = 'intro' | 'uncorrected' | 'pinhole' | 'result'
 export default function PrescriptionTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
   const { markTestComplete } = useJourney()
   const [test] = useState(() => createPrescriptionScreeningTest())
@@ -57,8 +59,13 @@ export default function PrescriptionTestPage() {
       router.push('/auth/signin')
       return
     }
+    if (participants.length > 0 && !activeParticipant) {
+      alert('Please select a participant before starting the test')
+      router.push('/dashboard/participants')
+      return
+    }
     ensureCalibration(() => {})
-  }, [user, authLoading, router])
+  }, [user, authLoading, router, participants, activeParticipant, ensureCalibration])
   
   // Calculate stroke width for current line
   const strokeWidthPx = currentLine 
@@ -148,12 +155,18 @@ export default function PrescriptionTestPage() {
     if (user) {
       setSaving(true)
       try {
-        await supabase.from('test_results').insert({
+        const testResultData: any = {
           user_id: user.id,
           test_type: TEST_TYPE_ID.PRESCRIPTION,
           test_data: result,
           results: { rightEye: right, leftEye: left, recommendation: result.recommendation },
-        })
+        }
+        
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
+        await supabase.from('test_results').insert(testResultData)
       } catch (error) {
         console.error('Error saving:', error)
       } finally {

@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useParticipants } from '@/lib/participants/participant-context'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
@@ -33,6 +34,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants, loading: participantsLoading } = useParticipants()
   const { calibrator, isCalibrated, isModalOpen, setIsModalOpen } = useCalibration()
   const { isOnboardingOpen, markOnboardingComplete, setIsOnboardingOpen } = useOnboarding()
 
@@ -43,19 +45,35 @@ export default function DashboardPage() {
       router.push('/auth/signin')
       return
     }
-    loadResults()
-  }, [user, authLoading, router])
+    
+    // Only load results if participants are loaded
+    if (!participantsLoading) {
+      loadResults()
+    }
+  }, [user, authLoading, router, participantsLoading, activeParticipant])
 
   const loadResults = async () => {
     if (!user) return
     
     setError(null)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('test_results')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+
+      // Filter by active participant if one is selected
+      if (activeParticipant) {
+        query = query.eq('participant_id', activeParticipant.id)
+      } else if (participants.length > 0) {
+        // If there are participants but none is active, show results for all participants
+        const participantIds = participants.map(p => p.id)
+        query = query.in('participant_id', participantIds)
+      } else {
+        // No participants, show user's direct results (legacy)
+        query = query.eq('user_id', user.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setResults(data || [])
@@ -133,9 +151,16 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-8">
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Your Dashboard</h1>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Your Dashboard
+                {activeParticipant && !activeParticipant.is_self && (
+                  <span className="text-2xl font-normal text-indigo-600 ml-3">
+                    ({activeParticipant.display_name})
+                  </span>
+                )}
+              </h1>
               <p className="text-gray-600">View your vision screening history and track your progress</p>
             </div>
             
@@ -152,8 +177,16 @@ export default function DashboardPage() {
         {results.length === 0 ? (
           <div className="bg-white rounded-lg shadow-xl p-12 text-center">
             <div className="text-6xl mb-4">👁️</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No test results yet</h2>
-            <p className="text-gray-600 mb-2">Take your first vision screening to get started</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {activeParticipant && !activeParticipant.is_self
+                ? `No test results for ${activeParticipant.display_name} yet`
+                : 'No test results yet'}
+            </h2>
+            <p className="text-gray-600 mb-2">
+              {activeParticipant && !activeParticipant.is_self
+                ? `Start a vision screening test for ${activeParticipant.display_name}`
+                : 'Take your first vision screening to get started'}
+            </p>
             <p className="text-sm text-gray-500 mb-6">
               Your results, trends, and clinical summary will appear here after completing tests
             </p>
@@ -170,6 +203,14 @@ export default function DashboardPage() {
               >
                 Browse All Tests
               </Link>
+              {participants.length > 0 && (
+                <Link
+                  href="/dashboard/participants"
+                  className="inline-block border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                >
+                  Manage Participants
+                </Link>
+              )}
             </div>
           </div>
         ) : (
@@ -180,7 +221,11 @@ export default function DashboardPage() {
             <div className="bg-white rounded-lg shadow-xl p-6 mb-8">
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <p className="text-gray-600 text-sm">Total Tests Completed</p>
+                  <p className="text-gray-600 text-sm">
+                    {activeParticipant && !activeParticipant.is_self
+                      ? `Tests for ${activeParticipant.display_name}`
+                      : 'Total Tests Completed'}
+                  </p>
                   <p className="text-3xl font-bold text-indigo-600">{results.length}</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -190,6 +235,14 @@ export default function DashboardPage() {
               >
                 📊 Clinical Summary
               </Link>
+              {participants.length > 0 && (
+                <Link
+                  href="/dashboard/participants"
+                  className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-colors text-sm"
+                >
+                  👥 Manage Participants
+                </Link>
+              )}
               <Link
                 href="/tests/acuity"
                 className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
