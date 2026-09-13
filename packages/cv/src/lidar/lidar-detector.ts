@@ -9,6 +9,14 @@
  * Fallback to camera depth estimation when LiDAR unavailable
  */
 
+// Extend MediaTrackCapabilities for experimental depth features
+declare global {
+  interface MediaTrackCapabilities {
+    depthNear?: number;
+    depthFar?: number;
+  }
+}
+
 export interface LiDARConfig {
   /** Minimum distance in meters */
   minDistance: number
@@ -157,11 +165,10 @@ export class LiDARDetector {
         }
 
         const blob = await imageCapture.takePhoto(photoSettings)
-        // Process depth data from blob
-        // Note: Actual depth extraction requires additional processing
+        const distance = await this.estimateDistanceFromImage(blob);
         
         const reading: DepthReading = {
-          distance: this.estimateDistanceFromImage(blob),
+          distance,
           confidence: 0.8,
           timestamp: Date.now(),
           deviceType: 'truedepth'

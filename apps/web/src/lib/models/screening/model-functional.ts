@@ -24,6 +24,7 @@ export interface ScreeningOutputs {
 
 let model: tf.LayersModel | null = null;
 let isInitialised = false;
+let currentBackend: ScreeningBackend = "webgl";
 
 /**
  * Initialise TensorFlow backend once (call early in app, e.g. on app load).
@@ -46,6 +47,7 @@ export async function initScreeningBackend(
       await tf.setBackend(b);
       await tf.ready();
       console.info(`[screening] Using tfjs backend: ${b}`);
+      currentBackend = b;
       isInitialised = true;
       return;
     } catch (err) {
