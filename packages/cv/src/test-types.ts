@@ -16,6 +16,7 @@ export const TEST_TYPE_ID = {
   ASTIGMATISM: 'astigmatism',
   VISUAL_FIELD: 'visual-field',
   PRESCRIPTION: 'prescription',
+  HEARING: 'hearing',
 } as const
 
 export type TestTypeId = typeof TEST_TYPE_ID[keyof typeof TEST_TYPE_ID]
@@ -30,6 +31,7 @@ export const TEST_TYPE_DISPLAY: Record<TestTypeId, string> = {
   [TEST_TYPE_ID.ASTIGMATISM]: 'Astigmatism',
   [TEST_TYPE_ID.VISUAL_FIELD]: 'Visual Field',
   [TEST_TYPE_ID.PRESCRIPTION]: 'Prescription Screening',
+  [TEST_TYPE_ID.HEARING]: 'Hearing Screening',
 }
 
 /**
@@ -42,6 +44,7 @@ export const TEST_TYPE_CLINICAL: Record<TestTypeId, string> = {
   [TEST_TYPE_ID.ASTIGMATISM]: 'Astigmatism (Clinical)',
   [TEST_TYPE_ID.VISUAL_FIELD]: 'Visual Field (Clinical)',
   [TEST_TYPE_ID.PRESCRIPTION]: 'Prescription Screening (Clinical)',
+  [TEST_TYPE_ID.HEARING]: 'Hearing Screening (Clinical)',
 }
 
 /**

@@ -28,6 +28,15 @@ const tests = [
     available: true
   },
   {
+    id: 'hearing',
+    title: 'Hearing Screening',
+    description: 'Basic pure-tone hearing screening at key frequencies with stereo testing',
+    icon: '🎧',
+    duration: '3-5 min',
+    route: '/tests/hearing',
+    available: true
+  },
+  {
     id: 'astigmatism',
     title: 'Astigmatism',
     description: 'Detect astigmatism using radial line patterns',
@@ -72,10 +81,10 @@ export function TestGridSection() {
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Comprehensive Vision Tests
+            Comprehensive Screening Tests
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Six professional-grade tests powered by AI and computer vision
+            Vision and hearing screening tests for families and teachers
           </p>
         </div>
 
@@ -114,7 +123,7 @@ export function TestGridSection() {
           <div className="text-center">
             <div className="text-4xl mb-3">📊</div>
             <h4 className="font-semibold mb-2">Comprehensive</h4>
-            <p className="text-sm text-gray-600">6 different vision tests</p>
+            <p className="text-sm text-gray-600">Vision and hearing screening tests</p>
           </div>
           <div className="text-center">
             <div className="text-4xl mb-3">📱</div>

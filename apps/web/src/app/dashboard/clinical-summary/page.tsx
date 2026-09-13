@@ -369,7 +369,7 @@ export default function ClinicalSummaryPage() {
         )}
 
         {/* Other Tests Summary */}
-        {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField) && (
+        {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing) && (
           <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">🎨 Other Screening Tests</h2>
             
@@ -454,6 +454,25 @@ export default function ClinicalSummaryPage() {
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.visualField.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {summary.hearing && (
+                <div className="p-4 rounded-lg border-2 border-teal-200 bg-teal-50 hover:border-teal-300 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">🎧</div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900">Hearing Screening</div>
+                      <div className="text-sm text-teal-700 mt-1 font-semibold">
+                        {summary.hearing.test_data?.overallStatus || 'REFER'}: 
+                        {' '}L: {summary.hearing.test_data?.leftEarPassCount || 0}/{summary.hearing.test_data?.totalFrequencies || 4} • 
+                        R: {summary.hearing.test_data?.rightEarPassCount || 0}/{summary.hearing.test_data?.totalFrequencies || 4}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
