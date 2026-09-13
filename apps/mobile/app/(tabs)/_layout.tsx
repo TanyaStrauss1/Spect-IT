@@ -18,6 +18,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="participants"
+        options={{
+          title: 'Participants',
+          tabBarIcon: () => '👥',
+        }}
+      />
+      <Tabs.Screen
         name="clinical-summary"
         options={{
           title: 'Clinical Summary',
