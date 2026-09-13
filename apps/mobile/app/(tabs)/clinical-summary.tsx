@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Share } from 'react-native'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
+import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { generateClinicalSummary, type TestResult, type ClinicalSummary } from '../../lib/results/clinical-summary'
 import { TrendsSection } from '../../components/TrendsSection'
@@ -16,6 +17,7 @@ export default function ClinicalSummaryScreen() {
   const [loading, setLoading] = useState(true)
   const [summary, setSummary] = useState<ClinicalSummary | null>(null)
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants, loading: participantsLoading } = useParticipants()
 
   useEffect(() => {
     if (authLoading) return
@@ -24,18 +26,33 @@ export default function ClinicalSummaryScreen() {
       router.replace('/auth/signin')
       return
     }
-    loadResults()
-  }, [user, authLoading])
+
+    if (!participantsLoading) {
+      loadResults()
+    }
+  }, [user, authLoading, participantsLoading, activeParticipant])
 
   const loadResults = async () => {
     if (!user) return
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('test_results')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+
+      // Filter by active participant if one is selected
+      if (activeParticipant) {
+        query = query.eq('participant_id', activeParticipant.id)
+      } else if (participants.length > 0) {
+        // If there are participants but none is active, show results for all participants
+        const participantIds = participants.map(p => p.id)
+        query = query.in('participant_id', participantIds)
+      } else {
+        // No participants, show user's direct results (legacy)
+        query = query.eq('user_id', user.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setResults(data || [])
@@ -139,8 +156,16 @@ export default function ClinicalSummaryScreen() {
 
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>📊</Text>
-          <Text style={styles.emptyTitle}>No Results Yet</Text>
-          <Text style={styles.emptyText}>Complete some vision tests to see your clinical summary</Text>
+          <Text style={styles.emptyTitle}>
+            {activeParticipant && !activeParticipant.is_self
+              ? `No results for ${activeParticipant.display_name} yet`
+              : 'No Results Yet'}
+          </Text>
+          <Text style={styles.emptyText}>
+            {activeParticipant && !activeParticipant.is_self
+              ? `Complete some vision tests for ${activeParticipant.display_name} to see their clinical summary`
+              : 'Complete some vision tests to see your clinical summary'}
+          </Text>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push('/test/acuity')}
@@ -156,8 +181,20 @@ export default function ClinicalSummaryScreen() {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Clinical Screening Summary</Text>
+        <Text style={styles.title}>
+          Clinical Screening Summary
+          {activeParticipant && !activeParticipant.is_self && (
+            <Text style={styles.participantName}> ({activeParticipant.display_name})</Text>
+          )}
+        </Text>
         <Text style={styles.subtitle}>Generated {new Date().toLocaleDateString()}</Text>
+        {activeParticipant && (
+          <Text style={styles.participantInfo}>
+            {activeParticipant.display_name}
+            {activeParticipant.date_of_birth && ` • DOB: ${new Date(activeParticipant.date_of_birth).toLocaleDateString()}`}
+            {activeParticipant.age && ` • Age: ${activeParticipant.age}`}
+          </Text>
+        )}
       </View>
 
       {/* Disclaimer */}
@@ -426,6 +463,15 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  participantName: {
+    fontSize: 20,
+    color: '#4F46E5',
+  },
+  participantInfo: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
   },
   disclaimer: {
     backgroundColor: '#FEF2F2',

@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth/auth-context'
 import { generateClinicalSummary, type TestResult, type ClinicalSummary } from '@/lib/results/clinical-summary'
+import { useParticipants } from '@/lib/participants/participant-context'
 import { Button } from '@/components/ui'
 import Link from 'next/link'
 
@@ -20,6 +21,7 @@ export default function ClinicalSummaryPage() {
   const [summary, setSummary] = useState<ClinicalSummary | null>(null)
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants, loading: participantsLoading } = useParticipants()
 
   useEffect(() => {
     if (authLoading) return
@@ -28,19 +30,34 @@ export default function ClinicalSummaryPage() {
       router.push('/auth/signin')
       return
     }
-    loadResults()
-  }, [user, authLoading, router])
+
+    if (!participantsLoading) {
+      loadResults()
+    }
+  }, [user, authLoading, router, participantsLoading, activeParticipant])
 
   const loadResults = async () => {
     if (!user) return
     
     setError(null)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('test_results')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+
+      // Filter by active participant if one is selected
+      if (activeParticipant) {
+        query = query.eq('participant_id', activeParticipant.id)
+      } else if (participants.length > 0) {
+        // If there are participants but none is active, show results for all participants
+        const participantIds = participants.map(p => p.id)
+        query = query.in('participant_id', participantIds)
+      } else {
+        // No participants, show user's direct results (legacy)
+        query = query.eq('user_id', user.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) throw error
       setResults(data || [])
@@ -121,8 +138,16 @@ export default function ClinicalSummaryPage() {
         <div className="container mx-auto max-w-4xl">
           <div className="bg-white rounded-lg shadow-xl p-12 text-center">
             <div className="text-6xl mb-4">📊</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Results Yet</h2>
-            <p className="text-gray-600 mb-2">Complete some vision tests to generate your clinical summary</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {activeParticipant && !activeParticipant.is_self
+                ? `No results for ${activeParticipant.display_name} yet`
+                : 'No Results Yet'}
+            </h2>
+            <p className="text-gray-600 mb-2">
+              {activeParticipant && !activeParticipant.is_self
+                ? `Complete some vision tests for ${activeParticipant.display_name} to generate their clinical summary`
+                : 'Complete some vision tests to generate your clinical summary'}
+            </p>
             <p className="text-sm text-gray-500 mb-6">
               The summary includes per-eye acuity, color vision, contrast sensitivity, and more
             </p>
@@ -151,13 +176,27 @@ export default function ClinicalSummaryPage() {
         <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none print:mb-4">
           <div className="flex justify-between items-start mb-4 print:mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 print:text-2xl">Spect-IT Clinical Screening Summary</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2 print:text-2xl">
+                Spect-IT Clinical Screening Summary
+                {activeParticipant && !activeParticipant.is_self && (
+                  <span className="text-xl font-normal text-indigo-600 ml-3">
+                    ({activeParticipant.display_name})
+                  </span>
+                )}
+              </h1>
               <p className="text-gray-600 print:text-sm">
                 Generated {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
                 {' '}at {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </p>
               {user?.email && (
                 <p className="text-sm text-gray-500 mt-1">Account: {user.email}</p>
+              )}
+              {activeParticipant && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Participant: {activeParticipant.display_name}
+                  {activeParticipant.date_of_birth && ` • DOB: ${new Date(activeParticipant.date_of_birth).toLocaleDateString()}`}
+                  {activeParticipant.age && ` • Age: ${activeParticipant.age}`}
+                </p>
               )}
             </div>
             <div className="flex gap-2 print:hidden">

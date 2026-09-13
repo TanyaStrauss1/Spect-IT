@@ -22,6 +22,10 @@ interface ParticipantContextType {
   activeParticipant: Participant | null
   loading: boolean
   setActiveParticipant: (participant: Participant) => Promise<void>
+  createParticipant: (data: Omit<Participant, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<Participant | null>
+  updateParticipant: (id: string, data: Partial<Participant>) => Promise<boolean>
+  archiveParticipant: (id: string) => Promise<boolean>
+  deleteParticipant: (id: string) => Promise<boolean>
   refreshParticipants: () => Promise<void>
 }
 
@@ -86,6 +90,67 @@ export function ParticipantProvider({ children }: { children: React.ReactNode })
     await AsyncStorage.setItem(ACTIVE_PARTICIPANT_KEY, participant.id)
   }, [])
 
+  const createParticipant = useCallback(async (data: Omit<Participant, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return null
+
+    try {
+      const { data: newParticipant, error } = await supabase
+        .from('participants')
+        .insert({
+          user_id: user.id,
+          ...data,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      await loadParticipants()
+      return newParticipant
+    } catch (error) {
+      console.error('Error creating participant:', error)
+      return null
+    }
+  }, [user, loadParticipants])
+
+  const updateParticipant = useCallback(async (id: string, data: Partial<Participant>) => {
+    try {
+      const { error } = await supabase
+        .from('participants')
+        .update(data)
+        .eq('id', id)
+
+      if (error) throw error
+
+      await loadParticipants()
+      return true
+    } catch (error) {
+      console.error('Error updating participant:', error)
+      return false
+    }
+  }, [loadParticipants])
+
+  const archiveParticipant = useCallback(async (id: string) => {
+    return updateParticipant(id, { archived: true })
+  }, [updateParticipant])
+
+  const deleteParticipant = useCallback(async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('participants')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      await loadParticipants()
+      return true
+    } catch (error) {
+      console.error('Error deleting participant:', error)
+      return false
+    }
+  }, [loadParticipants])
+
   const refreshParticipants = useCallback(async () => {
     await loadParticipants()
   }, [loadParticipants])
@@ -97,6 +162,10 @@ export function ParticipantProvider({ children }: { children: React.ReactNode })
         activeParticipant,
         loading,
         setActiveParticipant,
+        createParticipant,
+        updateParticipant,
+        archiveParticipant,
+        deleteParticipant,
         refreshParticipants,
       }}
     >
