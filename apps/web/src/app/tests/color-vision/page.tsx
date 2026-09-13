@@ -46,6 +46,17 @@ export default function ColorVisionTestPage() {
     }
   }, [user, authLoading, router])
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   const startTest = () => {
     setCurrentPlateIndex(0)
   }
@@ -196,19 +207,34 @@ export default function ColorVisionTestPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 space-y-3">
               <button
-                onClick={() => router.push('/dashboard')}
-                className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                onClick={() => router.push('/dashboard/clinical-summary')}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-colors"
               >
-                View Dashboard
+                📊 View Clinical Summary
               </button>
-              <button
-                onClick={() => router.push('/')}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Home
-              </button>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                >
+                  View Dashboard
+                </button>
+                <button
+                  onClick={() => router.push('/tests')}
+                  className="bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  More Tests
+                </button>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 text-center">
+                <strong>Next Steps:</strong> Complete all vision tests for a comprehensive screening report
+              </p>
             </div>
           </div>
         </div>
