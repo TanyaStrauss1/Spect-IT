@@ -95,6 +95,7 @@ async function saveTestResultToSupabase(result) {
             .from('test_results')
             .insert([{
                 user_id: user.id,
+                participant_id: result.participant_id || null,
                 test_type: result.type,
                 test_name: result.name,
                 score: result.score,

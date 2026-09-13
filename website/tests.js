@@ -3402,6 +3402,27 @@ function closeTest() {
 }
 
 async function saveResult(result) {
+    // Check for active classroom screening participant
+    if (window.ClassroomScreening && window.ClassroomScreening.hasActiveSession()) {
+        const student = window.ClassroomScreening.getCurrentStudent();
+        if (student) {
+            result.participant_id = student.id;
+        }
+    } else {
+        // Check if there's a stored participant from classroom screening
+        const storedParticipant = localStorage.getItem('spectit_active_participant_for_test');
+        if (storedParticipant) {
+            try {
+                const participant = JSON.parse(storedParticipant);
+                result.participant_id = participant.id;
+                // Clear the stored participant after using it
+                localStorage.removeItem('spectit_active_participant_for_test');
+            } catch (error) {
+                console.error('Error parsing stored participant:', error);
+            }
+        }
+    }
+
     // Save to localStorage first (fast, always works)
     testHistory.push(result);
     localStorage.setItem('testHistory', JSON.stringify(testHistory));
@@ -3448,6 +3469,11 @@ async function saveResult(result) {
     
     // Show immediate results popup
     showImmediateResult(result);
+    
+    // Refresh classroom screening if active
+    if (window.ClassroomScreening && window.ClassroomScreening.hasActiveSession()) {
+        await window.ClassroomScreening.refresh();
+    }
     
     // Check if all tests are completed
     checkAllTestsCompleted();
