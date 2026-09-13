@@ -320,7 +320,7 @@ export class ScreeningEngine {
     const model = await this.loadModel(config);
 
     // Prepare input tensor
-    const inputTensor = tf.tensor2d([Array.from(features)], config.inputShape as [number, number]);
+    const inputTensor = tf.tensor2d([Array.from(features)], [1, config.inputShape[1]]);
 
     try {
       // Run prediction
@@ -477,7 +477,7 @@ export class ScreeningEngine {
     const model = await this.loadModel(config);
 
     // Prepare input tensor
-    const inputTensor = tf.tensor2d([Array.from(features)], config.inputShape as [number, number]);
+    const inputTensor = tf.tensor2d([Array.from(features)], [1, config.inputShape[1]]);
 
     try {
       // Run prediction
