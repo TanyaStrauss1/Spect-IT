@@ -14,6 +14,7 @@ import { Button } from '@/components/ui'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
 import { OnboardingModal, useOnboarding } from '@/components/OnboardingModal'
 import { TrendsChart } from '@/components/dashboard/TrendsChart'
+import { ClassroomModeButton } from '@/components/classroom/ClassroomModeButton'
 
 interface TestResult {
   id: number
@@ -229,12 +230,15 @@ export default function DashboardPage() {
                 Browse All Tests
               </Link>
               {participants.length > 0 && (
-                <Link
-                  href="/dashboard/participants"
-                  className="inline-block border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-                >
-                  Manage Participants
-                </Link>
+                <>
+                  <Link
+                    href="/dashboard/participants"
+                    className="inline-block border-2 border-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    Manage Participants
+                  </Link>
+                  <ClassroomModeButton variant="primary" />
+                </>
               )}
             </div>
           </div>
@@ -260,6 +264,7 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-3">
+              <ClassroomModeButton variant="secondary" />
               <Link
                 href="/dashboard/clinical-summary"
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-colors text-sm"

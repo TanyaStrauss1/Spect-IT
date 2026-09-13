@@ -8,6 +8,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { ParticipantManager } from '@/components/participants/ParticipantManager'
+import { ClassroomModeButton } from '@/components/classroom/ClassroomModeButton'
 import Link from 'next/link'
 
 export default function ParticipantsPage() {
@@ -37,7 +38,7 @@ export default function ParticipantsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="container mx-auto max-w-5xl">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href="/dashboard"
             className="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium"
@@ -47,6 +48,7 @@ export default function ParticipantsPage() {
             </svg>
             Back to Dashboard
           </Link>
+          <ClassroomModeButton variant="primary" />
         </div>
         <ParticipantManager />
         
@@ -72,6 +74,24 @@ export default function ParticipantsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-6 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-lg p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <span className="text-2xl">🎓</span>
+            Classroom Screening Mode
+          </h3>
+          <p className="text-sm text-gray-700 mb-3">
+            For teachers and school nurses: When you have 2 or more participants with the "student" role, 
+            you can enter Classroom Mode to efficiently screen students one-by-one through all 6 vision tests.
+          </p>
+          <ul className="text-sm text-gray-700 space-y-2 list-disc list-inside">
+            <li>Automatically walks through each student in sequence</li>
+            <li>Shows which tests are complete and which are missing</li>
+            <li>Quick navigation to start any test</li>
+            <li>Session persists across browser sessions</li>
+            <li>Skip students or mark complete as needed</li>
+          </ul>
         </div>
       </div>
     </div>
