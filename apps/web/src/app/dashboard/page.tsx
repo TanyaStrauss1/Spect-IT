@@ -292,6 +292,12 @@ export default function DashboardPage() {
                 Color Vision
               </Link>
               <Link
+                href="/tests/hearing"
+                className="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"
+              >
+                Hearing
+              </Link>
+              <Link
                 href="/tests/astigmatism"
                 className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
               >
