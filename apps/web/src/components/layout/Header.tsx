@@ -7,6 +7,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth/auth-context'
+import { useParticipants } from '@/lib/participants/participant-context'
+import { ParticipantSwitcher } from '@/components/participants/ParticipantSwitcher'
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -17,6 +19,7 @@ const navItems = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { user, signOut } = useAuth()
+  const { participants, loading: participantsLoading } = useParticipants()
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
@@ -44,6 +47,7 @@ export function Header() {
             ))}
             {user ? (
               <>
+                {!participantsLoading && participants.length > 0 && <ParticipantSwitcher />}
                 <Link
                   href="/tests/acuity"
                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
