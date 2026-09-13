@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator, Slider } from 'react-native'
 import { router } from 'expo-router'
 import { Audio } from 'expo-av'
 import { useAuth } from '../../lib/auth/auth-context'
@@ -97,21 +97,43 @@ export default function HearingTestScreen() {
     }
   }
 
-  const generateTone = (frequency: number, duration: number = 1500): string => {
-    // Generate a simple sine wave tone using data URI
-    // This is a simplified approach - in production, you'd generate actual audio files
-    // For now, we'll use a placeholder and rely on the expo-av Sound API
-    // Note: Real implementation would generate PCM audio data or use pre-generated tone files
-    return `data:audio/wav;base64,${generateSineWaveBase64(frequency, duration)}`
+  // Safe base64 encoding for React Native/Hermes
+  const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    // Use base64-js or similar if btoa is unavailable, but btoa works in RN 0.73+
+    if (typeof btoa !== 'undefined') {
+      return btoa(binary)
+    }
+    // Fallback: simple base64 encoding
+    const b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    let result = ''
+    for (let i = 0; i < binary.length; i += 3) {
+      const byte1 = binary.charCodeAt(i)
+      const byte2 = i + 1 < binary.length ? binary.charCodeAt(i + 1) : 0
+      const byte3 = i + 2 < binary.length ? binary.charCodeAt(i + 2) : 0
+      
+      result += b64chars[byte1 >> 2]
+      result += b64chars[((byte1 & 3) << 4) | (byte2 >> 4)]
+      result += i + 1 < binary.length ? b64chars[((byte2 & 15) << 2) | (byte3 >> 6)] : '='
+      result += i + 2 < binary.length ? b64chars[byte3 & 63] : '='
+    }
+    return result
   }
 
-  const generateSineWaveBase64 = (frequency: number, duration: number): string => {
-    // Simplified WAV generation - in production, use pre-generated audio files
-    // This is a placeholder that returns a basic WAV header
-    // For a real implementation, you'd want to generate proper PCM audio data
+  const generateStereoTone = (frequency: number, ear: Ear, duration: number = 1500): string => {
+    // Generate stereo WAV with tone only on requested ear, silence on the other
     const sampleRate = 44100
+    const numChannels = 2 // Stereo
+    const bitsPerSample = 16
+    const bytesPerSample = bitsPerSample / 8
+    const blockAlign = numChannels * bytesPerSample
     const numSamples = Math.floor(sampleRate * (duration / 1000))
-    const buffer = new ArrayBuffer(44 + numSamples * 2)
+    const dataSize = numSamples * blockAlign
+    const buffer = new ArrayBuffer(44 + dataSize)
     const view = new DataView(buffer)
 
     // WAV header
@@ -122,33 +144,38 @@ export default function HearingTestScreen() {
     }
 
     writeString(0, 'RIFF')
-    view.setUint32(4, 36 + numSamples * 2, true)
+    view.setUint32(4, 36 + dataSize, true)
     writeString(8, 'WAVE')
     writeString(12, 'fmt ')
-    view.setUint32(16, 16, true)
-    view.setUint16(20, 1, true)
-    view.setUint16(22, 1, true)
-    view.setUint32(24, sampleRate, true)
-    view.setUint32(28, sampleRate * 2, true)
-    view.setUint16(32, 2, true)
-    view.setUint16(34, 16, true)
+    view.setUint32(16, 16, true) // PCM format chunk size
+    view.setUint16(20, 1, true) // Audio format (1 = PCM)
+    view.setUint16(22, numChannels, true) // Number of channels
+    view.setUint32(24, sampleRate, true) // Sample rate
+    view.setUint32(28, sampleRate * blockAlign, true) // Byte rate
+    view.setUint16(32, blockAlign, true) // Block align
+    view.setUint16(34, bitsPerSample, true) // Bits per sample
     writeString(36, 'data')
-    view.setUint32(40, numSamples * 2, true)
+    view.setUint32(40, dataSize, true)
 
-    // Generate sine wave
+    // Generate stereo sine wave: tone on requested ear, silence on other
+    let offset = 44
     for (let i = 0; i < numSamples; i++) {
       const sample = Math.sin(2 * Math.PI * frequency * i / sampleRate)
       const scaled = Math.floor(sample * 32767 * volumeLevel)
-      view.setInt16(44 + i * 2, scaled, true)
+      
+      if (ear === 'left') {
+        // Left channel: tone, Right channel: silence
+        view.setInt16(offset, scaled, true)
+        view.setInt16(offset + 2, 0, true)
+      } else {
+        // Left channel: silence, Right channel: tone
+        view.setInt16(offset, 0, true)
+        view.setInt16(offset + 2, scaled, true)
+      }
+      offset += 4
     }
 
-    // Convert to base64
-    const bytes = new Uint8Array(buffer)
-    let binary = ''
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i])
-    }
-    return btoa(binary)
+    return `data:audio/wav;base64,${arrayBufferToBase64(buffer)}`
   }
 
   const playTone = async (frequency: number, ear: Ear, duration: number = 1500) => {
@@ -158,21 +185,16 @@ export default function HearingTestScreen() {
       await cleanupAudio()
       setIsPlaying(true)
 
-      // Generate tone data URI
-      const toneUri = generateTone(frequency, duration)
+      // Generate stereo WAV with tone only on requested ear
+      const toneUri = generateStereoTone(frequency, ear, duration)
 
-      // Create and play sound
+      // Create and play sound at full volume (tone already scaled by volumeLevel)
       const { sound } = await Audio.Sound.createAsync(
         { uri: toneUri },
-        { volume: volumeLevel, shouldPlay: true }
+        { volume: 1.0, shouldPlay: true }
       )
 
       soundRef.current = sound
-
-      // Set position (pan) for stereo
-      // Note: expo-av doesn't have direct pan control like Web Audio
-      // In production, you'd generate separate L/R channel audio files
-      // For now, we note this limitation in the results
 
       setTimeout(() => {
         setIsPlaying(false)
@@ -239,7 +261,7 @@ export default function HearingTestScreen() {
     const overallPass = leftEarPassCount >= totalFrequencies - 1 && rightEarPassCount >= totalFrequencies - 1
 
     const result = {
-      methodology: 'Pure-tone screening at 500, 1000, 2000, 4000 Hz. Expo Audio API (mobile). Note: Limited stereo separation compared to clinical audiometry.',
+      methodology: 'Pure-tone screening at 500, 1000, 2000, 4000 Hz. Expo Audio API with stereo WAV generation (L/R ear separation).',
       frequencyResults,
       leftEarPassCount,
       rightEarPassCount,
@@ -421,6 +443,21 @@ export default function HearingTestScreen() {
               Adjust the volume slider until the tone is <Text style={styles.bold}>clearly audible but comfortable</Text>.
               Not too loud, not too soft.
             </Text>
+
+            <View style={styles.volumeControl}>
+              <Text style={styles.volumeLabel}>Volume: {Math.round(volumeLevel * 100)}%</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={0.05}
+                maximumValue={0.5}
+                step={0.01}
+                value={volumeLevel}
+                onValueChange={setVolumeLevel}
+                minimumTrackTintColor="#14B8A6"
+                maximumTrackTintColor="#E5E7EB"
+                thumbTintColor="#14B8A6"
+              />
+            </View>
 
             <TouchableOpacity
               style={[styles.playButton, isPlaying && styles.playButtonDisabled]}
@@ -817,6 +854,21 @@ const styles = StyleSheet.create({
   calibrationNote: {
     fontSize: 11,
     color: '#92400E',
+  },
+  volumeControl: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  volumeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A8A',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
   },
   startButton: {
     backgroundColor: '#10B981',
