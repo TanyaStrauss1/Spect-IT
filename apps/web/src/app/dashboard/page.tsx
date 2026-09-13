@@ -38,6 +38,9 @@ export default function DashboardPage() {
   const { calibrator, isCalibrated, isModalOpen, setIsModalOpen } = useCalibration()
   const { isOnboardingOpen, markOnboardingComplete, setIsOnboardingOpen } = useOnboarding()
 
+  const studentCount = participants.filter(p => p.role === 'student').length
+  const hasMultipleStudents = studentCount > 1
+
   useEffect(() => {
     if (authLoading) return
     
@@ -154,14 +157,19 @@ export default function DashboardPage() {
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Your Dashboard
-                {activeParticipant && !activeParticipant.is_self && (
-                  <span className="text-2xl font-normal text-indigo-600 ml-3">
-                    ({activeParticipant.display_name})
-                  </span>
+                {activeParticipant && !activeParticipant.is_self ? (
+                  <>
+                    <span className="text-indigo-600">{activeParticipant.display_name}'s</span> Dashboard
+                  </>
+                ) : (
+                  'Your Dashboard'
                 )}
               </h1>
-              <p className="text-gray-600">View your vision screening history and track your progress</p>
+              <p className="text-gray-600">
+                {activeParticipant && !activeParticipant.is_self
+                  ? `Viewing test results and screening history for ${activeParticipant.display_name}`
+                  : 'View your vision screening history and track your progress'}
+              </p>
             </div>
             
             {/* Calibration Status Badge */}
@@ -173,6 +181,21 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {hasMultipleStudents && (
+          <div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">👥</span>
+              <div className="flex-1">
+                <h3 className="font-semibold text-indigo-900 text-sm">Testing Multiple Students</h3>
+                <p className="text-sm text-indigo-800 mt-1">
+                  Currently viewing: <strong>{activeParticipant?.display_name}</strong>.
+                  Remember to use the participant switcher in the header before each test to select who is being screened.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {results.length === 0 ? (
           <div className="bg-white rounded-lg shadow-xl p-12 text-center">
@@ -188,7 +211,9 @@ export default function DashboardPage() {
                 : 'Take your first vision screening to get started'}
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              Your results, trends, and clinical summary will appear here after completing tests
+              {activeParticipant && !activeParticipant.is_self
+                ? `Results, trends, and clinical summary for ${activeParticipant.display_name} will appear here after completing tests`
+                : 'Your results, trends, and clinical summary will appear here after completing tests'}
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Link
@@ -223,10 +248,16 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-gray-600 text-sm">
                     {activeParticipant && !activeParticipant.is_self
-                      ? `Tests for ${activeParticipant.display_name}`
+                      ? `Tests completed by ${activeParticipant.display_name}`
                       : 'Total Tests Completed'}
                   </p>
                   <p className="text-3xl font-bold text-indigo-600">{results.length}</p>
+                  {activeParticipant && !activeParticipant.is_self && activeParticipant.role && (
+                    <p className="text-xs text-gray-500 mt-1 capitalize">
+                      Role: {activeParticipant.role}
+                      {activeParticipant.age && ` • Age: ${activeParticipant.age}`}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-3">
               <Link
