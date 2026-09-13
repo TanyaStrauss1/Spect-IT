@@ -8,6 +8,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import Svg, { Line, Circle, Rect } from 'react-native-svg'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
+import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import {
   createVisualFieldTest,
@@ -31,6 +32,7 @@ export default function VisualFieldTestScreen() {
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
 
   const test = createVisualFieldTest({ gridSize: 10, gridCoverageArcMin: 1200 })
   const gridConfig = test.getGridConfig()
@@ -40,8 +42,18 @@ export default function VisualFieldTestScreen() {
 
     if (!user) {
       router.replace('/auth/signin')
+      return
     }
-  }, [user, authLoading])
+
+    // Check if participant is required but not selected
+    if (participants.length > 0 && !activeParticipant) {
+      Alert.alert(
+        'Select Participant',
+        'Please select who is taking this test from the dashboard.',
+        [{ text: 'OK', onPress: () => router.replace('/(tabs)/dashboard') }]
+      )
+    }
+  }, [user, authLoading, participants, activeParticipant])
 
   const handleContinueToReport = () => {
     setStep('report')
@@ -94,15 +106,22 @@ export default function VisualFieldTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } =         await supabase
+        const testResultData: any = {
+          user_id: user.id,
+          test_type: TEST_TYPE_ID.VISUAL_FIELD,
+          test_data: testResult,
+          score: (rightEye.hasAbnormalities ? 0 : 1) + (leftEye.hasAbnormalities ? 0 : 1),
+          test_date: new Date().toISOString(),
+        }
+
+        // Add participant_id if active participant exists
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
+        const { error } = await supabase
           .from('test_results')
-          .insert({
-            user_id: user.id,
-            test_type: TEST_TYPE_ID.VISUAL_FIELD,
-            test_data: testResult,
-            score: (rightEye.hasAbnormalities ? 0 : 1) + (leftEye.hasAbnormalities ? 0 : 1),
-            test_date: new Date().toISOString(),
-          })
+          .insert(testResultData)
 
         if (error) {
           console.error('Error saving test result:', error)

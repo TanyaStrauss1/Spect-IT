@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
+import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
 import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
@@ -32,6 +33,7 @@ export default function ContrastTestScreen() {
   const [result, setResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const { user, loading: authLoading } = useAuth()
+  const { activeParticipant, participants } = useParticipants()
 
   const test = createContrastSensitivityTest({ letterSizeArcMin: 180 })
   const contrastLevels = test.getContrastLevels()
@@ -41,6 +43,16 @@ export default function ContrastTestScreen() {
 
     if (!user) {
       router.replace('/auth/signin')
+      return
+    }
+
+    // Check if participant is required but not selected
+    if (participants.length > 0 && !activeParticipant) {
+      Alert.alert(
+        'Select Participant',
+        'Please select who is taking this test from the dashboard.',
+        [{ text: 'OK', onPress: () => router.replace('/(tabs)/dashboard') }]
+      )
     }
 
     const cal = new ScreenCalibrator()
@@ -51,7 +63,7 @@ export default function ContrastTestScreen() {
       setCalibration(existingCal)
       setNeedsCalibration(false)
     }
-  }, [user, authLoading])
+  }, [user, authLoading, participants, activeParticipant])
 
   const handleCalibrationComplete = (cal: CalibrationData) => {
     setCalibration(cal)
@@ -111,15 +123,22 @@ export default function ContrastTestScreen() {
     if (user) {
       setSaving(true)
       try {
-        const { error } =         await supabase
+        const testResultData: any = {
+          user_id: user.id,
+          test_type: TEST_TYPE_ID.CONTRAST_SENSITIVITY,
+          test_data: testResult,
+          score: Math.round(testResult.finalLogCS * 100),
+          test_date: new Date().toISOString(),
+        }
+
+        // Add participant_id if active participant exists
+        if (activeParticipant) {
+          testResultData.participant_id = activeParticipant.id
+        }
+
+        const { error } = await supabase
           .from('test_results')
-          .insert({
-            user_id: user.id,
-            test_type: TEST_TYPE_ID.CONTRAST_SENSITIVITY,
-            test_data: testResult,
-            score: Math.round(testResult.finalLogCS * 100),
-            test_date: new Date().toISOString(),
-          })
+          .insert(testResultData)
 
         if (error) {
           console.error('Error saving test result:', error)
