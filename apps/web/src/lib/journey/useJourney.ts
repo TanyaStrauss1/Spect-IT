@@ -50,6 +50,16 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     route: '/tests/color-vision'
   },
   {
+    id: 'hearing',
+    name: 'Hearing Screening',
+    icon: '🎧',
+    duration: '3-5 min',
+    why: 'Basic pure-tone hearing screening at key frequencies with stereo testing',
+    requires: [],
+    category: 'recommended',
+    route: '/tests/hearing'
+  },
+  {
     id: 'astigmatism',
     name: 'Astigmatism',
     icon: '⚫',

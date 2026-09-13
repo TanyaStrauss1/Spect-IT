@@ -17,14 +17,16 @@ import {
   clearClassroomSession,
   ClassroomSessionState
 } from '@/lib/classroom/session-storage'
+import { TEST_TYPE_ID } from '@spect-it/cv'
 
 const CORE_TESTS = [
-  { id: 'acuity', name: 'Visual Acuity', route: '/tests/acuity', testType: 'Visual Acuity' },
-  { id: 'color', name: 'Color Vision', route: '/tests/color-vision', testType: 'Color Vision' },
-  { id: 'astigmatism', name: 'Astigmatism', route: '/tests/astigmatism', testType: 'Astigmatism' },
-  { id: 'contrast', name: 'Contrast Sensitivity', route: '/tests/contrast', testType: 'Contrast Sensitivity' },
-  { id: 'visual-field', name: 'Visual Field', route: '/tests/visual-field', testType: 'Visual Field' },
-  { id: 'prescription', name: 'Prescription', route: '/tests/prescription', testType: 'Prescription Measurement' }
+  { id: 'acuity', name: 'Visual Acuity', route: '/tests/acuity', testType: TEST_TYPE_ID.VISUAL_ACUITY },
+  { id: 'color', name: 'Color Vision', route: '/tests/color-vision', testType: TEST_TYPE_ID.COLOR_VISION },
+  { id: 'astigmatism', name: 'Astigmatism', route: '/tests/astigmatism', testType: TEST_TYPE_ID.ASTIGMATISM },
+  { id: 'contrast', name: 'Contrast Sensitivity', route: '/tests/contrast', testType: TEST_TYPE_ID.CONTRAST_SENSITIVITY },
+  { id: 'visual-field', name: 'Visual Field', route: '/tests/visual-field', testType: TEST_TYPE_ID.VISUAL_FIELD },
+  { id: 'prescription', name: 'Prescription', route: '/tests/prescription', testType: TEST_TYPE_ID.PRESCRIPTION },
+  { id: 'hearing', name: 'Hearing Screening', route: '/tests/hearing', testType: TEST_TYPE_ID.HEARING }
 ]
 
 interface ClassroomSessionProps {
@@ -190,7 +192,7 @@ export function ClassroomSession({ session: initialSession, onExit }: ClassroomS
 
       {/* Test Checklist */}
       <div className="bg-white rounded-lg shadow-xl p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Vision Screening Tests</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Screening Tests</h3>
         <div className="space-y-3">
           {CORE_TESTS.map(test => {
             const isCompleted = getTestStatus(test.testType)
