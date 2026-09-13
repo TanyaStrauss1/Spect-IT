@@ -113,7 +113,6 @@ export default function ColorVisionTestPage() {
         const { error } = await supabase
           .from('test_results')
           .insert(testResultData)
-          })
 
         if (error) console.error('Error saving test result:', error)
       } catch (error) {
