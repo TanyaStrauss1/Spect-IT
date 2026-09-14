@@ -471,6 +471,9 @@ export default function ClinicalSummaryPage() {
                         {' '}L: {summary.hearing.test_data?.leftEarPassCount || 0}/{summary.hearing.test_data?.totalFrequencies || 4} • 
                         R: {summary.hearing.test_data?.rightEarPassCount || 0}/{summary.hearing.test_data?.totalFrequencies || 4}
                       </div>
+                      <div className="text-xs text-red-700 mt-1 font-semibold">
+                        Relative volumes only — NOT calibrated dB HL
+                      </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
                       </div>
