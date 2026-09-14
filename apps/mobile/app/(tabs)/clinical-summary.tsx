@@ -110,6 +110,7 @@ export default function ClinicalSummaryScreen() {
     if (summary?.astigmatism) otherTests.push(`Astigmatism: ${summary.astigmatism.test_data?.overallAssessment || 'See report'}`)
     if (summary?.visualField) otherTests.push(`Visual Field: ${summary.visualField.test_data?.assessment || 'See report'}`)
     if (summary?.prescription) otherTests.push(`Refractive Screening: Needs-correction detection — NOT a prescription`)
+    if (summary?.hearing) otherTests.push(`Hearing Screening: ${summary.hearing.results?.overallStatus || summary.hearing.test_data?.overallStatus || 'See report'}`)
     
     if (otherTests.length > 0) {
       text += `OTHER SCREENING TESTS\n\n`
@@ -294,7 +295,7 @@ export default function ClinicalSummaryScreen() {
       )}
 
       {/* Other Tests Summary */}
-      {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField) && (
+      {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing) && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🎨 Other Screening Tests</Text>
           
@@ -369,6 +370,25 @@ export default function ClinicalSummaryScreen() {
                 </Text>
                 <Text style={styles.testDate}>
                   Tested {new Date(summary.visualField.created_at).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {summary.hearing && (
+            <View style={styles.testCard}>
+              <Text style={styles.testIcon}>🎧</Text>
+              <View style={styles.testInfo}>
+                <Text style={styles.testName}>Hearing Screening</Text>
+                <Text style={styles.testResult}>
+                  {summary.hearing.results?.overallStatus || summary.hearing.test_data?.overallStatus || 'See details'}
+                  {summary.hearing.test_data?.leftEarPassCount !== undefined && 
+                   summary.hearing.test_data?.rightEarPassCount !== undefined && (
+                    ` (L: ${summary.hearing.test_data.leftEarPassCount}/${summary.hearing.test_data.totalFrequencies}, R: ${summary.hearing.test_data.rightEarPassCount}/${summary.hearing.test_data.totalFrequencies})`
+                  )}
+                </Text>
+                <Text style={styles.testDate}>
+                  Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
                 </Text>
               </View>
             </View>
