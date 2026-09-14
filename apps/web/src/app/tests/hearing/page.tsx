@@ -35,9 +35,9 @@ interface FrequencyResult {
 // Standard screening frequencies (Hz)
 const SCREENING_FREQUENCIES = [500, 1000, 2000, 4000]
 
-// Screening level in dB HL (typically 25 dB HL for school screenings)
-// Note: Cannot accurately replicate dB HL with Web Audio without calibration hardware
-// We use relative volume instead
+// Screening level: relative device volume
+// IMPORTANT: Web Audio API uses relative device volumes (0.0 to 1.0), NOT calibrated dB HL
+// This is uncalibrated screening; results indicate relative hearing sensitivity only
 const SCREENING_LEVEL = 0.15 // Relative volume (0.0 to 1.0)
 
 export default function HearingTestPage() {
@@ -194,13 +194,13 @@ export default function HearingTestPage() {
     const overallPass = leftEarPassCount >= totalFrequencies - 1 && rightEarPassCount >= totalFrequencies - 1
 
     const result = {
-      methodology: 'Pure-tone screening at 500, 1000, 2000, 4000 Hz. Web Audio API simulation.',
+      methodology: 'Pure-tone screening at 500, 1000, 2000, 4000 Hz using Web Audio API. Levels are RELATIVE DEVICE VOLUMES, not calibrated dB HL. This is uncalibrated screening; results indicate relative hearing sensitivity only, not absolute thresholds.',
       frequencyResults,
       leftEarPassCount,
       rightEarPassCount,
       totalFrequencies,
       overallStatus: overallPass ? 'PASS' : 'REFER',
-      note: 'This is a basic hearing screening, not a diagnostic audiological examination. Refer to audiologist if any concerns.',
+      note: 'This is a basic hearing screening, not a diagnostic audiological examination. Volumes are relative to device output and are NOT calibrated dB HL. Refer to audiologist for calibrated testing and any concerns.',
       timestamp: new Date().toISOString(),
     }
 
@@ -289,6 +289,15 @@ export default function HearingTestPage() {
                 <p className="text-sm text-yellow-800">
                   This is a <strong>basic screening tool</strong>, not a diagnostic audiological examination. 
                   It cannot replace professional hearing evaluation by a licensed audiologist.
+                </p>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <h3 className="font-semibold text-red-900 mb-2">🔊 Calibration Limitation</h3>
+                <p className="text-sm text-red-800">
+                  This test uses <strong>relative device volumes, NOT calibrated dB HL</strong>. Results indicate 
+                  relative hearing sensitivity only, not absolute hearing thresholds. For calibrated audiometric 
+                  testing with standardized dB HL levels, consult an audiologist.
                 </p>
               </div>
 
@@ -388,6 +397,7 @@ export default function HearingTestPage() {
               <div className="text-6xl mb-4">🔊</div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Volume Calibration</h2>
               <p className="text-gray-600">Set to a comfortable listening level</p>
+              <p className="text-xs text-gray-500 mt-1">(Relative volume only — not calibrated dB HL)</p>
             </div>
 
             <div className="space-y-6">
@@ -583,12 +593,12 @@ export default function HearingTestPage() {
             </div>
 
             {/* Disclaimer */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800">
-                <strong>Screening Aid:</strong> This is a basic hearing screening tool using Web Audio API, 
-                not a diagnostic audiological examination. Results should not replace professional evaluation 
-                by a licensed audiologist. Screening conducted at standard frequencies (500, 1000, 2000, 4000 Hz). 
-                For comprehensive hearing assessment, consult an audiologist.
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-red-800">
+                <strong>SCREENING ONLY — NOT CALIBRATED:</strong> This test uses relative device volumes via Web Audio API, 
+                <strong> NOT calibrated dB HL</strong>. Results indicate relative hearing sensitivity, not absolute thresholds. 
+                This is not a diagnostic audiological examination. For calibrated testing with standardized dB HL levels and 
+                comprehensive hearing assessment, consult a licensed audiologist.
               </p>
             </div>
 
