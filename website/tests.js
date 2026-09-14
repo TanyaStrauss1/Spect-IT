@@ -46,6 +46,17 @@ function runPreTestSafetyChecks(testName) {
 async function startVisualAcuityTest() {
     try {
         if (!runPreTestSafetyChecks('Visual Acuity Test')) return;
+        
+        // Use clinical test if available
+        if (window.ClinicalTests && window.ClinicalTests.startVisualAcuityTest) {
+            console.log('[Visual Acuity] Using clinical ETDRS/LogMAR test');
+            window.ClinicalTests.startVisualAcuityTest();
+            return;
+        }
+        
+        // Fallback to legacy test
+        console.warn('[Visual Acuity] Clinical test not loaded, using legacy test');
+        
         // Check if user has email before starting test
         if (window.requireEmailBeforeTest && typeof window.requireEmailBeforeTest === 'function') {
             window.requireEmailBeforeTest(() => {
