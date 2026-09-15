@@ -15,7 +15,17 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { useParticipants } from '@/lib/participants/participant-context'
 import { supabase } from '@/lib/supabase'
 import { useJourney } from '@/lib/journey/useJourney'
-import { TEST_TYPE_ID } from '@spect-it/cv'
+import { 
+  TEST_TYPE_ID,
+  SCREENING_FREQUENCIES,
+  PULSED_TONE_CONFIG,
+  CATCH_TRIAL_CONFIG,
+  DEFAULT_SCREENING_LEVEL,
+  PASS_REFER_CRITERIA,
+  createMethodologyString,
+  createScreeningNote,
+  type ScreeningFrequency,
+} from '@spect-it/cv'
 
 type TestPhase = 'instructions' | 'headphone-check' | 'ambient-noise' | 'calibration' | 'testing' | 'complete'
 type Ear = 'left' | 'right'
@@ -32,25 +42,6 @@ interface FrequencyResult {
   rightEarPassed: boolean
 }
 
-// Standard screening frequencies (Hz) - ASHA school screening protocol
-const SCREENING_FREQUENCIES = [500, 1000, 2000, 4000]
-
-// Optional extended frequencies for advanced screening
-const EXTENDED_FREQUENCIES = [250, 6000, 8000]
-
-// Screening level: relative device volume
-// IMPORTANT: Web Audio API uses relative device volumes (0.0 to 1.0), NOT calibrated dB HL
-// This is uncalibrated screening; results indicate relative hearing sensitivity only
-const SCREENING_LEVEL = 0.15 // Relative volume (0.0 to 1.0)
-
-// Pulsed tone configuration (clinical screening best practice)
-const TONE_PULSE_DURATION_MS = 500 // 500ms on
-const TONE_PULSE_GAP_MS = 300 // 300ms off
-const TONE_PULSE_COUNT = 3 // 3 pulses per presentation
-
-// Catch trial configuration (to detect false positives)
-const CATCH_TRIAL_PROBABILITY = 0.15 // 15% of trials are silent catch trials
-
 export default function HearingTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -61,12 +52,13 @@ export default function HearingTestPage() {
   const [currentFreqIndex, setCurrentFreqIndex] = useState(0)
   const [currentEar, setCurrentEar] = useState<Ear>('right')
   const [results, setResults] = useState<ToneTest[]>([])
-  const [volumeLevel, setVolumeLevel] = useState(SCREENING_LEVEL)
+  const [volumeLevel, setVolumeLevel] = useState(DEFAULT_SCREENING_LEVEL)
   const [isPlaying, setIsPlaying] = useState(false)
   const [saving, setSaving] = useState(false)
   const [ambientNoiseOk, setAmbientNoiseOk] = useState(false)
   const [currentTestIsCatchTrial, setCurrentTestIsCatchTrial] = useState(false)
   const [falsePositiveCount, setFalsePositiveCount] = useState(0)
+  const [catchTrialCount, setCatchTrialCount] = useState(0)
 
   const audioContextRef = useRef<AudioContext | null>(null)
   const oscillatorRef = useRef<OscillatorNode | null>(null)
@@ -113,7 +105,7 @@ export default function HearingTestPage() {
     let pulseIndex = 0
 
     const playPulse = () => {
-      if (pulseIndex >= TONE_PULSE_COUNT) {
+      if (pulseIndex >= PULSED_TONE_CONFIG.pulseCount) {
         setIsPlaying(false)
         return
       }
@@ -132,22 +124,22 @@ export default function HearingTestPage() {
       const now = context.currentTime
       gainNode.gain.setValueAtTime(0, now)
       gainNode.gain.linearRampToValueAtTime(volumeLevel, now + 0.01) // 10ms attack
-      gainNode.gain.setValueAtTime(volumeLevel, now + TONE_PULSE_DURATION_MS / 1000 - 0.01)
-      gainNode.gain.linearRampToValueAtTime(0, now + TONE_PULSE_DURATION_MS / 1000) // 10ms release
+      gainNode.gain.setValueAtTime(volumeLevel, now + PULSED_TONE_CONFIG.pulseDurationMs / 1000 - 0.01)
+      gainNode.gain.linearRampToValueAtTime(0, now + PULSED_TONE_CONFIG.pulseDurationMs / 1000) // 10ms release
 
       oscillator.connect(gainNode)
       gainNode.connect(panner)
       panner.connect(context.destination)
 
       oscillator.start(now)
-      oscillator.stop(now + TONE_PULSE_DURATION_MS / 1000)
+      oscillator.stop(now + PULSED_TONE_CONFIG.pulseDurationMs / 1000)
 
       oscillatorRef.current = oscillator
       gainNodeRef.current = gainNode
       pannerRef.current = panner
 
       pulseIndex++
-      pulseTimeoutRef.current = setTimeout(playPulse, TONE_PULSE_DURATION_MS + TONE_PULSE_GAP_MS)
+      pulseTimeoutRef.current = setTimeout(playPulse, PULSED_TONE_CONFIG.pulseDurationMs + PULSED_TONE_CONFIG.pulseGapMs)
     }
 
     playPulse()
@@ -219,8 +211,15 @@ export default function HearingTestPage() {
   }
 
   const prepareNextTest = () => {
-    // Determine if this should be a catch trial (15% probability)
-    const isCatchTrial = Math.random() < CATCH_TRIAL_PROBABILITY
+    // Determine if this should be a catch trial
+    // Cap at 3 total catch trials (slightly above minCatchTrials) to prevent unbounded chaining
+    const maxCatchTrials = Math.max(CATCH_TRIAL_CONFIG.minCatchTrials, 3)
+    const isCatchTrial = catchTrialCount < maxCatchTrials && Math.random() < CATCH_TRIAL_CONFIG.probability
+    
+    if (isCatchTrial) {
+      setCatchTrialCount(prev => prev + 1)
+    }
+    
     setCurrentTestIsCatchTrial(isCatchTrial)
   }
 
@@ -285,16 +284,15 @@ export default function HearingTestPage() {
     const rightEarPassCount = frequencyResults.filter(f => f.rightEarPassed).length
     
     const totalFrequencies = SCREENING_FREQUENCIES.length
-    const overallPass = leftEarPassCount >= totalFrequencies - 1 && rightEarPassCount >= totalFrequencies - 1
-
+    
     // Pass/refer criteria per ASHA school screening guidelines:
-    // Refer if fails at any frequency in either ear at screening level
+    // Refer if fails at any frequency in either ear at screening level (strict: must pass ALL)
     const leftEarRefer = leftEarPassCount < totalFrequencies
     const rightEarRefer = rightEarPassCount < totalFrequencies
     const shouldRefer = leftEarRefer || rightEarRefer
 
     const result = {
-      methodology: `Clinical pure-tone screening protocol following ASHA school screening guidelines. Frequencies: 500, 1000, 2000, 4000 Hz (standard pure-tone air conduction screening frequencies). Presentation: pulsed tones (${TONE_PULSE_DURATION_MS}ms pulses with ${TONE_PULSE_GAP_MS}ms gaps, ${TONE_PULSE_COUNT} pulses per trial) to improve detection and reduce listener fatigue. Catch trials: ${catchTrials.length} silent trials included to assess response reliability (false positive rate: ${falsePositiveCount}/${catchTrials.length}). Left/right ear tested separately with stereo headphones. IMPORTANT: Screening levels use relative device volume (Web Audio API), NOT calibrated dB HL. Results indicate relative hearing sensitivity only, not absolute audiometric thresholds.`,
+      methodology: createMethodologyString(catchTrials.length, falsePositiveCount, 'web'),
       protocol: 'ASHA-based pure-tone screening',
       frequencyResults,
       leftEarPassCount,
@@ -303,8 +301,8 @@ export default function HearingTestPage() {
       catchTrialCount: catchTrials.length,
       falsePositiveCount,
       overallStatus: shouldRefer ? 'REFER' : 'PASS',
-      passCriteria: 'Pass all screening frequencies (500, 1000, 2000, 4000 Hz) in both ears. Refer if any frequency missed.',
-      note: 'This is a SCREENING TOOL using a clinical screening protocol, not a diagnostic audiological examination. Screening levels are relative device volumes, NOT calibrated dB HL. For diagnostic audiometry with calibrated equipment (ANSI/ISO standards), threshold determination, bone conduction, tympanometry, or speech testing, consult a licensed audiologist.',
+      passCriteria: PASS_REFER_CRITERIA.description,
+      note: createScreeningNote(),
       timestamp: new Date().toISOString(),
     }
 
@@ -360,9 +358,11 @@ export default function HearingTestPage() {
     const leftEarPassCount = frequencyResults.filter(f => f.leftEarPassed).length
     const rightEarPassCount = frequencyResults.filter(f => f.rightEarPassed).length
     const totalFrequencies = SCREENING_FREQUENCIES.length
-    const overallPass = leftEarPassCount >= totalFrequencies - 1 && rightEarPassCount >= totalFrequencies - 1
+    
+    // Use strict ASHA criteria: must pass ALL frequencies (no misses allowed)
+    const passed = leftEarPassCount >= totalFrequencies && rightEarPassCount >= totalFrequencies
 
-    return { frequencyResults, leftEarPassCount, rightEarPassCount, totalFrequencies, overallPass }
+    return { frequencyResults, leftEarPassCount, rightEarPassCount, totalFrequencies, passed }
   }
 
   if (authLoading) {
@@ -644,7 +644,7 @@ export default function HearingTestPage() {
                   Click the button to play the tone, then respond whether you heard it.
                 </p>
                 <p className="text-xs text-gray-500 mb-6">
-                  You will hear {TONE_PULSE_COUNT} short pulses if a tone is present
+                  You will hear {PULSED_TONE_CONFIG.pulseCount} short pulses if a tone is present
                 </p>
 
                 <button
@@ -654,7 +654,8 @@ export default function HearingTestPage() {
                     } else {
                       // Catch trial - no sound, but show "playing" state
                       setIsPlaying(true)
-                      setTimeout(() => setIsPlaying(false), TONE_PULSE_DURATION_MS * TONE_PULSE_COUNT + TONE_PULSE_GAP_MS * (TONE_PULSE_COUNT - 1))
+                      const totalDuration = PULSED_TONE_CONFIG.pulseDurationMs * PULSED_TONE_CONFIG.pulseCount + PULSED_TONE_CONFIG.pulseGapMs * (PULSED_TONE_CONFIG.pulseCount - 1)
+                      setTimeout(() => setIsPlaying(false), totalDuration)
                     }
                   }}
                   disabled={isPlaying}
@@ -721,17 +722,17 @@ export default function HearingTestPage() {
 
             {/* Overall Status */}
             <div className={`rounded-lg p-6 mb-6 text-center ${
-              summary.overallPass 
+              summary.passed 
                 ? 'bg-green-50 border border-green-200' 
                 : 'bg-yellow-50 border border-yellow-200'
             }`}>
-              <h3 className="text-2xl font-bold mb-2" style={{ color: summary.overallPass ? '#059669' : '#d97706' }}>
-                {summary.overallPass ? 'PASS' : 'REFER'}
+              <h3 className="text-2xl font-bold mb-2" style={{ color: summary.passed ? '#059669' : '#d97706' }}>
+                {summary.passed ? 'PASS' : 'REFER'}
               </h3>
-              <p className={`text-sm ${summary.overallPass ? 'text-green-800' : 'text-yellow-800'}`}>
-                {summary.overallPass 
-                  ? 'Basic screening passed. No immediate concerns detected.'
-                  : 'Screening indicates follow-up recommended. Please consult an audiologist.'}
+              <p className={`text-sm ${summary.passed ? 'text-green-800' : 'text-yellow-800'}`}>
+                {summary.passed 
+                  ? 'Screening passed. Heard all frequencies in both ears.'
+                  : 'Screening incomplete or missed frequency detected. Audiological follow-up recommended.'}
               </p>
             </div>
 
