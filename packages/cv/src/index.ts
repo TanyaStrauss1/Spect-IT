@@ -114,6 +114,25 @@ export {
   type PrescriptionScreeningResult,
 } from './tests/prescription'
 
+// Hearing screening test
+export {
+  SCREENING_FREQUENCIES,
+  EXTENDED_FREQUENCIES,
+  PULSED_TONE_CONFIG,
+  CATCH_TRIAL_CONFIG,
+  DEFAULT_SCREENING_LEVEL,
+  PASS_REFER_CRITERIA,
+  AMBIENT_NOISE_REQUIREMENTS,
+  HEADPHONE_REQUIREMENTS,
+  CALIBRATION_DISCLAIMER,
+  PROTOCOL_REFERENCES,
+  createMethodologyString,
+  createScreeningNote,
+  type ScreeningFrequency,
+  type ExtendedFrequency,
+  type HearingScreeningResult,
+} from './tests/hearing-screening'
+
 // Rendering utilities
 export {
   SLOAN_GEOMETRIES,

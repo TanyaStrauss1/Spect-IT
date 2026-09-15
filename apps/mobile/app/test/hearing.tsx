@@ -15,11 +15,11 @@ import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { TEST_TYPE_ID } from '@spect-it/cv'
 
-type TestPhase = 'instructions' | 'headphone-check' | 'calibration' | 'testing' | 'complete'
+type TestPhase = 'instructions' | 'headphone-check' | 'ambient-noise' | 'calibration' | 'testing' | 'complete'
 type Ear = 'left' | 'right'
 
 interface ToneTest {
-  frequency: number
+  frequency: number | null // null = catch trial (no tone)
   ear: Ear
   heard: boolean | null
 }
@@ -30,11 +30,19 @@ interface FrequencyResult {
   rightEarPassed: boolean
 }
 
-// Standard screening frequencies (Hz)
+// Standard screening frequencies (Hz) - ASHA school screening protocol
 const SCREENING_FREQUENCIES = [500, 1000, 2000, 4000]
 
 // Relative volume for screening (0.0 to 1.0)
 const SCREENING_LEVEL = 0.15
+
+// Pulsed tone configuration (clinical screening best practice)
+const TONE_PULSE_DURATION_MS = 500 // 500ms on
+const TONE_PULSE_GAP_MS = 300 // 300ms off  
+const TONE_PULSE_COUNT = 3 // 3 pulses per presentation
+
+// Catch trial configuration (to detect false positives)
+const CATCH_TRIAL_PROBABILITY = 0.15 // 15% of trials are silent catch trials
 
 export default function HearingTestScreen() {
   const { user, loading: authLoading } = useAuth()
@@ -48,8 +56,12 @@ export default function HearingTestScreen() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [saving, setSaving] = useState(false)
   const [audioReady, setAudioReady] = useState(false)
+  const [ambientNoiseOk, setAmbientNoiseOk] = useState(false)
+  const [currentTestIsCatchTrial, setCurrentTestIsCatchTrial] = useState(false)
+  const [falsePositiveCount, setFalsePositiveCount] = useState(0)
 
   const soundRef = useRef<Audio.Sound | null>(null)
+  const pulseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (authLoading) return
@@ -208,15 +220,32 @@ export default function HearingTestScreen() {
   }
 
   const handleHeadphoneCheckPass = () => {
+    setPhase('ambient-noise')
+  }
+
+  const handleAmbientNoiseConfirm = () => {
+    setAmbientNoiseOk(true)
     setPhase('calibration')
   }
 
   const handleCalibrationComplete = () => {
     setPhase('testing')
+    prepareNextTest()
+  }
+
+  const prepareNextTest = () => {
+    // Determine if this should be a catch trial (15% probability)
+    const isCatchTrial = Math.random() < CATCH_TRIAL_PROBABILITY
+    setCurrentTestIsCatchTrial(isCatchTrial)
   }
 
   const handleResponse = (heard: boolean) => {
-    const frequency = SCREENING_FREQUENCIES[currentFreqIndex]
+    // Check for false positive (heard sound on catch trial)
+    if (currentTestIsCatchTrial && heard) {
+      setFalsePositiveCount(prev => prev + 1)
+    }
+
+    const frequency = currentTestIsCatchTrial ? null : SCREENING_FREQUENCIES[currentFreqIndex]
 
     const newResult: ToneTest = {
       frequency,
@@ -228,12 +257,17 @@ export default function HearingTestScreen() {
     setResults(updatedResults)
 
     // Advance to next test
-    if (currentEar === 'right') {
+    if (currentTestIsCatchTrial) {
+      // Catch trial complete, stay on same frequency/ear
+      prepareNextTest()
+    } else if (currentEar === 'right') {
       setCurrentEar('left')
+      prepareNextTest()
     } else {
       if (currentFreqIndex < SCREENING_FREQUENCIES.length - 1) {
         setCurrentFreqIndex(currentFreqIndex + 1)
         setCurrentEar('right')
+        prepareNextTest()
       } else {
         finishTest(updatedResults)
       }
@@ -243,10 +277,14 @@ export default function HearingTestScreen() {
   const finishTest = async (testResults: ToneTest[]) => {
     setPhase('complete')
 
+    // Separate catch trials from real tests
+    const realTests = testResults.filter(t => t.frequency !== null)
+    const catchTrials = testResults.filter(t => t.frequency === null)
+
     // Process results
     const frequencyResults: FrequencyResult[] = SCREENING_FREQUENCIES.map(freq => {
-      const leftResult = testResults.find(r => r.frequency === freq && r.ear === 'left')
-      const rightResult = testResults.find(r => r.frequency === freq && r.ear === 'right')
+      const leftResult = realTests.find(r => r.frequency === freq && r.ear === 'left')
+      const rightResult = realTests.find(r => r.frequency === freq && r.ear === 'right')
 
       return {
         frequency: freq,
@@ -259,16 +297,25 @@ export default function HearingTestScreen() {
     const rightEarPassCount = frequencyResults.filter(f => f.rightEarPassed).length
 
     const totalFrequencies = SCREENING_FREQUENCIES.length
-    const overallPass = leftEarPassCount >= totalFrequencies - 1 && rightEarPassCount >= totalFrequencies - 1
+
+    // Pass/refer criteria per ASHA school screening guidelines:
+    // Refer if fails at any frequency in either ear at screening level
+    const leftEarRefer = leftEarPassCount < totalFrequencies
+    const rightEarRefer = rightEarPassCount < totalFrequencies
+    const shouldRefer = leftEarRefer || rightEarRefer
 
     const result = {
-      methodology: 'Pure-tone screening at 500, 1000, 2000, 4000 Hz. Expo Audio API with stereo WAV generation (L/R ear separation).',
+      methodology: `Clinical pure-tone screening protocol following ASHA school screening guidelines. Frequencies: 500, 1000, 2000, 4000 Hz (standard pure-tone air conduction screening frequencies). Presentation: pulsed tones (${TONE_PULSE_DURATION_MS}ms pulses with ${TONE_PULSE_GAP_MS}ms gaps, ${TONE_PULSE_COUNT} pulses per trial) generated as stereo WAV to improve detection and reduce listener fatigue. Catch trials: ${catchTrials.length} silent trials included to assess response reliability (false positive rate: ${falsePositiveCount}/${catchTrials.length}). Left/right ear tested separately with stereo headphones. Platform: React Native Expo Audio API with procedural tone generation. IMPORTANT: Screening levels use relative device volume, NOT calibrated dB HL. Results indicate relative hearing sensitivity only, not absolute audiometric thresholds.`,
+      protocol: 'ASHA-based pure-tone screening',
       frequencyResults,
       leftEarPassCount,
       rightEarPassCount,
       totalFrequencies,
-      overallStatus: overallPass ? 'PASS' : 'REFER',
-      note: 'This is a basic hearing screening, not a diagnostic audiological examination. Refer to audiologist if any concerns.',
+      catchTrialCount: catchTrials.length,
+      falsePositiveCount,
+      overallStatus: shouldRefer ? 'REFER' : 'PASS',
+      passCriteria: 'Pass all screening frequencies (500, 1000, 2000, 4000 Hz) in both ears. Refer if any frequency missed.',
+      note: 'This is a SCREENING TOOL using a clinical screening protocol, not a diagnostic audiological examination. Screening levels are relative device volumes, NOT calibrated dB HL. For diagnostic audiometry with calibrated equipment (ANSI/ISO standards), threshold determination, bone conduction, tympanometry, or speech testing, consult a licensed audiologist.',
       timestamp: new Date().toISOString(),
     }
 
@@ -413,7 +460,7 @@ export default function HearingTestScreen() {
             </View>
 
             <Text style={styles.checkNote}>
-              Headphones are required for reliable left/right ear separation.
+              ✓ Headphones are required for reliable left/right ear separation. Speakers will not provide accurate screening results.
             </Text>
           </View>
 
@@ -424,6 +471,53 @@ export default function HearingTestScreen() {
               onPress={handleHeadphoneCheckPass}
             >
               <Text style={styles.continueButtonText}>Yes, Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    )
+  }
+
+  if (phase === 'ambient-noise') {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.emoji}>🔇</Text>
+          <Text style={styles.title}>Ambient Noise Check</Text>
+          <Text style={styles.subtitle}>Ensure a quiet testing environment</Text>
+
+          <View style={styles.noticeBox}>
+            <Text style={styles.noticeTitle}>⚠️ Environmental Requirements</Text>
+            <Text style={styles.noticeText}>
+              Clinical screening protocols require ambient noise levels below 50 dB for reliable results. 
+              Background noise can mask tones and cause false failures.
+            </Text>
+          </View>
+
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>Before proceeding, ensure:</Text>
+            <Text style={styles.infoItem}>✓ You are in a <Text style={styles.bold}>quiet room</Text> away from traffic, conversations, or machinery</Text>
+            <Text style={styles.infoItem}>✓ Windows and doors are closed to reduce external noise</Text>
+            <Text style={styles.infoItem}>✓ Fans, air conditioning, or other noise sources are off if possible</Text>
+            <Text style={styles.infoItem}>✓ You are not in a busy environment (cafeteria, hallway, open office)</Text>
+            <Text style={styles.infoItem}>✓ Phone notifications and other devices are silenced</Text>
+          </View>
+
+          <View style={[styles.infoBox, { backgroundColor: '#EFF6FF' }]}>
+            <Text style={[styles.infoItem, { fontSize: 11, color: '#1E3A8A' }]}>
+              <Text style={styles.bold}>Note:</Text> This screening cannot measure actual ambient noise levels. You are attesting that your environment meets the quiet conditions described above.
+            </Text>
+          </View>
+
+          <View style={styles.centerContent}>
+            <Text style={[styles.questionText, { fontWeight: '600' }]}>
+              I am in a quiet environment suitable for hearing screening
+            </Text>
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={handleAmbientNoiseConfirm}
+            >
+              <Text style={styles.continueButtonText}>✓ Confirm & Continue</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -489,8 +583,8 @@ export default function HearingTestScreen() {
   if (phase === 'testing') {
     const frequency = SCREENING_FREQUENCIES[currentFreqIndex]
     const totalTests = SCREENING_FREQUENCIES.length * 2
-    const completedTests = results.length
-    const progress = (completedTests / totalTests) * 100
+    const completedRealTests = results.filter(r => r.frequency !== null).length
+    const progress = (completedRealTests / totalTests) * 100
 
     return (
       <View style={styles.container}>
@@ -501,8 +595,8 @@ export default function HearingTestScreen() {
                 {currentEar === 'right' ? '→ Right Ear' : '← Left Ear'} • {frequency} Hz
               </Text>
             </View>
-            <Text style={styles.testInstruction}>Listen for the tone</Text>
-            <Text style={styles.testProgress}>Test {completedTests + 1} of {totalTests}</Text>
+            <Text style={styles.testInstruction}>Listen for the pulsed tone</Text>
+            <Text style={styles.testProgress}>Frequency {currentFreqIndex + 1} of {SCREENING_FREQUENCIES.length} • {completedRealTests} / {totalTests} tests</Text>
           </View>
 
           <View style={styles.toneArea}>
@@ -510,16 +604,27 @@ export default function HearingTestScreen() {
               {currentEar === 'left' ? '👂' : '👂'}
             </Text>
             <Text style={styles.tonePrompt}>
-              Tap the button to play a tone, then respond whether you heard it.
+              Tap the button to play the tone, then respond whether you heard it.
+            </Text>
+            <Text style={[styles.tonePrompt, { fontSize: 11, marginTop: 4 }]}>
+              You will hear {TONE_PULSE_COUNT} short pulses if a tone is present
             </Text>
 
             <TouchableOpacity
               style={[styles.toneButton, isPlaying && styles.toneButtonDisabled]}
-              onPress={() => playTone(frequency, currentEar, 1500)}
+              onPress={() => {
+                if (!currentTestIsCatchTrial) {
+                  playTone(frequency, currentEar, TONE_PULSE_DURATION_MS * TONE_PULSE_COUNT + TONE_PULSE_GAP_MS * (TONE_PULSE_COUNT - 1))
+                } else {
+                  // Catch trial - no sound, but show "playing" state
+                  setIsPlaying(true)
+                  setTimeout(() => setIsPlaying(false), TONE_PULSE_DURATION_MS * TONE_PULSE_COUNT + TONE_PULSE_GAP_MS * (TONE_PULSE_COUNT - 1))
+                }
+              }}
               disabled={isPlaying}
             >
               <Text style={styles.toneButtonText}>
-                {isPlaying ? '🔊 Playing Tone...' : '▶ Play Tone'}
+                {isPlaying ? '🔊 Playing...' : '▶ Play Tone'}
               </Text>
             </TouchableOpacity>
 
@@ -537,12 +642,17 @@ export default function HearingTestScreen() {
                 <Text style={styles.notHeardButtonText}>✗ Didn't Hear It</Text>
               </TouchableOpacity>
             </View>
+
+            <Text style={[styles.checkNote, { marginTop: 12, textAlign: 'center' }]}>
+              <Text style={styles.bold}>Clinical Protocol:</Text> Tones are presented as brief pulses. 
+              Some trials may be silent to assess response reliability—respond honestly based on what you hear.
+            </Text>
           </View>
 
           <View style={styles.progressSection}>
             <View style={styles.progressHeader}>
               <Text style={styles.progressLabel}>Overall Progress</Text>
-              <Text style={styles.progressCount}>{completedTests} / {totalTests}</Text>
+              <Text style={styles.progressCount}>{completedRealTests} / {totalTests}</Text>
             </View>
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -609,12 +719,24 @@ export default function HearingTestScreen() {
             ))}
           </View>
 
+          {falsePositiveCount > 0 && (
+            <View style={[styles.noticeBox, { backgroundColor: '#FEF3C7', borderColor: '#FCD34D', marginBottom: 16 }]}>
+              <Text style={[styles.disclaimerText, { color: '#92400E' }]}>
+                <Text style={styles.bold}>Response Reliability Note:</Text> You responded "heard" on {falsePositiveCount} silent catch trial(s). 
+                This may indicate guessing or difficulty maintaining attention. Consider retesting in a quieter environment 
+                or consulting an audiologist for comprehensive evaluation.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.disclaimerBox}>
             <Text style={styles.disclaimerText}>
-              <Text style={styles.bold}>Screening Aid:</Text> This is a basic hearing screening tool using mobile audio,
-              not a diagnostic audiological examination. Results should not replace professional evaluation
-              by a licensed audiologist. Screening conducted at standard frequencies (500, 1000, 2000, 4000 Hz).
-              For comprehensive hearing assessment, consult an audiologist.
+              <Text style={styles.bold}>SCREENING PROTOCOL — NOT DIAGNOSTIC AUDIOMETRY:</Text> This test follows clinical pure-tone screening 
+              methodology (pulsed tones, standard frequencies, catch trials) but uses relative device volumes, 
+              <Text style={styles.bold}> NOT calibrated dB HL</Text>. Results indicate relative hearing sensitivity and screening pass/refer 
+              outcomes only, not absolute audiometric thresholds. This is <Text style={styles.bold}>NOT</Text> a diagnostic audiological 
+              examination. For diagnostic audiometry with calibrated equipment (ANSI S3.6, ISO 8253), threshold determination, 
+              bone conduction, tympanometry, otoacoustic emissions, or speech audiometry, consult a licensed audiologist.
             </Text>
           </View>
 
