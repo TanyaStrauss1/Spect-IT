@@ -183,6 +183,16 @@ export default function PrescriptionTestPage() {
           <div className="bg-white rounded-lg shadow-xl p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Refractive Screening (Pinhole Method)</h1>
             
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+              <h3 className="font-semibold text-red-900 mb-2 text-lg">⚠️ NOT A PRESCRIPTION</h3>
+              <p className="text-sm text-red-800">
+                <strong>This screening does NOT provide a prescription.</strong> It only detects whether refractive error 
+                (nearsightedness, farsightedness, astigmatism) may be present. Precise sphere, cylinder, and axis values 
+                require comprehensive refraction by an optometrist or ophthalmologist. <strong>Do NOT attempt to order 
+                glasses or contact lenses based on this screening.</strong>
+              </p>
+            </div>
+
             <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
               <h3 className="font-semibold text-indigo-900 mb-2">
                 {currentEye === 'right' ? 'Right Eye (OD)' : 'Left Eye (OS)'}
