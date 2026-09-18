@@ -1,13 +1,50 @@
-# Spect-IT mobile app
+# Spect-IT Mobile App
 
-This Expo app opens the live Spect-IT website (`https://www.spect-it.com`) in a native WebView. Screening tests, shop enquiries, and specialist requests are the same product as the website — installable as an iOS/Android app.
+Expo-based mobile application for Spect-IT vision screening (Expo SDK 50).
 
+## Google Play Store Preparation
+
+This app is configured for Android builds with EAS. See [PLAY_STORE_CHECKLIST.md](./PLAY_STORE_CHECKLIST.md) for complete submission instructions.
+
+### Quick Start (Local Development)
 ```bash
-cd apps/mobile
 npm install
-npx expo start
+npm start
 ```
 
-Then press `i` for the iOS simulator or `a` for Android. Camera and location permissions are requested by the OS when a screening test or optional location search needs them.
+### Building for Play Store
+```bash
+# Prerequisites
+npm install -g eas-cli
+eas login
 
-This is not a second medical engine. Results remain a **screening**, not a diagnosis.
+# First-time setup
+eas build:configure
+
+# Build production AAB
+eas build -p android --profile production
+```
+
+## Configuration
+
+- **Package**: `com.spectit.app`
+- **Version**: `1.0.0` (versionCode: 1)
+- **Config**: `app.config.js` (migrated from app.json for dynamic configuration)
+- **Build profiles**: `eas.json`
+
+## Permissions
+
+- **CAMERA**: Required for vision test calibration
+- **ACCESS_COARSE_LOCATION**: Optional, for finding nearby optical practices
+
+## Monorepo Setup
+
+This app is part of a monorepo with workspace dependencies (`@spect-it/cv`). EAS builds handle workspace installation automatically. If you encounter workspace errors during EAS builds, see the troubleshooting section in [PLAY_STORE_CHECKLIST.md](./PLAY_STORE_CHECKLIST.md).
+
+## Privacy Policy
+
+https://spect-it.com/privacy
+
+## Important: Screening Disclaimer
+
+Spect-IT provides **screening only**, not medical diagnosis or dispensable prescriptions. All marketing materials, store listings, and in-app messaging must maintain this positioning to comply with medical app regulations.
