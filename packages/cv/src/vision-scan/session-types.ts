@@ -8,6 +8,7 @@ import type {
   DeviceQualification,
   CalibrationResult,
   AlignmentResult,
+  CoverUncoverResult,
   MotilityResult,
   ConvergenceResult,
   PupilExaminationResult,
@@ -24,6 +25,7 @@ export type VisionScanSessionState = {
   deviceQualification: DeviceQualification | null
   calibration: CalibrationResult | null
   alignment: AlignmentResult | null
+  coverUncover: CoverUncoverResult | null
   motility: MotilityResult | null
   convergence: ConvergenceResult | null
   pupilExamination: PupilExaminationResult | null
@@ -52,6 +54,7 @@ export type VisionScanSessionActions = {
   setDeviceQualification: (result: DeviceQualification) => void
   setCalibration: (result: CalibrationResult) => void
   setAlignment: (result: AlignmentResult) => void
+  setCoverUncover: (result: CoverUncoverResult) => void
   setMotility: (result: MotilityResult) => void
   setConvergence: (result: ConvergenceResult) => void
   setPupilExamination: (result: PupilExaminationResult) => void

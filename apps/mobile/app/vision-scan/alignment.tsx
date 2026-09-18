@@ -240,7 +240,7 @@ export default function AlignmentScreen() {
   }
 
   const handleContinue = () => {
-    router.push('/vision-scan/motility')
+    router.push('/vision-scan/cover-uncover')
   }
 
   const handleRetry = () => {

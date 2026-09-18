@@ -163,6 +163,59 @@ export type ConvergenceResult = {
 }
 
 // ============================================================================
+// Cover-Uncover (Occlusion) Screening
+// ============================================================================
+
+export type CoverUncoverPhase = 
+  | 'baseline'      // Both eyes visible, baseline position
+  | 'cover-left'    // Left eye covered
+  | 'uncover-left'  // Left eye just uncovered
+  | 'cover-right'   // Right eye covered
+  | 'uncover-right' // Right eye just uncovered
+
+export type OcclusionStatus = {
+  leftEyeVisible: boolean
+  rightEyeVisible: boolean
+  leftEyeOcclusionConfidence: number  // 0-1, confidence that eye is covered
+  rightEyeOcclusionConfidence: number // 0-1, confidence that eye is covered
+  detectionMethod: 'eye-landmarks' | 'heuristic' | 'failed'
+}
+
+export type CoverUncoverFrame = {
+  timestamp: number
+  phase: CoverUncoverPhase
+  leftEye: EyePosition | null
+  rightEye: EyePosition | null
+  occlusion: OcclusionStatus
+  headPose: { pitch: number; yaw: number; roll: number }
+  headDisplacement: number // mm from baseline
+  quality: number
+  rejected: boolean // true if quality gates failed
+}
+
+export type CoverUncoverResult = {
+  timestamp: number
+  frames: CoverUncoverFrame[]
+  phaseData: Record<CoverUncoverPhase, CoverUncoverFrame[]>
+  
+  // Alignment shifts detected during cover/uncover
+  leftEyeShift: { horizontal: number; vertical: number } | null // degrees
+  rightEyeShift: { horizontal: number; vertical: number } | null // degrees
+  
+  // Screening assessment
+  asymmetryDetected: boolean
+  asymmetryScore: number // 0-100, higher = more asymmetry
+  screeningNote: string
+  
+  // Quality metrics
+  qualityIssues: string[]
+  usedSensorData: boolean
+  
+  // Honest limitations
+  reliabilityNote: string // e.g., "Occlusion detection is approximate; results should be confirmed professionally"
+}
+
+// ============================================================================
 // Quality & Confidence
 // ============================================================================
 
@@ -170,6 +223,7 @@ export type ModuleName =
   | 'device-qualification'
   | 'calibration'
   | 'alignment'
+  | 'cover-uncover'
   | 'motility'
   | 'convergence'
   | 'pupil-examination'
@@ -235,6 +289,7 @@ export type VisionScanResult = {
   deviceQualification: DeviceQualification
   calibration: CalibrationResult
   alignment: AlignmentResult
+  coverUncover: CoverUncoverResult | null // Optional, may be skipped in some scans
   motility: MotilityResult
   convergence: ConvergenceResult
   pupilExamination: PupilExaminationResult | null
