@@ -11,10 +11,12 @@ import { DeviceQualifier, type DeviceQualification, type CapabilityMatrix } from
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { requestCameraPermission, type DetectedFace, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 
 export default function QualificationScreen() {
   const { setDeviceQualification } = useVisionScan()
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
+  const [cameraError, setCameraError] = useState<'permission-denied' | 'camera-unavailable' | 'camera-error' | null>(null)
   const [isQualifying, setIsQualifying] = useState(false)
   const [qualification, setQualification] = useState<DeviceQualification | null>(null)
   const [capabilityMatrix, setCapabilityMatrix] = useState<CapabilityMatrix | null>(null)
@@ -35,12 +37,9 @@ export default function QualificationScreen() {
     setHasPermission(granted)
     
     if (!granted) {
-      Alert.alert(
-        'Camera Permission Required',
-        'Vision Scan requires camera access to assess your eye function. Please grant camera permission in settings.',
-        [{ text: 'OK' }]
-      )
+      setCameraError('permission-denied')
     } else {
+      setCameraError(null)
       // Auto-start qualification after a short delay
       setTimeout(() => {
         runQualification()
@@ -122,6 +121,20 @@ export default function QualificationScreen() {
     runQualification()
   }
 
+  const handleCameraRetry = () => {
+    setCameraError(null)
+    setHasPermission(null)
+    setupCamera()
+  }
+
+  const handleCameraCancel = () => {
+    router.back()
+  }
+
+  const handleCameraError = () => {
+    setCameraError('camera-error')
+  }
+
   if (hasPermission === null) {
     return (
       <View style={styles.container}>
@@ -131,18 +144,13 @@ export default function QualificationScreen() {
     )
   }
 
-  if (hasPermission === false) {
+  if (hasPermission === false || cameraError) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorIcon}>⚠️</Text>
-        <Text style={styles.errorTitle}>Camera Permission Denied</Text>
-        <Text style={styles.errorText}>
-          Vision Scan requires camera access to function. Please enable camera permission in your device settings.
-        </Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
+      <CameraRecovery
+        error={cameraError || 'permission-denied'}
+        onRetry={handleCameraRetry}
+        onCancel={handleCameraCancel}
+      />
     )
   }
 
@@ -156,6 +164,8 @@ export default function QualificationScreen() {
             style={styles.camera}
             type={CameraType.front}
             onFacesDetected={handleFacesDetected}
+            onCameraReady={() => console.log('Camera ready')}
+            onMountError={handleCameraError}
             faceDetectorSettings={{
               mode: FaceDetector.FaceDetectorMode.fast,
               detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,

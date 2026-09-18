@@ -16,6 +16,7 @@ import {
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, computeHeadPose, estimateFaceDistance, applyEMA, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -28,6 +29,7 @@ export default function CalibrationScreen() {
   const [isComplete, setIsComplete] = useState(false)
   const [result, setResult] = useState<CalibrationResult | null>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
+  const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
 
   // Temporal smoothing state
@@ -162,6 +164,28 @@ export default function CalibrationScreen() {
     setResult(null)
   }
 
+  const handleCameraError = () => {
+    setCameraError('camera-error')
+  }
+
+  const handleCameraRetry = () => {
+    setCameraError(null)
+  }
+
+  const handleCameraCancel = () => {
+    router.back()
+  }
+
+  if (cameraError) {
+    return (
+      <CameraRecovery
+        error={cameraError}
+        onRetry={handleCameraRetry}
+        onCancel={handleCameraCancel}
+      />
+    )
+  }
+
   if (isComplete && result) {
     return (
       <View style={styles.container}>
@@ -260,6 +284,7 @@ export default function CalibrationScreen() {
         style={styles.camera}
         type={CameraType.front}
         onFacesDetected={handleFacesDetected}
+        onMountError={handleCameraError}
         faceDetectorSettings={{
           mode: FaceDetector.FaceDetectorMode.accurate,
           detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,

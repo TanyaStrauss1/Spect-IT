@@ -13,6 +13,7 @@ import { ConvergenceTracker, QualityEngine, type ConvergenceFrame } from '@spect
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, estimateFaceDistance, estimateVergence, applyEMA, medianFilter, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 
 export default function ConvergenceScreen() {
   const {
@@ -32,6 +33,7 @@ export default function ConvergenceScreen() {
   const [baselineIPD, setBaselineIPD] = useState<number | null>(null)
   const [baselineFaceWidth, setBaselineFaceWidth] = useState<number | null>(null)
   const [vergenceMethod, setVergenceMethod] = useState<'ipd-change' | 'face-width-change' | null>(null)
+  const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
 
   // Temporal smoothing state
@@ -216,6 +218,28 @@ export default function ConvergenceScreen() {
     router.push('/vision-scan/quality-review')
   }
 
+  const handleCameraError = () => {
+    setCameraError('camera-error')
+  }
+
+  const handleCameraRetry = () => {
+    setCameraError(null)
+  }
+
+  const handleCameraCancel = () => {
+    router.back()
+  }
+
+  if (cameraError) {
+    return (
+      <CameraRecovery
+        error={cameraError}
+        onRetry={handleCameraRetry}
+        onCancel={handleCameraCancel}
+      />
+    )
+  }
+
   if (phase === 'complete') {
     return (
       <View style={styles.container}>
@@ -252,6 +276,7 @@ export default function ConvergenceScreen() {
         style={styles.camera}
         type={CameraType.front}
         onFacesDetected={handleFacesDetected}
+        onMountError={handleCameraError}
         faceDetectorSettings={{
           mode: FaceDetector.FaceDetectorMode.fast,
           detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,

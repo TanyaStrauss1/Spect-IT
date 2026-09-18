@@ -203,6 +203,11 @@ export type VisionScanResult = {
   screeningSummary: string // Overall screening message - no diagnoses
   recommendsProfessionalExam: boolean
   repeatAttempts: Record<ModuleName, number>
+  methodology?: {
+    distanceMethod?: string // e.g., 'sensor', 'ipd-first-with-face-width-fallback'
+    gazeMethod?: string // e.g., 'eye-landmarks-relative-to-face-bounds'
+    vergenceMethod?: string // e.g., 'ipd-change-with-face-width-fallback'
+  }
 }
 
 // ============================================================================

@@ -11,6 +11,7 @@ import { MotilityTracker, type GazePosition, type MotilityFrame } from '@spect-i
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, computeHeadPose, estimateFaceDistance, applyEMA, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 
 const { width: screenWidth } = Dimensions.get('window')
 
@@ -22,6 +23,7 @@ export default function MotilityScreen() {
   const [frameCount, setFrameCount] = useState(0)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [lastFacePosition, setLastFacePosition] = useState<{ x: number; y: number } | null>(null)
+  const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
   const framesPerPosition = 10
 
@@ -168,6 +170,28 @@ export default function MotilityScreen() {
     }
   }
 
+  const handleCameraError = () => {
+    setCameraError('camera-error')
+  }
+
+  const handleCameraRetry = () => {
+    setCameraError(null)
+  }
+
+  const handleCameraCancel = () => {
+    router.back()
+  }
+
+  if (cameraError) {
+    return (
+      <CameraRecovery
+        error={cameraError}
+        onRetry={handleCameraRetry}
+        onCancel={handleCameraCancel}
+      />
+    )
+  }
+
   const getPositionCoord = (position: GazePosition) => {
     const coords: Record<GazePosition, { x: number; y: number }> = {
       center: { x: 0, y: 0 },
@@ -206,6 +230,7 @@ export default function MotilityScreen() {
         style={styles.camera}
         type={CameraType.front}
         onFacesDetected={handleFacesDetected}
+        onMountError={handleCameraError}
         faceDetectorSettings={{
           mode: FaceDetector.FaceDetectorMode.fast,
           detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
