@@ -29,6 +29,13 @@ export type VisionScanSessionState = {
   // Quality assessment
   qualityAssessment: QualityAssessment | null
   
+  // Methodology tracking (observed methods actually used during capture)
+  methodology: {
+    distanceMethod?: string
+    gazeMethod?: string
+    vergenceMethod?: string
+  }
+  
   // Repeat tracking
   repeatAttempts: Record<string, number>
   
@@ -46,6 +53,7 @@ export type VisionScanSessionActions = {
   setConvergence: (result: ConvergenceResult) => void
   setQualityAssessment: (assessment: QualityAssessment) => void
   recordRepeatAttempt: (module: string) => void
+  updateMethodology: (methodologyUpdate: Partial<{ distanceMethod: string; gazeMethod: string; vergenceMethod: string }>) => void
   completeSession: () => void
   resetSession: () => void
   buildFinalResult: () => VisionScanResult | null

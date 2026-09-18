@@ -30,6 +30,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     motility: null,
     convergence: null,
     qualityAssessment: null,
+    methodology: {},
     repeatAttempts: {},
     isComplete: false,
     completedAt: null,
@@ -46,6 +47,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       motility: null,
       convergence: null,
       qualityAssessment: null,
+      methodology: {},
       repeatAttempts: {},
       isComplete: false,
       completedAt: null,
@@ -86,6 +88,16 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     }))
   }, [])
 
+  const updateMethodology = useCallback((methodologyUpdate: Partial<{ distanceMethod: string; gazeMethod: string; vergenceMethod: string }>) => {
+    setSession((prev) => ({
+      ...prev,
+      methodology: {
+        ...prev.methodology,
+        ...methodologyUpdate,
+      },
+    }))
+  }, [])
+
   const completeSession = useCallback(() => {
     setSession((prev) => ({
       ...prev,
@@ -105,6 +117,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       motility: null,
       convergence: null,
       qualityAssessment: null,
+      methodology: {},
       repeatAttempts: {},
       isComplete: false,
       completedAt: null,
@@ -161,6 +174,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       screeningSummary,
       recommendsProfessionalExam,
       repeatAttempts: session.repeatAttempts,
+      methodology: session.methodology,
     }
   }, [session])
 
@@ -174,6 +188,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     setConvergence,
     setQualityAssessment,
     recordRepeatAttempt,
+    updateMethodology,
     completeSession,
     resetSession,
     buildFinalResult,

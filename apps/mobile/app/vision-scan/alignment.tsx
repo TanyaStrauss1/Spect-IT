@@ -18,6 +18,7 @@ import {
   detectFaceFlicker,
 } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -28,6 +29,7 @@ export default function AlignmentScreen() {
   const [isCapturing, setIsCapturing] = useState(true)
   const [result, setResult] = useState<AlignmentResult | null>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
+  const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
   const targetFrames = 30
 
@@ -191,6 +193,33 @@ export default function AlignmentScreen() {
     setResult(null)
   }
 
+  const handleCameraError = () => {
+    setIsCapturing(false)
+    setCameraError('camera-error')
+  }
+
+  const handleCameraRetry = () => {
+    setCameraError(null)
+    // Resume from current frame count (don't restart)
+    if (!result) {
+      setIsCapturing(true)
+    }
+  }
+
+  const handleCameraCancel = () => {
+    router.back()
+  }
+
+  if (cameraError) {
+    return (
+      <CameraRecovery
+        error={cameraError}
+        onRetry={handleCameraRetry}
+        onCancel={handleCameraCancel}
+      />
+    )
+  }
+
   if (!isCapturing && result) {
     return (
       <View style={styles.container}>
@@ -256,6 +285,7 @@ export default function AlignmentScreen() {
         style={styles.camera}
         type={CameraType.front}
         onFacesDetected={handleFacesDetected}
+        onMountError={handleCameraError}
         faceDetectorSettings={{
           mode: FaceDetector.FaceDetectorMode.accurate,
           detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,

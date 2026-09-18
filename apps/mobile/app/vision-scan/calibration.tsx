@@ -16,11 +16,12 @@ import {
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, computeHeadPose, estimateFaceDistance, applyEMA, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function CalibrationScreen() {
-  const { deviceQualification, setCalibration, recordRepeatAttempt } = useVisionScan()
+  const { deviceQualification, setCalibration, recordRepeatAttempt, updateMethodology } = useVisionScan()
   const [calibrator] = useState(() => new VisionScanCalibrator(deviceQualification?.useSensorBasedMeasurements || false))
   const [currentPointIndex, setCurrentPointIndex] = useState(0)
   const [calibrationPoints] = useState(VisionScanCalibrator.getCalibrationPoints())
@@ -28,6 +29,7 @@ export default function CalibrationScreen() {
   const [isComplete, setIsComplete] = useState(false)
   const [result, setResult] = useState<CalibrationResult | null>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
+  const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
 
   // Temporal smoothing state
@@ -89,6 +91,12 @@ export default function CalibrationScreen() {
       detectedFace.leftEye,
       detectedFace.rightEye
     )
+
+    // Track the actual distance method used
+    updateMethodology({
+      distanceMethod: faceDistanceResult.method === 'ipd' ? 'ipd-preferred' : 'face-width-fallback',
+      gazeMethod: 'eye-landmarks-relative-to-face-bounds'
+    })
 
     // Compute quality based on smoothed face size, stability, and head pose
     const faceSizeScore = Math.min(1, smoothedBounds.width / (screenWidth * 0.4))
@@ -160,6 +168,33 @@ export default function CalibrationScreen() {
     setCurrentPointIndex(0)
     setIsComplete(false)
     setResult(null)
+  }
+
+  const handleCameraError = () => {
+    setIsCapturing(false)
+    setCameraError('camera-error')
+  }
+
+  const handleCameraRetry = () => {
+    setCameraError(null)
+    // Resume from current point
+    if (!isComplete) {
+      setIsCapturing(true)
+    }
+  }
+
+  const handleCameraCancel = () => {
+    router.back()
+  }
+
+  if (cameraError) {
+    return (
+      <CameraRecovery
+        error={cameraError}
+        onRetry={handleCameraRetry}
+        onCancel={handleCameraCancel}
+      />
+    )
   }
 
   if (isComplete && result) {
@@ -260,6 +295,7 @@ export default function CalibrationScreen() {
         style={styles.camera}
         type={CameraType.front}
         onFacesDetected={handleFacesDetected}
+        onMountError={handleCameraError}
         faceDetectorSettings={{
           mode: FaceDetector.FaceDetectorMode.accurate,
           detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
