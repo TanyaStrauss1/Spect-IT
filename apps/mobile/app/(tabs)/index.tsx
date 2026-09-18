@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useAuth } from '../../lib/auth/auth-context'
+import { VisionScanStatusCard } from '../../components/vision-scan/VisionScanStatusCard'
 
 export default function HomeScreen() {
   const { user, signOut } = useAuth()
@@ -32,25 +33,21 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.logo}>👁️</Text>
-      <Text style={styles.title}>Welcome back!</Text>
-      <Text style={styles.email}>{user.email}</Text>
-      
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.primaryButton, { backgroundColor: '#8B5CF6' }]}
-          onPress={() => router.push('/vision-scan')}
-        >
-          <Text style={styles.primaryButtonText}>👁️ Vision Scan (NEW)</Text>
-        </TouchableOpacity>
+    <ScrollView style={styles.scrollContainer}>
+      <View style={styles.container}>
+        <Text style={styles.logo}>👁️</Text>
+        <Text style={styles.title}>Welcome back!</Text>
+        <Text style={styles.email}>{user.email}</Text>
+        
+        <View style={styles.buttonContainer}>
+          <VisionScanStatusCard />
 
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/test/acuity')}
-        >
-          <Text style={styles.primaryButtonText}>👁️ Visual Acuity Test</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.push('/test/acuity')}
+          >
+            <Text style={styles.primaryButtonText}>👁️ Visual Acuity Test</Text>
+          </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.purpleButton}
@@ -108,17 +105,19 @@ export default function HomeScreen() {
           <Text style={styles.textButtonText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flex: 1,
     backgroundColor: '#EEF2FF',
+  },
+  container: {
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
+    paddingTop: 40,
   },
   logo: {
     fontSize: 80,

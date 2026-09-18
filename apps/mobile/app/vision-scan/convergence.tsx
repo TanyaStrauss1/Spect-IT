@@ -14,6 +14,8 @@ import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, estimateFaceDistance, estimateVergence, applyEMA, medianFilter, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
+import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
+import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
 
 export default function ConvergenceScreen() {
   const {
@@ -29,6 +31,7 @@ export default function ConvergenceScreen() {
   const [phase, setPhase] = useState<'approach' | 'recede' | 'complete'>('approach')
   const [distance, setDistance] = useState(600)
   const [frameCount, setFrameCount] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [initialFaceSize, setInitialFaceSize] = useState<number | null>(null)
   const [baselineIPD, setBaselineIPD] = useState<number | null>(null)
@@ -36,6 +39,7 @@ export default function ConvergenceScreen() {
   const [vergenceMethod, setVergenceMethod] = useState<'ipd-change' | 'face-width-change' | null>(null)
   const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
+  const faceLostTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Temporal smoothing state
   const [ipdBuffer, setIpdBuffer] = useState<number[]>([])
@@ -47,14 +51,14 @@ export default function ConvergenceScreen() {
   const BUFFER_SIZE = 5
 
   useEffect(() => {
-    if ((phase === 'approach' || phase === 'recede') && detectedFace) {
+    if ((phase === 'approach' || phase === 'recede') && !isPaused && detectedFace) {
       const interval = setInterval(() => {
         captureFrame()
       }, 100)
 
       return () => clearInterval(interval)
     }
-  }, [phase, distance, frameCount, detectedFace])
+  }, [phase, distance, frameCount, isPaused, detectedFace])
 
   const handleFacesDetected = ({ faces }: { faces: any[] }) => {
     if (faces.length > 0) {
@@ -67,6 +71,17 @@ export default function ConvergenceScreen() {
         yawAngle: face.yawAngle,
       }
       setDetectedFace(faceData)
+      
+      // Resume if was paused
+      if (isPaused) {
+        setIsPaused(false)
+      }
+      
+      // Clear any face-lost timeout
+      if (faceLostTimeoutRef.current) {
+        clearTimeout(faceLostTimeoutRef.current)
+        faceLostTimeoutRef.current = null
+      }
       
       // Store baseline measurements for vergence estimation
       if (!initialFaceSize) {
@@ -84,6 +99,13 @@ export default function ConvergenceScreen() {
       }
     } else {
       setDetectedFace(null)
+      
+      // Pause capture after 1 second of no face
+      if (!isPaused && !faceLostTimeoutRef.current && phase !== 'complete') {
+        faceLostTimeoutRef.current = setTimeout(() => {
+          setIsPaused(true)
+        }, 1000)
+      }
     }
   }
 
@@ -234,6 +256,20 @@ export default function ConvergenceScreen() {
   const handleCameraCancel = () => {
     router.back()
   }
+  
+  const computeFaceHoldStatus = (): FaceHoldStatus => {
+    if (!detectedFace) return 'no-face'
+    
+    // For convergence, we want the user moving the phone
+    // So we're more lenient on distance checks
+    const faceWidth = detectedFace.bounds.width
+    if (faceWidth < 80) return 'too-far'
+    
+    // Check if face is moving (expected during convergence)
+    // This is less strict than alignment
+    
+    return 'good'
+  }
 
   if (cameraError) {
     return (
@@ -272,6 +308,8 @@ export default function ConvergenceScreen() {
       : 'Slowly move phone away from your face'
 
   const distancePercent = ((600 - distance) / 500) * 100
+  const faceHoldStatus = computeFaceHoldStatus()
+  const useSensorMode = deviceQualification?.useSensorBasedMeasurements || false
 
   return (
     <View style={styles.container}>
@@ -290,32 +328,36 @@ export default function ConvergenceScreen() {
       />
 
       <View style={styles.overlay}>
-        <View style={styles.instructions}>
-          <Text style={styles.instructionText}>{phaseText}</Text>
-          <Text style={styles.distanceText}>Distance: {distance.toFixed(0)}mm</Text>
-          <Text style={styles.phaseText}>
-            Phase: {phase === 'approach' ? 'Approaching' : 'Receding'}
-          </Text>
-          {!detectedFace && (
-            <Text style={styles.warningText}>⚠️ Face not detected</Text>
-          )}
-        </View>
+        <FaceHoldCoaching 
+          status={faceHoldStatus}
+          frameCount={frameCount}
+          targetFrames={phase === 'approach' ? 50 : 100}
+          isPaused={isPaused}
+        />
 
         <View style={styles.convergenceArea}>
+          <View style={styles.phaseInstructionCard}>
+            <Text style={styles.phaseInstructionText}>{phaseText}</Text>
+            <Text style={styles.distanceText}>Distance: ~{distance.toFixed(0)}mm</Text>
+          </View>
           <View style={styles.fixationTarget} />
-          <Text style={styles.guideText}>Keep looking at the center dot</Text>
+          <Text style={styles.guideText}>Keep looking at the dot</Text>
         </View>
 
-        <View style={styles.distanceIndicator}>
-          <View style={styles.distanceBar}>
-            <View
-              style={[styles.distanceMarker, { left: `${Math.max(0, Math.min(100, distancePercent))}%` }]}
-            />
+        <View style={styles.bottomArea}>
+          <View style={styles.distanceIndicator}>
+            <View style={styles.distanceBar}>
+              <View
+                style={[styles.distanceMarker, { left: `${Math.max(0, Math.min(100, distancePercent))}%` }]}
+              />
+            </View>
+            <View style={styles.distanceLabels}>
+              <Text style={styles.distanceLabel}>Far (600mm)</Text>
+              <Text style={styles.distanceLabel}>Near (100mm)</Text>
+            </View>
           </View>
-          <View style={styles.distanceLabels}>
-            <Text style={styles.distanceLabel}>Far (600mm)</Text>
-            <Text style={styles.distanceLabel}>Near (100mm)</Text>
-          </View>
+
+          <DegradedModeBanner useSensorMode={useSensorMode} />
         </View>
       </View>
     </View>
@@ -332,37 +374,30 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  instructions: {
-    padding: 20,
-    alignItems: 'center',
-    backgroundColor: 'rgba(55, 65, 81, 0.95)',
-  },
-  instructionText: {
-    fontSize: 18,
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  distanceText: {
-    fontSize: 16,
-    color: '#9CA3AF',
-    marginBottom: 4,
-  },
-  phaseText: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#F59E0B',
-    marginTop: 4,
+    justifyContent: 'center',
   },
   convergenceArea: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  phaseInstructionCard: {
+    backgroundColor: 'rgba(55, 65, 81, 0.9)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  phaseInstructionText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  distanceText: {
+    fontSize: 14,
+    color: '#9CA3AF',
   },
   fixationTarget: {
     width: 50,
@@ -371,15 +406,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#F59E0B',
     borderWidth: 4,
     borderColor: 'white',
-    marginBottom: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   guideText: {
-    fontSize: 16,
-    color: '#9CA3AF',
+    fontSize: 14,
+    color: 'white',
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  bottomArea: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   distanceIndicator: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   distanceBar: {
     height: 40,
