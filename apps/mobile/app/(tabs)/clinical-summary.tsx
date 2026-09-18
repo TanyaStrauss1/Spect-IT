@@ -392,6 +392,9 @@ export default function ClinicalSummaryScreen() {
                     ` (L: ${summary.hearing.test_data.leftEarPassCount}/${summary.hearing.test_data.totalFrequencies}, R: ${summary.hearing.test_data.rightEarPassCount}/${summary.hearing.test_data.totalFrequencies})`
                   )}
                 </Text>
+                <Text style={[styles.testResult, { fontSize: 11, color: '#DC2626', fontWeight: '600', marginTop: 2 }]}>
+                  ⚠️ Relative volumes only — NOT calibrated dB HL
+                </Text>
                 <Text style={styles.testDate}>
                   Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
                 </Text>
@@ -401,7 +404,7 @@ export default function ClinicalSummaryScreen() {
 
           {summary.visionScan && (
             <View style={[styles.testCard, { backgroundColor: '#F5F3FF', borderColor: '#A78BFA' }]}>
-              <Text style={styles.testIcon}>👁️</Text>
+              <Text style={styles.testIcon}>📱</Text>
               <View style={styles.testInfo}>
                 <Text style={styles.testName}>Vision Scan – Ocular Function Screening</Text>
                 <Text style={[styles.testResult, { 
@@ -415,6 +418,16 @@ export default function ClinicalSummaryScreen() {
                 <Text style={[styles.testResult, { fontSize: 12, marginTop: 4 }]}>
                   {summary.visionScan.test_data?.screeningSummary || 'Mobile camera wellness screening'}
                 </Text>
+                {summary.visionScan.test_data?.alignment?.alignmentIndex !== undefined && (
+                  <Text style={[styles.testResult, { fontSize: 11, marginTop: 3 }]}>
+                    • Alignment Index: {Math.round(summary.visionScan.test_data.alignment.alignmentIndex)}/100
+                  </Text>
+                )}
+                {summary.visionScan.test_data?.convergence?.nearPoint !== undefined && (
+                  <Text style={[styles.testResult, { fontSize: 11 }]}>
+                    • Convergence Near Point: {Math.round(summary.visionScan.test_data.convergence.nearPoint)}mm
+                  </Text>
+                )}
                 <Text style={[styles.testDate, { marginTop: 4 }]}>
                   Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
                 </Text>
