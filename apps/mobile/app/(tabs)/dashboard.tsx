@@ -270,15 +270,15 @@ export default function DashboardScreen() {
       {/* Vision Trends */}
       <TrendsSection results={results} />
 
-      {/* Clinical Summary Button */}
+      {/* Screening Profile Button */}
       <TouchableOpacity
         style={styles.clinicalSummaryButton}
         onPress={() => router.push('/clinical-summary' as any)}
       >
-        <Text style={styles.clinicalSummaryIcon}>🩺</Text>
+        <Text style={styles.clinicalSummaryIcon}>📋</Text>
         <View style={styles.clinicalSummaryContent}>
-          <Text style={styles.clinicalSummaryTitle}>View Clinical Summary</Text>
-          <Text style={styles.clinicalSummaryText}>Per-eye breakdown & recommendations</Text>
+          <Text style={styles.clinicalSummaryTitle}>View Screening Profile</Text>
+          <Text style={styles.clinicalSummaryText}>Unified wellness screening results</Text>
         </View>
         <Text style={styles.clinicalSummaryArrow}>→</Text>
       </TouchableOpacity>

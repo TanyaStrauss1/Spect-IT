@@ -1,6 +1,6 @@
 /**
- * Clinical Results Summary Page
- * Unified results page with per-eye breakdown, PDF export, and recommendations
+ * Wellness Screening Profile Page
+ * Unified screening results with per-eye breakdown, PDF export, and recommendations
  */
 
 'use client'
@@ -75,7 +75,7 @@ export default function ClinicalSummaryPage() {
   }
 
   const handleShare = async () => {
-    const text = `Spect-IT Vision Screening Report\n\nCompleted: ${new Date().toLocaleDateString()}\n\nView full results at spect-it.com\n\nNote: Screening only — not a diagnosis or prescription.`
+    const text = `Spect-IT Wellness Screening Report\n\nCompleted: ${new Date().toLocaleDateString()}\n\nView full results at spect-it.com\n\nImportant: Wellness screening only — NOT medical diagnoses, clinical exams, or dispensable prescriptions.`
     
     if (navigator.share) {
       try {
@@ -97,7 +97,7 @@ export default function ClinicalSummaryPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your clinical summary...</p>
+          <p className="mt-4 text-gray-600">Loading your wellness screening profile...</p>
           <p className="mt-2 text-sm text-gray-500">Analyzing test history</p>
         </div>
       </div>
@@ -145,11 +145,11 @@ export default function ClinicalSummaryPage() {
             </h2>
             <p className="text-gray-600 mb-2">
               {activeParticipant && !activeParticipant.is_self
-                ? `Complete some vision tests for ${activeParticipant.display_name} to generate their clinical summary`
-                : 'Complete some vision tests to generate your clinical summary'}
+                ? `Complete some vision tests for ${activeParticipant.display_name} to generate their wellness screening profile`
+                : 'Complete some vision tests to generate your wellness screening profile'}
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              The summary includes per-eye acuity, color vision, contrast sensitivity, and more
+              Your profile includes per-eye acuity, color vision, contrast sensitivity, hearing screening, Vision Scan, and more
             </p>
             <div className="flex gap-3 justify-center">
               <Link href="/tests">
@@ -177,7 +177,7 @@ export default function ClinicalSummaryPage() {
           <div className="flex justify-between items-start mb-4 print:mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2 print:text-2xl">
-                Spect-IT Clinical Screening Summary
+                Spect-IT Wellness Screening Profile
                 {activeParticipant && !activeParticipant.is_self && (
                   <span className="text-xl font-normal text-indigo-600 ml-3">
                     ({activeParticipant.display_name})
@@ -185,7 +185,7 @@ export default function ClinicalSummaryPage() {
                 )}
               </h1>
               <p className="text-gray-600 print:text-sm">
-                Generated {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
+                Screening Summary · {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
                 {' '}at {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </p>
               {user?.email && (
@@ -216,8 +216,8 @@ export default function ClinicalSummaryPage() {
           </div>
           <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded print:border print:border-amber-500 print:mt-4">
             <p className="text-sm text-amber-800">
-              <strong>Important Medical Disclaimer:</strong> This is a screening assessment for informational use only, NOT a medical diagnosis, clinical assessment, or dispensable eyewear prescription. 
-              Results must be confirmed by a licensed optometrist or ophthalmologist. Consult an eye care professional for clinical decisions, prescriptions, and comprehensive eye examinations.
+              <strong>Wellness Screening Only:</strong> These results are wellness screening assessments for informational purposes only — NOT medical diagnoses, clinical examinations, or dispensable prescriptions. 
+              Always consult a licensed optometrist or ophthalmologist for comprehensive eye examinations, clinical diagnoses, treatment decisions, and prescription eyewear. Screening does not replace professional care.
             </p>
           </div>
 
@@ -358,10 +358,11 @@ export default function ClinicalSummaryPage() {
             {(summary.leftEye?.interpretation || summary.rightEye?.interpretation || summary.bothEyes?.interpretation) && (
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <p className="text-sm text-blue-900">
-                  <strong>Recommendation:</strong>{' '}
+                  <strong>Screening Guidance:</strong>{' '}
                   {summary.leftEye?.interpretation?.recommendation || 
                    summary.rightEye?.interpretation?.recommendation || 
                    summary.bothEyes?.interpretation?.recommendation}
+                  {' '}This is screening guidance only — consult an eye care professional for a comprehensive exam.
                 </p>
               </div>
             )}
@@ -371,7 +372,7 @@ export default function ClinicalSummaryPage() {
         {/* Other Tests Summary */}
         {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing || summary.visionScan) && (
           <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">🎨 Other Screening Tests</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">🎨 Additional Wellness Screenings</h2>
             
             <div className="grid md:grid-cols-2 gap-4">
               {summary.colorVision && (
@@ -433,7 +434,7 @@ export default function ClinicalSummaryPage() {
                     <div className="flex-1">
                       <div className="font-bold text-gray-900">Refractive Screening</div>
                       <div className="text-sm text-amber-700 mt-1 font-semibold">
-                        Screening estimate only — NOT dispensable
+                        Wellness screening only — NOT a dispensable prescription
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.prescription.created_at).toLocaleDateString()}
@@ -487,7 +488,7 @@ export default function ClinicalSummaryPage() {
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">👁️</div>
                     <div className="flex-1">
-                      <div className="font-bold text-gray-900">Vision Scan - Ocular Function</div>
+                      <div className="font-bold text-gray-900">Vision Scan – Ocular Function Screening</div>
                       <div className={`text-sm mt-1 font-semibold ${
                         summary.visionScan.test_data?.recommendsProfessionalExam 
                           ? 'text-amber-700' 
@@ -495,13 +496,13 @@ export default function ClinicalSummaryPage() {
                       }`}>
                         {summary.visionScan.test_data?.recommendsProfessionalExam 
                           ? '⚠️ Professional exam recommended'
-                          : '✓ No significant issues detected'}
+                          : '✓ No significant issues detected in screening'}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {summary.visionScan.test_data?.screeningSummary || 'Mobile camera screening'}
+                        {summary.visionScan.test_data?.screeningSummary || 'Mobile camera wellness screening'}
                       </div>
                       <div className="text-xs text-purple-700 mt-1 font-semibold">
-                        Mobile camera screening (alignment, motility, convergence)
+                        Wellness screening via mobile camera (alignment, motility, convergence)
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
@@ -517,15 +518,15 @@ export default function ClinicalSummaryPage() {
         {/* When to See an Optometrist */}
         <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            👁️ When to See an Optometrist
+            👁️ Professional Eye Care
           </h2>
           
           <div className="space-y-3">
             <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
               <span className="text-green-600 text-xl">✓</span>
               <div>
-                <div className="font-semibold text-gray-900">Annual eye exams</div>
-                <div className="text-sm text-gray-600">Recommended for everyone, even with good screening results.</div>
+                <div className="font-semibold text-gray-900">Annual comprehensive eye exams</div>
+                <div className="text-sm text-gray-600">Recommended for everyone, even with good screening results. Screening does not replace professional care.</div>
               </div>
             </div>
             
@@ -618,7 +619,7 @@ export default function ClinicalSummaryPage() {
           @page {
             margin: 1.5cm;
             @bottom-center {
-              content: "Spect-IT Screening Report — spect-it.com — NOT a diagnosis or prescription";
+              content: "Spect-IT Wellness Screening — spect-it.com — NOT medical diagnoses or dispensable prescriptions";
               font-size: 8pt;
               color: #6b7280;
             }
