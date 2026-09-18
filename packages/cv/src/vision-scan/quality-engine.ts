@@ -171,7 +171,7 @@ export class QualityEngine {
     }
 
     // Check for sufficient frames per position (stricter gate)
-    const positionKeys = Object.keys(motility.positions) as any[]
+    const positionKeys = Object.keys(motility.positions) as (keyof typeof motility.positions)[]
     const insufficientPositions = positionKeys.filter(pos => {
       const frames = motility.positions[pos].filter((f: any) => !f.rejected)
       return frames.length < 3
