@@ -26,7 +26,8 @@ const CORE_TESTS = [
   { id: 'contrast', name: 'Contrast Sensitivity', route: '/tests/contrast', testType: TEST_TYPE_ID.CONTRAST_SENSITIVITY },
   { id: 'visual-field', name: 'Visual Field', route: '/tests/visual-field', testType: TEST_TYPE_ID.VISUAL_FIELD },
   { id: 'prescription', name: 'Prescription', route: '/tests/prescription', testType: TEST_TYPE_ID.PRESCRIPTION },
-  { id: 'hearing', name: 'Hearing Screening', route: '/tests/hearing', testType: TEST_TYPE_ID.HEARING }
+  { id: 'hearing', name: 'Hearing Screening', route: '/tests/hearing', testType: TEST_TYPE_ID.HEARING },
+  { id: 'vision-scan', name: 'Vision Scan (Mobile App Only)', route: null, testType: TEST_TYPE_ID.VISION_SCAN, mobileOnly: true }
 ]
 
 interface ClassroomSessionProps {
@@ -196,37 +197,47 @@ export function ClassroomSession({ session: initialSession, onExit }: ClassroomS
         <div className="space-y-3">
           {CORE_TESTS.map(test => {
             const isCompleted = getTestStatus(test.testType)
+            const isMobileOnly = test.mobileOnly || false
             return (
               <div
                 key={test.id}
                 className={`border-2 rounded-lg p-4 transition-all ${
                   isCompleted
                     ? 'border-green-300 bg-green-50'
+                    : isMobileOnly
+                    ? 'border-purple-200 bg-purple-50'
                     : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1">
                     <div className="text-3xl">
-                      {isCompleted ? '✅' : '⬜'}
+                      {isCompleted ? '✅' : isMobileOnly ? '📱' : '⬜'}
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">{test.name}</h4>
                       <p className="text-sm text-gray-500">
-                        {isCompleted ? 'Completed' : 'Not started'}
+                        {isCompleted ? 'Completed' : isMobileOnly ? 'Available in mobile app only' : 'Not started'}
                       </p>
                     </div>
                   </div>
-                  <Button
-                    onClick={() => handleTestClick(test.route)}
-                    className={`${
-                      isCompleted
-                        ? 'bg-green-600 hover:bg-green-700'
-                        : 'bg-indigo-600 hover:bg-indigo-700'
-                    } text-white`}
-                  >
-                    {isCompleted ? 'Review' : 'Start Test'}
-                  </Button>
+                  {!isMobileOnly && (
+                    <Button
+                      onClick={() => handleTestClick(test.route)}
+                      className={`${
+                        isCompleted
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : 'bg-indigo-600 hover:bg-indigo-700'
+                      } text-white`}
+                    >
+                      {isCompleted ? 'Review' : 'Start Test'}
+                    </Button>
+                  )}
+                  {isMobileOnly && (
+                    <div className="text-sm text-purple-600 font-medium px-4 py-2 bg-purple-100 rounded-lg">
+                      Mobile Camera
+                    </div>
+                  )}
                 </div>
               </div>
             )

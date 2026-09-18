@@ -28,6 +28,8 @@ export default function ResultsScreen() {
   const saveToSupabase = async (scanResult: VisionScanResult) => {
     if (!user?.id) {
       console.log('No authenticated user - skipping save')
+      // Mark as not saved so we can show a warning
+      setIsSaved(false)
       return
     }
     
@@ -159,6 +161,12 @@ export default function ResultsScreen() {
         {isSaved && (
           <View style={styles.savedBadge}>
             <Text style={styles.savedText}>✓ Results saved</Text>
+          </View>
+        )}
+
+        {!isSaving && !isSaved && !user && (
+          <View style={styles.warningBadge}>
+            <Text style={styles.warningText}>⚠️ Not saved - Sign in to save results</Text>
           </View>
         )}
 
@@ -344,6 +352,20 @@ const styles = StyleSheet.create({
   savedText: {
     fontSize: 14,
     color: '#065F46',
+    fontWeight: '600',
+  },
+  warningBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#92400E',
     fontWeight: '600',
   },
   summaryCard: {

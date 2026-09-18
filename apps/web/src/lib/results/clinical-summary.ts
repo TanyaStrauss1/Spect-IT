@@ -89,6 +89,7 @@ export interface ClinicalSummary {
   prescription?: TestResult
   visualField?: TestResult
   hearing?: TestResult
+  visionScan?: TestResult
 }
 
 export function extractAcuityResults(results: TestResult[]): {
@@ -161,6 +162,7 @@ export function generateClinicalSummary(results: TestResult[]): ClinicalSummary 
     astigmatism: latest(TEST_TYPE_ID.ASTIGMATISM),
     prescription: latest(TEST_TYPE_ID.PRESCRIPTION),
     visualField: latest(TEST_TYPE_ID.VISUAL_FIELD),
-    hearing: latest(TEST_TYPE_ID.HEARING)
+    hearing: latest(TEST_TYPE_ID.HEARING),
+    visionScan: latest(TEST_TYPE_ID.VISION_SCAN)
   }
 }
