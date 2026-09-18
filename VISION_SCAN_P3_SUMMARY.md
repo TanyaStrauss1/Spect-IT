@@ -1,7 +1,7 @@
-# Vision Scan P3 + P3.5 Implementation Summary
+# Vision Scan P3 + P3.5 + P3.6 Implementation Summary
 
 ## Overview
-This PR implements comprehensive P3 + P3.5 improvements for Vision Scan: hardened estimate accuracy with stricter quality gates + UX polish (quality-review enhancements, accessibility, method transparency) + **P3.5 additions** (gaze/vergence quality, temporal smoothing, repeat caps, share/export). Three commits covering technical accuracy and user experience improvements. All changes maintain screening-only honesty.
+This PR implements comprehensive P3 + P3.5 + P3.6 improvements for Vision Scan: hardened estimate accuracy with stricter quality gates + UX polish (quality-review enhancements, accessibility, method transparency) + **P3.5 additions** (gaze/vergence quality, temporal smoothing utilities, repeat caps, share/export) + **P3.6 completion** (temporal smoothing fully applied, method persistence). Five commits covering technical accuracy and user experience improvements. All changes maintain screening-only honesty.
 
 ## Completed Tasks (All Priority Items)
 
@@ -207,7 +207,7 @@ detectFaceFlicker(detectionHistory[], timestamps[])
 // Use to: reject burst frames when flickering
 ```
 
-**Status:** Utilities implemented but not yet applied in capture screens (future work)
+**Status:** ✅ Utilities implemented AND fully applied in capture screens (Commit 5: P3.6)
 
 **Files changed:**
 - `apps/mobile/lib/vision-scan/camera-utils.ts` - Smoothing utilities exported
@@ -525,7 +525,18 @@ estimateFaceDistance(bounds, width, leftEye?, rightEye?) => {distance, method}
 18. `apps/mobile/app/vision-scan/quality-review.tsx` - Cap repeats (max 2), show attempts (updated again)
 19. `apps/mobile/app/vision-scan/results.tsx` - Share button with screening summary (updated again)
 
-**Note:** Files 7, 10, 11, 14, 18, 19 are same files updated in both commits (camera-utils, quality-review, results)
+### Commit 4: P3 Summary Update (1 file)
+20. `VISION_SCAN_P3_SUMMARY.md` - Updated with P3.5 improvements
+
+### Commit 5: P3.6 Temporal Smoothing Application (6 files - 5 overlap)
+21. `apps/mobile/app/vision-scan/qualification.tsx` - Flicker detection (updated again)
+22. `apps/mobile/app/vision-scan/calibration.tsx` - EMA smoothing (updated again)
+23. `apps/mobile/app/vision-scan/alignment.tsx` - Full smoothing + flicker (updated 3rd time)
+24. `apps/mobile/app/vision-scan/motility.tsx` - EMA smoothing (updated 3rd time)
+25. `apps/mobile/app/vision-scan/convergence.tsx` - EMA + median (updated 3rd time)
+26. `apps/mobile/app/vision-scan/results.tsx` - Persist + display methods (updated 3rd time)
+
+**Note:** Many files updated across multiple commits as features layered on top of each other
 
 ---
 
@@ -598,14 +609,128 @@ For each module:
 12. ✅ Wire all estimateFaceDistance call sites (alignment, motility, convergence)
 13. ✅ Share/export (native share sheet with screening summary)
 
+**Commit 5 (P3.6):**
+14. ✅ Temporal smoothing fully applied (all capture screens, before trackers)
+15. ✅ Method persistence (distance, gaze, vergence methods saved + displayed)
+
+---
+
+### ✅ A.6) Temporal Smoothing Fully Applied (Commit 5: P3.6)
+
+#### 9. Applied Temporal Smoothing in All Capture Screens
+**EMA, median filter, and flicker detection now active:**
+
+**Qualification screen:**
+- Face flicker detection (8-frame buffer)
+- Filters unstable face detection before qualification
+- Console logging when flicker detected
+
+**Calibration screen:**
+- EMA smoothing: face bounds (x, y, width), head pose (pitch, yaw, roll)
+- Alpha = 0.3 for moderate smoothing
+- 5-frame detection history buffer
+- Flicker detection rejects samples during bursts
+- Quality computed from smoothed values
+
+**Alignment screen:**
+- EMA smoothing: face bounds, IPD, head pose
+- 8-frame detection history buffer
+- Flicker detection rejects frames
+- Quality adjustment: penalty for head instability based on smoothed pose
+- Smoothed values passed to tracker for consistency
+
+**Motility screen:**
+- EMA smoothing: head pose, face bounds
+- 5-frame detection history buffer
+- Flicker detection rejects frames
+- Head motion computed from smoothed poses
+- Face confidence from smoothed bounds
+
+**Convergence screen (most critical):**
+- **Double smoothing:** Median filter → EMA
+- IPD buffer + face width buffer (5 frames each)
+- Alpha = 0.25 (lower = more smoothing for vergence stability)
+- Flicker detection rejects frames
+- Smoothed IPD/face-width used for vergence estimation
+
+**Implementation details:**
+```typescript
+// Pattern used in all screens:
+
+// 1. Track detection history
+const newDetectionHistory = [...history.slice(-BUFFER_SIZE + 1), detected]
+const newTimestampHistory = [...timestamps.slice(-BUFFER_SIZE + 1), now]
+
+// 2. Check for flicker
+if (detectFaceFlicker(newDetectionHistory, newTimestampHistory)) {
+  console.log('Screen: Face flicker detected, skipping frame')
+  return // Drop frame
+}
+
+// 3. Apply EMA smoothing
+const smoothedValue = applyEMA(currentValue, previousEMA, alpha)
+
+// 4. (Convergence only) Apply median filter first
+const medianValue = medianFilter(valueBuffer)
+const smoothedValue = applyEMA(medianValue, previousEMA, 0.25)
+```
+
+**Benefits:**
+- Reduces one-frame spikes in face detection
+- Stable distance/vergence estimates despite minor head motion
+- Rejects flickering bursts before they corrupt tracker data
+- Improves alignment/convergence quality scores by reducing noise
+
+**Files changed:**
+- `apps/mobile/app/vision-scan/qualification.tsx`
+- `apps/mobile/app/vision-scan/calibration.tsx`
+- `apps/mobile/app/vision-scan/alignment.tsx`
+- `apps/mobile/app/vision-scan/motility.tsx`
+- `apps/mobile/app/vision-scan/convergence.tsx`
+
+#### 10. Persisted Distance/Gaze/Vergence Methods
+**Extended test_data.methodology and results display:**
+
+**Saved to Supabase test_data.methodology:**
+```typescript
+{
+  distanceMethod: 'ipd-first-with-face-width-fallback' | 'sensor',
+  gazeMethod: 'eye-landmarks-relative-to-face-bounds',
+  vergenceMethod: 'ipd-change-with-face-width-fallback',
+  temporalSmoothing: 'EMA + median filter + flicker detection',
+  // ... existing fields
+}
+```
+
+**Results screen display:**
+- Shows all methods actually used
+- Distance: "IPD/face-width estimation" vs "Sensor-based (TrueDepth/LiDAR)"
+- Blue info box expanded with all method details:
+  - Distance: IPD (63mm avg) when available, else face width (140mm avg)
+  - Gaze: Eye positions relative to face bounds (~16° per face width at 500mm)
+  - Vergence: IPD pixel change (preferred) or face-width change
+  - Smoothing: EMA + median filter to reduce frame-to-frame noise
+
+**Share text includes:**
+- Gaze Method: Eye landmarks relative to face bounds
+- Vergence Method: IPD change (preferred) / face-width fallback
+- Temporal Smoothing: EMA + median filter + flicker rejection
+- All methods documented in Technical Methods section
+
+**Files changed:**
+- `apps/mobile/app/vision-scan/results.tsx`
+
+---
+
 ### ⏸️ Deferred (Future Work)
 
-**Temporal smoothing application:**
-- ✅ Utilities implemented (EMA, median filter, flicker detection)
-- ⏸️ Application in capture screens: Not yet applied before scoring
-- Next: Apply EMA to face bounds, IPD, head pose across frames
-- Next: Use flicker detection to reject burst frames
-- Reason: Utilities ready for integration; capture screens need refactoring to maintain frame history
+**PDF generation:**
+- ✅ Strengthened share/export with native share sheet + formatted text (P3.5)
+- ⏸️ Full PDF builder: Would require library integration (react-native-pdf, expo-print)
+- Current solution: Plain text export via Share API (sufficient for screening summary)
+- Reason: No existing PDF infrastructure; share sheet covers primary use case
+
+**None - all P3/P3.5/P3.6 items completed:**
 
 **PDF generation:**
 - ✅ Strengthened share/export with native share sheet + formatted text
@@ -730,10 +855,12 @@ For each module:
 - **Branch:** `cursor/vision-scan-p3-accuracy-ux-969d`
 - **Status:** Draft (ready for review, per task requirements; NOT merged)
 - **Base Branch:** `main` (after PR #90 squash-merge)
-- **Commits:** 3 total
+- **Commits:** 5 total
   1. P3: Estimate accuracy hardening + UX polish (12 files)
   2. P3 summary document (1 file)
-  3. P3.5: Gaze/vergence quality + temporal smoothing + UX recovery (6 files)
+  3. P3.5: Gaze/vergence quality + temporal smoothing utilities + UX recovery (6 files)
+  4. P3.5 summary update (1 file)
+  5. P3.6: Temporal smoothing fully applied + method persistence (6 files)
 
 ---
 
