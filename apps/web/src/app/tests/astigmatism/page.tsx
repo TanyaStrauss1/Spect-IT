@@ -99,16 +99,33 @@ export default function AstigmatismTestPage() {
         <div className="container mx-auto max-w-2xl">
           <div className="bg-white rounded-lg shadow-xl p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Astigmatism Screening (Clock Dial)</h1>
+            
+            <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+              <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Screening Only</h3>
+              <p className="text-sm text-yellow-800">
+                This test provides <strong>axis indication ONLY</strong>. It cannot measure cylinder power or provide a prescription. 
+                Comprehensive refraction by an eye care professional is required for precise astigmatism correction.
+              </p>
+            </div>
+
             <div className="space-y-4 mb-8">
-              <p className="text-gray-700">This test uses a clock dial to screen for astigmatism.</p>
+              <p className="text-gray-700">This test uses a clock dial to screen for astigmatism in each eye separately.</p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Test Setup</h3>
+                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                  <li><strong>Distance:</strong> 3–4 meters (10–13 feet) from your screen</li>
+                  <li><strong>Lighting:</strong> Moderate ambient lighting (not too bright or dark)</li>
+                  <li><strong>Correction:</strong> Wear your usual glasses or contacts if you use them</li>
+                  <li><strong>Room setup:</strong> Remove glare from screen</li>
+                </ul>
+              </div>
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-900 mb-2">Instructions</h3>
                 <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
                   {test.getInstructions().map((inst, i) => (<li key={i}>{inst}</li>))}
                 </ul>
-              </div>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800"><strong>Note:</strong> This test provides axis indication only, not cylinder power. Comprehensive refraction required for prescription.</p>
               </div>
             </div>
             <button onClick={() => setStep('test')} className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white py-3 rounded-lg font-semibold hover:from-orange-700 hover:to-amber-700">Start Test</button>
@@ -138,7 +155,13 @@ export default function AstigmatismTestPage() {
               </div>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800"><strong>Screening Result:</strong> This test provides axis indication only. Comprehensive eye examination required for cylinder power and precise prescription.</p>
+              <p className="text-sm text-blue-800"><strong>Screening Result:</strong> This test provides axis indication only. It CANNOT measure cylinder power (the strength of your astigmatism). Comprehensive eye examination with retinoscopy or autorefraction required for dispensable prescription.</p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-yellow-900 mb-1 text-sm">⚠️ Next Steps</h4>
+              <p className="text-sm text-yellow-800">
+                If this screening indicates potential astigmatism, schedule a comprehensive eye exam. Only an optometrist or ophthalmologist can provide a complete prescription with sphere, cylinder, and axis values.
+              </p>
             </div>
             <div className="flex gap-4">
               <button onClick={() => router.push('/dashboard')} className="flex-1 bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700">Dashboard</button>

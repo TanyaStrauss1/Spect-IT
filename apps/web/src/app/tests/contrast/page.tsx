@@ -23,6 +23,9 @@ import {
   type SloanLetter,
 } from '@spect-it/cv'
 
+type Eye = 'right' | 'left'
+type TestPhase = 'intro' | 'test' | 'result'
+
 export default function ContrastTestPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -30,11 +33,14 @@ export default function ContrastTestPage() {
   const { calibrator, isModalOpen, setIsModalOpen, ensureCalibration } = useCalibration()
   const { markTestComplete } = useJourney()
   const [test] = useState(() => createContrastSensitivityTest())
+  const [step, setStep] = useState<TestPhase>('intro')
+  const [currentEye, setCurrentEye] = useState<Eye>('right')
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0)
   const [userInput, setUserInput] = useState('')
   const [tripletResponses, setTripletResponses] = useState<ContrastTripletResponse[]>([])
-  const [result, setResult] = useState<any>(null)
+  const [rightEyeResult, setRightEyeResult] = useState<any>(null)
+  const [leftEyeResult, setLeftEyeResult] = useState<any>(null)
   const [saving, setSaving] = useState(false)
 
   const levels = test.getContrastLevels()
@@ -98,35 +104,104 @@ export default function ContrastTestPage() {
 
   const finishTest = async (triplets: ContrastTripletResponse[]) => {
     const testResult = test.createResult(calibration, triplets)
-    setResult(testResult)
 
-    // Mark test as complete in journey
-    markTestComplete(TEST_TYPE_ID.CONTRAST_SENSITIVITY)
+    if (currentEye === 'right') {
+      setRightEyeResult(testResult)
+      setCurrentEye('left')
+      setCurrentLevelIndex(0)
+      setCurrentLetterIndex(0)
+      setTripletResponses([])
+      setUserInput('')
+      setStep('intro')
+    } else {
+      setLeftEyeResult(testResult)
+      setStep('result')
 
-    if (user) {
-      setSaving(true)
-      try {
-        const testResultData: any = {
-          user_id: user.id,
-          test_type: TEST_TYPE_ID.CONTRAST_SENSITIVITY,
-          test_data: testResult,
-          results: { finalLogCS: testResult.finalLogCS, category: testResult.category },
+      // Mark test as complete in journey
+      markTestComplete(TEST_TYPE_ID.CONTRAST_SENSITIVITY)
+
+      if (user) {
+        setSaving(true)
+        try {
+          const testResultData: any = {
+            user_id: user.id,
+            test_type: TEST_TYPE_ID.CONTRAST_SENSITIVITY,
+            test_data: { rightEye: rightEyeResult, leftEye: testResult },
+            results: { 
+              rightEye: { finalLogCS: rightEyeResult.finalLogCS, category: rightEyeResult.category },
+              leftEye: { finalLogCS: testResult.finalLogCS, category: testResult.category }
+            },
+          }
+          
+          if (activeParticipant) {
+            testResultData.participant_id = activeParticipant.id
+          }
+
+          await supabase.from('test_results').insert(testResultData)
+        } catch (error) {
+          console.error('Error saving:', error)
+        } finally {
+          setSaving(false)
         }
-        
-        if (activeParticipant) {
-          testResultData.participant_id = activeParticipant.id
-        }
-
-        await supabase.from('test_results').insert(testResultData)
-      } catch (error) {
-        console.error('Error saving:', error)
-      } finally {
-        setSaving(false)
       }
     }
   }
 
-  if (result) {
+  if (step === 'intro') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-12 px-4">
+        <CalibrationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onComplete={() => setIsModalOpen(false)} calibrator={calibrator} />
+        <div className="container mx-auto max-w-2xl">
+          <div className="bg-white rounded-lg shadow-xl p-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Contrast Sensitivity Screening</h1>
+            
+            <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
+              <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Screen Brightness Critical</h3>
+              <p className="text-sm text-yellow-800">
+                <strong>Before starting:</strong> Set your screen to <strong>maximum brightness</strong>. This test uses varying contrast levels that require optimal display settings. Test results are invalid with dimmed screens.
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <p className="text-gray-700">This test measures your ability to see letters at different contrast levels (from dark to faint gray) using Sloan optotypes.</p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Test Setup</h3>
+                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                  <li><strong>Screen brightness:</strong> Maximum (100%)</li>
+                  <li><strong>Room lighting:</strong> Moderate (not too bright or dark)</li>
+                  <li><strong>Distance:</strong> 35–40 cm from screen</li>
+                  <li><strong>Remove glare:</strong> No reflections on screen</li>
+                </ul>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Testing Method</h3>
+                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                  <li>Test each eye separately (cover the other eye)</li>
+                  <li>Fixed-size letters (~3° visual angle) with decreasing contrast</li>
+                  <li>Letters get fainter, not smaller</li>
+                  <li>Type the letter you see, or your best guess</li>
+                </ul>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 className="font-semibold text-purple-900 mb-2">Now Testing: {currentEye === 'right' ? 'Right Eye (OD)' : 'Left Eye (OS)'}</h3>
+                <p className="text-sm text-purple-800">
+                  Cover your <strong>{currentEye === 'right' ? 'LEFT' : 'RIGHT'}</strong> eye with your hand or an eye patch. Keep both eyes open behind the cover.
+                </p>
+              </div>
+            </div>
+            <button onClick={() => setStep('test')} className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700">
+              Start {currentEye === 'right' ? 'Right Eye' : 'Left Eye'} Test
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'result' && rightEyeResult && leftEyeResult) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-12 px-4">
         <div className="container mx-auto max-w-2xl">
@@ -136,24 +211,40 @@ export default function ContrastTestPage() {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Test Complete!</h2>
             </div>
             
-            {/* Display brightness warning if needed */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
               <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Viewing Conditions</h4>
               <p className="text-sm text-yellow-800">
-                Ensure your screen is at maximum brightness and the room has moderate ambient lighting 
-                (not too bright, not too dark). Contrast sensitivity testing is affected by display 
-                brightness and viewing environment.
+                Contrast sensitivity testing is highly dependent on screen brightness and viewing environment. 
+                Results should be interpreted cautiously and compared to clinical testing if concerns exist.
               </p>
             </div>
             
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 mb-6">
-              <p className="text-sm text-gray-600 mb-2">Log Contrast Sensitivity</p>
-              <p className="text-5xl font-bold text-purple-600 mb-4">{result.finalLogCS.toFixed(2)}</p>
-              <p className="text-lg text-gray-700">{test.getInterpretation(result.category, result.finalLogCS)}</p>
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Right Eye (OD)</h3>
+                <p className="text-4xl font-bold text-purple-600 mb-2">{rightEyeResult.finalLogCS.toFixed(2)}</p>
+                <p className="text-sm text-gray-600 mb-2">Log Contrast Sensitivity</p>
+                <p className="text-sm text-gray-700">{test.getInterpretation(rightEyeResult.category, rightEyeResult.finalLogCS)}</p>
+              </div>
+              <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Left Eye (OS)</h3>
+                <p className="text-4xl font-bold text-pink-600 mb-2">{leftEyeResult.finalLogCS.toFixed(2)}</p>
+                <p className="text-sm text-gray-600 mb-2">Log Contrast Sensitivity</p>
+                <p className="text-sm text-gray-700">{test.getInterpretation(leftEyeResult.category, leftEyeResult.finalLogCS)}</p>
+              </div>
             </div>
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800"><strong>Screening Result:</strong> {result.methodology}</p>
+              <p className="text-sm text-blue-800"><strong>Screening Result:</strong> {rightEyeResult.methodology} This is NOT a Pelli-Robson test. Comprehensive clinical testing required for diagnosis.</p>
             </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-yellow-900 mb-1 text-sm">⚠️ Next Steps</h4>
+              <p className="text-sm text-yellow-800">
+                If results show reduced contrast sensitivity or differ significantly between eyes, schedule a comprehensive eye exam. Reduced contrast sensitivity can indicate cataracts, glaucoma, diabetic retinopathy, or neurological conditions.
+              </p>
+            </div>
+
             <div className="flex gap-4">
               <button onClick={() => router.push('/dashboard')} className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700">Dashboard</button>
               <button onClick={() => router.push('/')} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300">Home</button>
@@ -166,7 +257,6 @@ export default function ContrastTestPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 py-8 px-4">
-      <CalibrationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onComplete={() => setIsModalOpen(false)} calibrator={calibrator} />
       <div className="container mx-auto max-w-4xl">
         <div className="bg-white rounded-lg shadow-xl p-8">
           {/* Brightness warning */}
@@ -179,7 +269,8 @@ export default function ContrastTestPage() {
           
           <div className="text-center mb-8">
             <div className="inline-block bg-purple-100 text-purple-600 px-4 py-2 rounded-full font-semibold mb-4">
-              Level {currentLevelIndex + 1} - Letter {currentLetterIndex + 1}/3
+              {currentEye === 'right' ? 'Right Eye (OD) - Cover LEFT eye' : 'Left Eye (OS) - Cover RIGHT eye'} • 
+              Level {currentLevelIndex + 1} • Letter {currentLetterIndex + 1}/3
             </div>
             <h3 className="text-xl text-gray-600">Read the letter</h3>
             <p className="text-sm text-gray-500">Weber contrast: {(currentLevel.contrast * 100).toFixed(1)}%</p>

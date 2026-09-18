@@ -95,16 +95,32 @@ export default function VisualFieldTestPage() {
         <div className="container mx-auto max-w-2xl">
           <div className="bg-white rounded-lg shadow-xl p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Visual Field Screening (Amsler Grid)</h1>
+            
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+              <h3 className="font-semibold text-red-900 mb-2">⚠️ Central Visual Field ONLY</h3>
+              <p className="text-sm text-red-800">
+                This test screens ONLY your central {config.coverageDegrees}° visual field. It does <strong>NOT</strong> detect peripheral field loss, glaucoma, or neurological visual field defects. Comprehensive perimetry required for full assessment.
+              </p>
+            </div>
+
             <div className="space-y-4 mb-8">
-              <p className="text-gray-700">This test screens your central {config.coverageDegrees}° visual field for scotomas and distortions.</p>
+              <p className="text-gray-700">This test screens for scotomas (blind spots), distortions, and central field abnormalities using an interactive Amsler grid.</p>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Test Setup</h3>
+                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
+                  <li><strong>Distance:</strong> 30–35 cm from screen (arm's length)</li>
+                  <li><strong>Lighting:</strong> Good ambient lighting</li>
+                  <li><strong>Correction:</strong> Wear reading glasses if you normally use them</li>
+                  <li><strong>Fixation:</strong> Keep eyes on central dot throughout test</li>
+                </ul>
+              </div>
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-900 mb-2">Instructions</h3>
                 <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
                   {test.getInstructions().map((inst, i) => (<li key={i}>{inst}</li>))}
                 </ul>
-              </div>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-800"><strong>Important:</strong> {test.createResult(undefined, null, null).limitations}</p>
               </div>
             </div>
             <button onClick={() => setStep('test')} className="w-full bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-3 rounded-lg font-semibold hover:from-teal-700 hover:to-cyan-700">Start Test</button>
@@ -134,8 +150,16 @@ export default function VisualFieldTestPage() {
               </div>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800"><strong>Screening Result:</strong> Central visual field only. Does not detect peripheral field loss or glaucoma. Comprehensive perimetry required for full assessment.</p>
+              <p className="text-sm text-blue-800"><strong>Screening Result:</strong> Central visual field only (~{config.coverageDegrees}°). Does NOT detect peripheral field loss, glaucoma, or neurological visual field defects. Comprehensive automated perimetry (Humphrey, Octopus) required for full assessment.</p>
             </div>
+            {(rightEyeResult.hasAbnormalities || leftEyeResult.hasAbnormalities) && (
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-6">
+                <h4 className="font-semibold text-red-900 mb-1 text-sm">🚨 URGENT REFERRAL RECOMMENDED</h4>
+                <p className="text-sm text-red-800">
+                  This screening detected visual field abnormalities. This may indicate macular degeneration, retinal disease, or other serious conditions. Schedule a comprehensive eye exam with an optometrist or ophthalmologist as soon as possible.
+                </p>
+              </div>
+            )}
             <div className="flex gap-4">
               <button onClick={() => router.push('/dashboard')} className="flex-1 bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700">Dashboard</button>
               <button onClick={() => router.push('/')} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300">Home</button>
