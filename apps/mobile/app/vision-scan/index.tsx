@@ -25,6 +25,11 @@ export default function VisionScanHome() {
       <View style={styles.content}>
         <Text style={styles.icon}>👁️</Text>
         <Text style={styles.title}>Vision Scan</Text>
+        {activeParticipant && (
+          <Text style={styles.participantBadge}>
+            For: {activeParticipant.display_name}
+          </Text>
+        )}
         <Text style={styles.subtitle}>
           Comprehensive Eye Function Screening
         </Text>
@@ -90,6 +95,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#1F2937',
+    marginBottom: 8,
+  },
+  participantBadge: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4F46E5',
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
     marginBottom: 8,
   },
   subtitle: {

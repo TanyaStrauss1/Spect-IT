@@ -10,6 +10,7 @@ import * as FaceDetector from 'expo-face-detector'
 import { DeviceQualifier, type DeviceQualification, type CapabilityMatrix } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { requestCameraPermission, type DetectedFace } from '../../lib/vision-scan/camera-utils'
+import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 export default function QualificationScreen() {
   const { setDeviceQualification } = useVisionScan()
@@ -128,6 +129,7 @@ export default function QualificationScreen() {
   if (isQualifying || !qualification || !capabilityMatrix) {
     return (
       <View style={styles.container}>
+        <ProgressStepper currentStep="qualification" />
         <View style={styles.cameraContainer}>
           <Camera
             ref={cameraRef}
@@ -142,6 +144,11 @@ export default function QualificationScreen() {
           />
           <View style={styles.overlay}>
             <View style={styles.faceGuide} />
+            {!faceDetected && (
+              <View style={styles.coachingBadge}>
+                <Text style={styles.coachingText}>👤 Position your face in the oval</Text>
+              </View>
+            )}
             {faceDetected && (
               <View style={styles.faceDetectedBadge}>
                 <Text style={styles.faceDetectedText}>✓ Face Detected</Text>
@@ -169,6 +176,7 @@ export default function QualificationScreen() {
 
   return (
     <View style={styles.container}>
+      <ProgressStepper currentStep="qualification" />
       <View style={styles.content}>
         <Text style={styles.icon}>
           {canContinue ? '✓' : '⚠️'}
@@ -296,6 +304,21 @@ const styles = StyleSheet.create({
   faceDetectedText: {
     color: 'white',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  coachingBadge: {
+    position: 'absolute',
+    top: 40,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  coachingText: {
+    fontSize: 14,
+    color: '#92400E',
     fontWeight: '600',
   },
   qualifyingOverlay: {

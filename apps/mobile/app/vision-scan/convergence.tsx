@@ -12,6 +12,7 @@ import * as FaceDetector from 'expo-face-detector'
 import { ConvergenceTracker, QualityEngine, type ConvergenceFrame } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 export default function ConvergenceScreen() {
   const {
@@ -152,6 +153,7 @@ export default function ConvergenceScreen() {
 
   return (
     <View style={styles.container}>
+      <ProgressStepper currentStep="convergence" />
       <Camera
         ref={cameraRef}
         style={styles.camera}

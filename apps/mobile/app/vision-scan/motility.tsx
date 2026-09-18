@@ -10,6 +10,7 @@ import * as FaceDetector from 'expo-face-detector'
 import { MotilityTracker, type GazePosition, type MotilityFrame } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, computeHeadPose, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 const { width: screenWidth } = Dimensions.get('window')
 
@@ -149,6 +150,7 @@ export default function MotilityScreen() {
 
   return (
     <View style={styles.container}>
+      <ProgressStepper currentStep="motility" />
       <Camera
         ref={cameraRef}
         style={styles.camera}

@@ -39,6 +39,11 @@ export function TrendsSection({ results }: TrendsSectionProps) {
       r.test_name === 'Contrast Sensitivity'
     ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
+    // Extract Vision Scan results (use canonical TEST_TYPE_ID)
+    const visionScanResults = results.filter(r => 
+      r.test_type === 'vision-scan'
+    ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
     // Build acuity trend data
     const acuityTrends: TrendDataPoint[] = acuityResults.map(r => {
       const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -71,6 +76,28 @@ export function TrendsSection({ results }: TrendsSectionProps) {
         contrastScore: contrastScore ? contrastScore * 100 : undefined,
       }
     }).filter(d => d.contrastScore !== undefined)
+
+    // Build Vision Scan trend data (overall confidence and alignment index)
+    const visionScanTrends: Array<{
+      date: string
+      timestamp: number
+      overallConfidence?: number
+      alignmentIndex?: number
+      recommendsProfessionalExam?: boolean
+    }> = visionScanResults.map(r => {
+      const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const timestamp = new Date(r.created_at).getTime()
+      
+      return {
+        date,
+        timestamp,
+        overallConfidence: r.test_data?.qualityAssessment?.overallConfidence 
+          ? r.test_data.qualityAssessment.overallConfidence * 100 
+          : undefined,
+        alignmentIndex: r.test_data?.alignment?.alignmentIndex,
+        recommendsProfessionalExam: r.test_data?.recommendsProfessionalExam || false,
+      }
+    }).filter(d => d.overallConfidence !== undefined || d.alignmentIndex !== undefined)
 
     // Detect meaningful changes (≥0.1 logMAR)
     const meaningfulChanges: {
@@ -109,15 +136,15 @@ export function TrendsSection({ results }: TrendsSectionProps) {
       }
     }
 
-    return { acuityTrends, contrastTrends, meaningfulChanges }
+    return { acuityTrends, contrastTrends, visionScanTrends, meaningfulChanges }
   }, [results])
 
-  if (acuityTrends.length === 0 && contrastTrends.length === 0) {
+  if (acuityTrends.length === 0 && contrastTrends.length === 0 && visionScanTrends.length === 0) {
     return null
   }
 
   // Calculate timespan
-  const allTimestamps = [...acuityTrends, ...contrastTrends].map(t => t.timestamp)
+  const allTimestamps = [...acuityTrends, ...contrastTrends, ...visionScanTrends].map(t => t.timestamp)
   const timespan = allTimestamps.length > 0 
     ? Math.floor((Math.max(...allTimestamps) - Math.min(...allTimestamps)) / (1000 * 60 * 60 * 24))
     : 0
@@ -210,6 +237,48 @@ export function TrendsSection({ results }: TrendsSectionProps) {
         </View>
       )}
 
+      {/* Vision Scan Trends */}
+      {visionScanTrends.length >= 1 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Vision Scan - Ocular Function</Text>
+          <Text style={styles.sectionSubtitle}>Mobile camera screening (alignment, motility, convergence)</Text>
+          
+          {visionScanTrends.slice(-5).reverse().map((trend, idx) => (
+            <View key={idx} style={styles.trendItem}>
+              <View style={styles.trendHeader}>
+                <Text style={styles.trendDate}>{trend.date}</Text>
+                {trend.recommendsProfessionalExam && (
+                  <View style={[styles.badge, { backgroundColor: '#FEF3C7' }]}>
+                    <Text style={[styles.badgeText, { color: '#92400E' }]}>⚠️ Refer</Text>
+                  </View>
+                )}
+                {!trend.recommendsProfessionalExam && (
+                  <View style={[styles.badge, { backgroundColor: '#D1FAE5' }]}>
+                    <Text style={[styles.badgeText, { color: '#065F46' }]}>✓ Pass</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.visionScanMetrics}>
+                {trend.overallConfidence !== undefined && (
+                  <View style={styles.metricRow}>
+                    <Text style={styles.metricLabel}>Data Quality</Text>
+                    <Text style={styles.metricValue}>{trend.overallConfidence.toFixed(0)}%</Text>
+                    <View style={[styles.visualBar, { width: `${trend.overallConfidence}%`, backgroundColor: '#8B5CF6' }]} />
+                  </View>
+                )}
+                {trend.alignmentIndex !== undefined && (
+                  <View style={styles.metricRow}>
+                    <Text style={styles.metricLabel}>Alignment Index</Text>
+                    <Text style={styles.metricValue}>{trend.alignmentIndex.toFixed(0)}</Text>
+                    <View style={[styles.visualBar, { width: `${trend.alignmentIndex}%`, backgroundColor: '#A855F7' }]} />
+                  </View>
+                )}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
       {/* Summary Stats */}
       <View style={styles.statsGrid}>
         {acuityTrends.length > 0 && (
@@ -232,6 +301,12 @@ export function TrendsSection({ results }: TrendsSectionProps) {
           <View style={[styles.statCard, { backgroundColor: '#EFF6FF', borderColor: '#3B82F6' }]}>
             <Text style={[styles.statLabel, { color: '#2563EB' }]}>CONTRAST TESTS</Text>
             <Text style={[styles.statValue, { color: '#1D4ED8' }]}>{contrastTrends.length}</Text>
+          </View>
+        )}
+        {visionScanTrends.length > 0 && (
+          <View style={[styles.statCard, { backgroundColor: '#FAF5FF', borderColor: '#8B5CF6' }]}>
+            <Text style={[styles.statLabel, { color: '#7C3AED' }]}>VISION SCANS</Text>
+            <Text style={[styles.statValue, { color: '#6D28D9' }]}>{visionScanTrends.length}</Text>
           </View>
         )}
         <View style={[styles.statCard, { backgroundColor: '#F0FDF4', borderColor: '#10B981' }]}>
@@ -384,5 +459,32 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  visionScanMetrics: {
+    gap: 8,
+    marginTop: 8,
+  },
+  metricRow: {
+    gap: 4,
+  },
+  metricLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 2,
   },
 })

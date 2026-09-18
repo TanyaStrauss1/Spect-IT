@@ -15,6 +15,7 @@ import {
 } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, computeHeadPose, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -150,6 +151,7 @@ export default function CalibrationScreen() {
   if (isComplete && result) {
     return (
       <View style={styles.container}>
+        <ProgressStepper currentStep="calibration" />
         <View style={styles.content}>
           <Text style={styles.icon}>{result.isValid ? '✓' : '⚠️'}</Text>
           <Text style={styles.title}>Calibration Complete</Text>
@@ -222,6 +224,7 @@ export default function CalibrationScreen() {
 
   return (
     <View style={styles.container}>
+      <ProgressStepper currentStep="calibration" />
       <Camera
         ref={cameraRef}
         style={styles.camera}
@@ -237,13 +240,20 @@ export default function CalibrationScreen() {
       <View style={styles.overlay}>
         <View style={styles.instructions}>
           <Text style={styles.instructionText}>
-            Follow the dots with your eyes. Keep your head still.
+            Look at the dots as they appear. Keep your head still.
           </Text>
           <Text style={styles.progressText}>
             Point {currentPointIndex + 1} of {calibrationPoints.length}
           </Text>
           {!detectedFace && (
-            <Text style={styles.warningText}>⚠️ Face not detected</Text>
+            <View style={styles.coachingBanner}>
+              <Text style={styles.coachingText}>👤 Position your face in view</Text>
+            </View>
+          )}
+          {detectedFace && isCapturing && (
+            <View style={styles.capturingBanner}>
+              <Text style={styles.capturingText}>✓ Capturing...</Text>
+            </View>
           )}
         </View>
 
@@ -305,6 +315,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#F59E0B',
     marginTop: 4,
+  },
+  coachingBanner: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  coachingText: {
+    fontSize: 14,
+    color: '#92400E',
+    fontWeight: '600',
+  },
+  capturingBanner: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 8,
+  },
+  capturingText: {
+    fontSize: 14,
+    color: '#065F46',
+    fontWeight: '600',
   },
   calibrationArea: {
     flex: 1,

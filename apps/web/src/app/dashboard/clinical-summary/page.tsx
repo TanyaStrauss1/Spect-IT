@@ -369,7 +369,7 @@ export default function ClinicalSummaryPage() {
         )}
 
         {/* Other Tests Summary */}
-        {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing) && (
+        {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing || summary.visionScan) && (
           <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">🎨 Other Screening Tests</h2>
             
@@ -476,6 +476,35 @@ export default function ClinicalSummaryPage() {
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {summary.visionScan && (
+                <div className="p-4 rounded-lg border-2 border-purple-200 bg-purple-50 hover:border-purple-300 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">👁️</div>
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900">Vision Scan - Ocular Function</div>
+                      <div className={`text-sm mt-1 font-semibold ${
+                        summary.visionScan.test_data?.recommendsProfessionalExam 
+                          ? 'text-amber-700' 
+                          : 'text-green-700'
+                      }`}>
+                        {summary.visionScan.test_data?.recommendsProfessionalExam 
+                          ? '⚠️ Professional exam recommended'
+                          : '✓ No significant issues detected'}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {summary.visionScan.test_data?.screeningSummary || 'Mobile camera screening'}
+                      </div>
+                      <div className="text-xs text-purple-700 mt-1 font-semibold">
+                        Mobile camera screening (alignment, motility, convergence)
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>

@@ -111,6 +111,10 @@ export default function ClinicalSummaryScreen() {
     if (summary?.visualField) otherTests.push(`Visual Field: ${summary.visualField.test_data?.assessment || 'See report'}`)
     if (summary?.prescription) otherTests.push(`Refractive Screening: Needs-correction detection — NOT a prescription`)
     if (summary?.hearing) otherTests.push(`Hearing Screening: ${summary.hearing.results?.overallStatus || summary.hearing.test_data?.overallStatus || 'See report'}`)
+    if (summary?.visionScan) {
+      const visionScanStatus = summary.visionScan.test_data?.recommendsProfessionalExam ? 'Professional exam recommended' : 'No significant issues detected'
+      otherTests.push(`Vision Scan (Mobile): ${visionScanStatus} — ${summary.visionScan.test_data?.screeningSummary || 'Ocular function screening'}`)
+    }
     
     if (otherTests.length > 0) {
       text += `OTHER SCREENING TESTS\n\n`
@@ -295,7 +299,7 @@ export default function ClinicalSummaryScreen() {
       )}
 
       {/* Other Tests Summary */}
-      {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing) && (
+      {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing || summary.visionScan) && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🎨 Other Screening Tests</Text>
           
@@ -389,6 +393,32 @@ export default function ClinicalSummaryScreen() {
                 </Text>
                 <Text style={styles.testDate}>
                   Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {summary.visionScan && (
+            <View style={[styles.testCard, { backgroundColor: '#F5F3FF', borderColor: '#A78BFA' }]}>
+              <Text style={styles.testIcon}>👁️</Text>
+              <View style={styles.testInfo}>
+                <Text style={styles.testName}>Vision Scan - Ocular Function</Text>
+                <Text style={[styles.testResult, { 
+                  color: summary.visionScan.test_data?.recommendsProfessionalExam ? '#B45309' : '#059669',
+                  fontWeight: '600' 
+                }]}>
+                  {summary.visionScan.test_data?.recommendsProfessionalExam 
+                    ? '⚠️ Professional exam recommended'
+                    : '✓ No significant issues detected'}
+                </Text>
+                <Text style={[styles.testResult, { fontSize: 12, marginTop: 4 }]}>
+                  {summary.visionScan.test_data?.screeningSummary || 'Mobile camera screening'}
+                </Text>
+                <Text style={[styles.testDate, { marginTop: 4 }]}>
+                  Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
+                </Text>
+                <Text style={[styles.testDate, { fontSize: 10, marginTop: 2, fontStyle: 'italic' }]}>
+                  Mobile camera screening (alignment, motility, convergence)
                 </Text>
               </View>
             </View>
