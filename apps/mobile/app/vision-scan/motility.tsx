@@ -12,6 +12,8 @@ import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, computeHeadPose, estimateFaceDistance, applyEMA, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
+import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
+import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
 
 const { width: screenWidth } = Dimensions.get('window')
 
@@ -21,10 +23,12 @@ export default function MotilityScreen() {
   const [sequence] = useState(MotilityTracker.getGazeSequence())
   const [currentIndex, setCurrentIndex] = useState(0)
   const [frameCount, setFrameCount] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [lastFacePosition, setLastFacePosition] = useState<{ x: number; y: number } | null>(null)
   const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
+  const faceLostTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const framesPerPosition = 10
 
   // Temporal smoothing state
@@ -37,14 +41,14 @@ export default function MotilityScreen() {
   const currentPosition = sequence[currentIndex]
 
   useEffect(() => {
-    if (currentIndex < sequence.length && detectedFace) {
+    if (currentIndex < sequence.length && detectedFace && !isPaused) {
       const interval = setInterval(() => {
         captureFrame()
       }, 150)
 
       return () => clearInterval(interval)
     }
-  }, [currentIndex, frameCount, detectedFace])
+  }, [currentIndex, frameCount, detectedFace, isPaused])
 
   const handleFacesDetected = ({ faces }: { faces: any[] }) => {
     if (faces.length > 0) {
@@ -56,9 +60,55 @@ export default function MotilityScreen() {
         rollAngle: face.rollAngle,
         yawAngle: face.yawAngle,
       })
+      
+      // Resume if was paused
+      if (isPaused) {
+        setIsPaused(false)
+      }
+      
+      // Clear any face-lost timeout
+      if (faceLostTimeoutRef.current) {
+        clearTimeout(faceLostTimeoutRef.current)
+        faceLostTimeoutRef.current = null
+      }
     } else {
       setDetectedFace(null)
+      
+      // Pause capture after 1 second of no face
+      if (!isPaused && !faceLostTimeoutRef.current) {
+        faceLostTimeoutRef.current = setTimeout(() => {
+          setIsPaused(true)
+        }, 1000)
+      }
     }
+  }
+  
+  const computeFaceHoldStatus = (): FaceHoldStatus => {
+    if (!detectedFace) return 'no-face'
+    
+    // For motility, we focus on keeping face visible and reasonably stable
+    const faceWidth = detectedFace.bounds.width
+    if (faceWidth < screenWidth * 0.2) return 'too-far'
+    if (faceWidth > screenWidth * 0.65) return 'too-close'
+    
+    // Check centering - more lenient than alignment
+    const faceCenterX = detectedFace.bounds.x + detectedFace.bounds.width / 2
+    const screenCenterX = screenWidth / 2
+    const xOffset = Math.abs(faceCenterX - screenCenterX)
+    
+    if (xOffset > screenWidth * 0.3) {
+      return 'off-center'
+    }
+    
+    // Check head pose - more lenient for motility
+    if (headPoseEMA) {
+      if (Math.abs(headPoseEMA.yaw) > 30 || Math.abs(headPoseEMA.roll) > 30) {
+        return 'head-motion'
+      }
+    }
+    
+    // Good if reasonably sized and positioned
+    return 'good'
   }
 
   const captureFrame = () => {
@@ -223,6 +273,9 @@ export default function MotilityScreen() {
     return positions[position]
   }
 
+  const faceHoldStatus = computeFaceHoldStatus()
+  const useSensorMode = deviceQualification?.useSensorBasedMeasurements || false
+
   return (
     <View style={styles.container}>
       <ProgressStepper currentStep="motility" />
@@ -240,6 +293,13 @@ export default function MotilityScreen() {
       />
 
       <View style={styles.overlay}>
+        <FaceHoldCoaching 
+          status={faceHoldStatus}
+          frameCount={currentIndex * framesPerPosition + frameCount}
+          targetFrames={sequence.length * framesPerPosition}
+          isPaused={isPaused}
+        />
+
         <View style={styles.instructions}>
           <Text style={styles.instructionText}>
             Follow the moving dot with your eyes. Keep your head still.
@@ -247,9 +307,6 @@ export default function MotilityScreen() {
           <Text style={styles.progressText}>
             Position {currentIndex + 1} of {sequence.length}
           </Text>
-          {!detectedFace && (
-            <Text style={styles.warningText}>⚠️ Face not detected</Text>
-          )}
         </View>
 
         <View style={styles.motilityArea}>
@@ -279,6 +336,8 @@ export default function MotilityScreen() {
             />
           </View>
         </View>
+
+        <DegradedModeBanner useSensorMode={useSensorMode} />
       </View>
     </View>
   )
@@ -310,11 +369,6 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 14,
     color: '#9CA3AF',
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#F59E0B',
-    marginTop: 4,
   },
   motilityArea: {
     flex: 1,
