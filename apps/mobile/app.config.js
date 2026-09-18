@@ -18,9 +18,11 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.spectit.app",
+      buildNumber: "1",
       infoPlist: {
-        NSCameraUsageDescription: "Spect-IT uses your camera to calibrate screening tests on your device.",
-        NSLocationWhenInUseUsageDescription: "Spect-IT can use your location to sort nearby optical stores. Location is optional."
+        NSCameraUsageDescription: "Spect-IT uses your camera to calibrate and perform vision screening tests. This includes face detection for accurate measurement distances and grid pattern analysis for astigmatism screening.",
+        NSLocationWhenInUseUsageDescription: "Spect-IT can use your location to find nearby optical practices and help you book appointments. Location access is completely optional.",
+        ITSAppUsesNonExemptEncryption: false
       }
     },
     android: {

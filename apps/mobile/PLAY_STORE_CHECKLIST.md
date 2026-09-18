@@ -2,6 +2,8 @@
 
 This document outlines the exact steps required to submit Spect-IT to Google Play Store.
 
+> **Looking for iOS?** See `APP_STORE_CHECKLIST.md` for Apple App Store submission.
+
 ---
 
 ## Prerequisites
