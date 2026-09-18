@@ -1,13 +1,21 @@
 /**
  * Quality Review & Selective Repeat Screen
+ * P3: Clearer module issues, one-tap re-run, skip with acknowledgment
+ * P3.5: Cap repeat attempts (max 2 per module), auto-return after repeat
  */
 
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
+import { useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import { router } from 'expo-router'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
+import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import type { ModuleName } from '@spect-it/cv'
+
+const MAX_REPEAT_ATTEMPTS = 2
 
 export default function QualityReviewScreen() {
-  const { qualityAssessment, completeSession } = useVisionScan()
+  const { qualityAssessment, completeSession, repeatAttempts } = useVisionScan()
+  const [acknowledgedProceed, setAcknowledgedProceed] = useState(false)
 
   if (!qualityAssessment) {
     return (
@@ -24,6 +32,17 @@ export default function QualityReviewScreen() {
   const allModulesGood = modulesNeedingRepeat.length === 0
 
   const handleRepeatModule = (moduleName: string) => {
+    const attempts = repeatAttempts[moduleName as ModuleName] || 0
+    
+    if (attempts >= MAX_REPEAT_ATTEMPTS) {
+      Alert.alert(
+        'Maximum Repeats Reached',
+        `You've already repeated ${moduleName} ${MAX_REPEAT_ATTEMPTS} times. Proceeding with current data is recommended.`,
+        [{ text: 'OK' }]
+      )
+      return
+    }
+
     switch (moduleName) {
       case 'device-qualification':
         router.push('/vision-scan/qualification')
@@ -44,6 +63,26 @@ export default function QualityReviewScreen() {
   }
 
   const handleProceedToResults = () => {
+    if (!allModulesGood && !acknowledgedProceed) {
+      Alert.alert(
+        'Proceed with Limited Data?',
+        'Some modules have low quality data. Results may be less reliable. Repeating recommended modules will improve accuracy.\n\nProceed anyway?',
+        [
+          { text: 'Go Back', style: 'cancel' },
+          {
+            text: 'Proceed Anyway',
+            style: 'destructive',
+            onPress: () => {
+              setAcknowledgedProceed(true)
+              completeSession()
+              router.push('/vision-scan/results')
+            },
+          },
+        ]
+      )
+      return
+    }
+
     completeSession()
     router.push('/vision-scan/results')
   }
@@ -68,9 +107,12 @@ export default function QualityReviewScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      <ProgressStepper currentStep="quality-review" />
       <View style={styles.content}>
-        <Text style={styles.icon}>{allModulesGood ? '✓' : '⚠️'}</Text>
-        <Text style={styles.title}>Quality Review</Text>
+        <Text style={styles.icon} accessibilityLabel={allModulesGood ? 'Success' : 'Warning'}>
+          {allModulesGood ? '✓' : '⚠️'}
+        </Text>
+        <Text style={styles.title} accessibilityRole="header">Quality Review</Text>
 
         <View style={styles.overallCard}>
           <Text style={styles.overallLabel}>Overall Data Quality</Text>
@@ -123,7 +165,7 @@ export default function QualityReviewScreen() {
               {module.qualityIssues.length > 0 && (
                 <View style={styles.issuesList}>
                   {module.qualityIssues.map((issue, idx) => (
-                    <Text key={idx} style={styles.issue}>
+                    <Text key={idx} style={styles.issue} accessibilityRole="text">
                       • {issue}
                     </Text>
                   ))}
@@ -131,12 +173,31 @@ export default function QualityReviewScreen() {
               )}
 
               {module.shouldRepeat && (
-                <TouchableOpacity
-                  style={styles.repeatButton}
-                  onPress={() => handleRepeatModule(module.module)}
-                >
-                  <Text style={styles.repeatButtonText}>Repeat This Module</Text>
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.repeatButton,
+                      (repeatAttempts[module.module as ModuleName] || 0) >= MAX_REPEAT_ATTEMPTS && styles.repeatButtonDisabled
+                    ]}
+                    onPress={() => handleRepeatModule(module.module)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Repeat ${getModuleDisplayName(module.module)}`}
+                    accessibilityHint="Tap to re-run this module with improved quality"
+                    disabled={(repeatAttempts[module.module as ModuleName] || 0) >= MAX_REPEAT_ATTEMPTS}
+                  >
+                    <Text style={[
+                      styles.repeatButtonText,
+                      (repeatAttempts[module.module as ModuleName] || 0) >= MAX_REPEAT_ATTEMPTS && styles.repeatButtonTextDisabled
+                    ]}>
+                      🔄 Repeat Now
+                    </Text>
+                  </TouchableOpacity>
+                  {repeatAttempts[module.module as ModuleName] > 0 && (
+                    <Text style={styles.attemptCount}>
+                      Attempt {repeatAttempts[module.module as ModuleName]}/{MAX_REPEAT_ATTEMPTS}
+                    </Text>
+                  )}
+                </>
               )}
             </View>
           ))}
@@ -148,15 +209,20 @@ export default function QualityReviewScreen() {
             { backgroundColor: allModulesGood ? '#4F46E5' : '#F59E0B' },
           ]}
           onPress={handleProceedToResults}
+          accessibilityRole="button"
+          accessibilityLabel={allModulesGood ? 'View Results' : 'Proceed with current data'}
+          accessibilityHint={allModulesGood ? 'All modules passed' : 'Some modules need attention. Will prompt for confirmation.'}
         >
           <Text style={styles.proceedButtonText}>
-            {allModulesGood ? 'View Results' : 'Proceed with Current Data'}
+            {allModulesGood ? '✓ View Results' : '⚠️ Proceed Anyway'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.cancelButton}
           onPress={() => router.push('/vision-scan')}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel scan"
         >
           <Text style={styles.cancelButtonText}>Cancel Scan</Text>
         </TouchableOpacity>
@@ -290,15 +356,29 @@ const styles = StyleSheet.create({
   },
   repeatButton: {
     backgroundColor: '#F59E0B',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     borderRadius: 8,
     alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  repeatButtonDisabled: {
+    backgroundColor: '#D1D5DB',
+    opacity: 0.6,
   },
   repeatButtonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
+  },
+  repeatButtonTextDisabled: {
+    color: '#9CA3AF',
+  },
+  attemptCount: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
   },
   proceedButton: {
     width: '100%',
@@ -306,6 +386,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   proceedButtonText: {
     color: 'white',

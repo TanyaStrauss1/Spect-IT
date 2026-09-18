@@ -9,7 +9,7 @@ import { Camera, CameraType } from 'expo-camera'
 import * as FaceDetector from 'expo-face-detector'
 import { DeviceQualifier, type DeviceQualification, type CapabilityMatrix } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
-import { requestCameraPermission, type DetectedFace } from '../../lib/vision-scan/camera-utils'
+import { requestCameraPermission, type DetectedFace, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 export default function QualificationScreen() {
@@ -20,6 +20,11 @@ export default function QualificationScreen() {
   const [capabilityMatrix, setCapabilityMatrix] = useState<CapabilityMatrix | null>(null)
   const [faceDetected, setFaceDetected] = useState(false)
   const cameraRef = useRef<Camera>(null)
+
+  // Temporal smoothing state for face flicker detection
+  const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
+  const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const BUFFER_SIZE = 8
 
   useEffect(() => {
     setupCamera()
@@ -44,7 +49,22 @@ export default function QualificationScreen() {
   }
 
   const handleFacesDetected = ({ faces }: { faces: any[] }) => {
-    setFaceDetected(faces.length > 0)
+    const now = Date.now()
+    const detected = faces.length > 0
+    
+    // Update detection history for flicker detection
+    const newDetectionHistory = [...faceDetectionHistory.slice(-BUFFER_SIZE + 1), detected]
+    const newTimestampHistory = [...timestampHistory.slice(-BUFFER_SIZE + 1), now]
+    setFaceDetectionHistory(newDetectionHistory)
+    setTimestampHistory(newTimestampHistory)
+
+    // Check for flicker - only set detected if not flickering
+    const isFlickering = detectFaceFlicker(newDetectionHistory, newTimestampHistory)
+    if (!isFlickering) {
+      setFaceDetected(detected)
+    } else {
+      console.log('Qualification: Face flicker detected, maintaining previous state')
+    }
   }
 
   const runQualification = async () => {
@@ -145,13 +165,17 @@ export default function QualificationScreen() {
           <View style={styles.overlay}>
             <View style={styles.faceGuide} />
             {!faceDetected && (
-              <View style={styles.coachingBadge}>
-                <Text style={styles.coachingText}>👤 Position your face in the oval</Text>
+              <View style={styles.coachingBadge} accessibilityRole="alert">
+                <Text style={styles.coachingText} accessibilityLabel="Position your face in the oval">
+                  👤 Position your face in the oval
+                </Text>
               </View>
             )}
             {faceDetected && (
-              <View style={styles.faceDetectedBadge}>
-                <Text style={styles.faceDetectedText}>✓ Face Detected</Text>
+              <View style={styles.faceDetectedBadge} accessibilityLiveRegion="polite">
+                <Text style={styles.faceDetectedText} accessibilityLabel="Face detected">
+                  ✓ Face Detected
+                </Text>
               </View>
             )}
           </View>
@@ -244,23 +268,39 @@ export default function QualificationScreen() {
         )}
 
         {canContinue ? (
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+          <TouchableOpacity 
+            style={styles.continueButton} 
+            onPress={handleContinue}
+            accessibilityRole="button"
+            accessibilityLabel="Continue to calibration"
+            accessibilityHint="Proceed to next step"
+          >
             <Text style={styles.continueButtonText}>Continue to Calibration</Text>
           </TouchableOpacity>
         ) : (
           <>
-            <View style={styles.errorCard}>
+            <View style={styles.errorCard} accessibilityRole="alert">
               <Text style={styles.errorText}>
                 Quality too low to proceed. Please improve lighting and environment, then retry.
               </Text>
             </View>
-            <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+            <TouchableOpacity 
+              style={styles.retryButton} 
+              onPress={handleRetry}
+              accessibilityRole="button"
+              accessibilityLabel="Retry qualification"
+            >
               <Text style={styles.retryButtonText}>Retry Qualification</Text>
             </TouchableOpacity>
           </>
         )}
 
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel and go back"
+        >
           <Text style={styles.backButtonText}>Cancel</Text>
         </TouchableOpacity>
       </View>
@@ -483,6 +523,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   continueButtonText: {
     color: 'white',
@@ -496,6 +538,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   retryButtonText: {
     color: 'white',
@@ -506,6 +550,8 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 16,
     alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
   },
   backButtonText: {
     color: '#6B7280',

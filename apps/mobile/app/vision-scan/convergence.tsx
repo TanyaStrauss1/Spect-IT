@@ -11,7 +11,7 @@ import { Camera, CameraType } from 'expo-camera'
 import * as FaceDetector from 'expo-face-detector'
 import { ConvergenceTracker, QualityEngine, type ConvergenceFrame } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
-import { type DetectedFace, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+import { type DetectedFace, estimateFaceDistance, estimateVergence, applyEMA, medianFilter, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 export default function ConvergenceScreen() {
@@ -29,7 +29,19 @@ export default function ConvergenceScreen() {
   const [frameCount, setFrameCount] = useState(0)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [initialFaceSize, setInitialFaceSize] = useState<number | null>(null)
+  const [baselineIPD, setBaselineIPD] = useState<number | null>(null)
+  const [baselineFaceWidth, setBaselineFaceWidth] = useState<number | null>(null)
+  const [vergenceMethod, setVergenceMethod] = useState<'ipd-change' | 'face-width-change' | null>(null)
   const cameraRef = useRef<Camera>(null)
+
+  // Temporal smoothing state
+  const [ipdBuffer, setIpdBuffer] = useState<number[]>([])
+  const [faceWidthBuffer, setFaceWidthBuffer] = useState<number[]>([])
+  const [ipdEMA, setIpdEMA] = useState<number | null>(null)
+  const [faceWidthEMA, setFaceWidthEMA] = useState<number | null>(null)
+  const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
+  const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const BUFFER_SIZE = 5
 
   useEffect(() => {
     if ((phase === 'approach' || phase === 'recede') && detectedFace) {
@@ -53,9 +65,19 @@ export default function ConvergenceScreen() {
       }
       setDetectedFace(faceData)
       
-      // Store initial face size for distance calibration
+      // Store baseline measurements for vergence estimation
       if (!initialFaceSize) {
         setInitialFaceSize(face.bounds.width)
+        setBaselineFaceWidth(face.bounds.width)
+        
+        // Store baseline IPD if eye landmarks available
+        if (face.leftEyePosition && face.rightEyePosition) {
+          const ipd = Math.sqrt(
+            Math.pow(face.rightEyePosition.x - face.leftEyePosition.x, 2) +
+            Math.pow(face.rightEyePosition.y - face.leftEyePosition.y, 2)
+          )
+          setBaselineIPD(ipd)
+        }
       }
     } else {
       setDetectedFace(null)
@@ -63,28 +85,99 @@ export default function ConvergenceScreen() {
   }
 
   const captureFrame = () => {
-    if (!detectedFace || !initialFaceSize) return
+    if (!detectedFace || !initialFaceSize) {
+      // Track detection history
+      const now = Date.now()
+      setFaceDetectionHistory(prev => [...prev.slice(-BUFFER_SIZE + 1), false])
+      setTimestampHistory(prev => [...prev.slice(-BUFFER_SIZE + 1), now])
+      return
+    }
 
-    // Use face size change to simulate distance change
-    const faceSizeRatio = detectedFace.bounds.width / initialFaceSize
-    const estimatedDistance = 500 / faceSizeRatio // Inverse relationship
+    const now = Date.now()
     
-    // Compute vergence angle (binocular convergence)
-    const interpupillaryDistance = 65 // mm average
-    const vergenceAngle = interpupillaryDistance / estimatedDistance * 1000 // Convert to appropriate units
+    // Update detection history
+    const newDetectionHistory = [...faceDetectionHistory.slice(-BUFFER_SIZE + 1), true]
+    const newTimestampHistory = [...timestampHistory.slice(-BUFFER_SIZE + 1), now]
+    setFaceDetectionHistory(newDetectionHistory)
+    setTimestampHistory(newTimestampHistory)
+
+    // Check for face flicker - reject frame if flickering
+    if (detectFaceFlicker(newDetectionHistory, newTimestampHistory)) {
+      console.log('Convergence: Face flicker detected, skipping frame')
+      return
+    }
+
+    // Smooth IPD using both EMA and median filter
+    let smoothedIPD = baselineIPD
+    if (detectedFace.leftEye && detectedFace.rightEye) {
+      const currentIPD = Math.sqrt(
+        Math.pow(detectedFace.rightEye.x - detectedFace.leftEye.x, 2) +
+        Math.pow(detectedFace.rightEye.y - detectedFace.leftEye.y, 2)
+      )
+      
+      // Add to buffer
+      const newIpdBuffer = [...ipdBuffer.slice(-BUFFER_SIZE + 1), currentIPD]
+      setIpdBuffer(newIpdBuffer)
+      
+      // Apply median filter to remove outliers
+      const medianIPD = medianFilter(newIpdBuffer)
+      
+      // Then apply EMA for smoothness
+      smoothedIPD = applyEMA(medianIPD, ipdEMA, 0.25) // Lower alpha for more smoothing in vergence
+      setIpdEMA(smoothedIPD)
+    }
+
+    // Smooth face width
+    const currentFaceWidth = detectedFace.bounds.width
+    const newFaceWidthBuffer = [...faceWidthBuffer.slice(-BUFFER_SIZE + 1), currentFaceWidth]
+    setFaceWidthBuffer(newFaceWidthBuffer)
+    
+    const medianFaceWidth = medianFilter(newFaceWidthBuffer)
+    const smoothedFaceWidth = applyEMA(medianFaceWidth, faceWidthEMA, 0.25)
+    setFaceWidthEMA(smoothedFaceWidth)
+
+    // Create smoothed bounds for distance estimation
+    const smoothedBounds = {
+      ...detectedFace.bounds,
+      width: smoothedFaceWidth,
+    }
+
+    // Estimate distance using improved method (IPD or face-width) with smoothed values
+    const faceDistanceResult = estimateFaceDistance(
+      smoothedBounds,
+      600, // Assume 600px width
+      detectedFace.leftEye,
+      detectedFace.rightEye
+    )
+
+    // Estimate vergence using smoothed IPD/face-width changes
+    const vergenceResult = estimateVergence(
+      detectedFace.leftEye,
+      detectedFace.rightEye,
+      smoothedBounds,
+      baselineIPD,
+      baselineFaceWidth
+    )
+
+    const vergenceAngle = vergenceResult?.vergenceAngle ?? 7.2 // Default if estimation fails
+
+    // Track which method is being used (for documentation)
+    if (vergenceResult && !vergenceMethod) {
+      setVergenceMethod(vergenceResult.method)
+    }
 
     const frame: ConvergenceFrame = {
       timestamp: Date.now(),
-      faceDistance: estimatedDistance,
+      faceDistance: faceDistanceResult.distance,
       leftEye: {
         x: Math.random() * 2 - 1,
         y: Math.random() * 2 - 1,
-        z: estimatedDistance,
+        z: faceDistanceResult.distance,
       },
       rightEye: {
         x: Math.random() * 2 - 1,
         y: Math.random() * 2 - 1,
-        z: estimatedDistance,
+        z: faceDistanceResult.distance,
       },
       vergenceAngle,
       quality: detectedFace.bounds.width > 100 ? 0.8 : 0.5,
@@ -92,7 +185,7 @@ export default function ConvergenceScreen() {
 
     tracker.addFrame(frame)
     setFrameCount((prev) => prev + 1)
-    setDistance(estimatedDistance)
+    setDistance(faceDistanceResult.distance)
 
     if (phase === 'approach' && frameCount > 50) {
       tracker.setPhase('recede')

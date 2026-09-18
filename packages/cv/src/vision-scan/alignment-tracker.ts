@@ -10,29 +10,84 @@ import type { AlignmentFrame, AlignmentResult } from './types'
 export class AlignmentTracker {
   private frames: AlignmentFrame[] = []
   private useSensorData: boolean
+  private readonly MIN_FRAMES = 20
+  private readonly MIN_GOOD_FRAMES = 12
+  private readonly QUALITY_THRESHOLD = 0.6
+  private readonly HEAD_MOTION_LIMIT = 3 // degrees/sec
+  private lastFacePosition: { x: number; y: number; width: number } | null = null
 
   constructor(useSensorData: boolean) {
     this.useSensorData = useSensorData
   }
 
-  addFrame(frame: AlignmentFrame): void {
+  /**
+   * Add frame with quality gates:
+   * - Face confidence check (quality > threshold)
+   * - Bbox stability check (face position shouldn't jump)
+   * - Head motion limits
+   */
+  addFrame(
+    frame: AlignmentFrame,
+    faceBounds?: { x: number; y: number; width: number }
+  ): boolean {
+    // Gate 1: Face confidence
+    if (frame.quality < this.QUALITY_THRESHOLD) {
+      return false // Reject low-quality frame
+    }
+
+    // Gate 2: Head motion limits
+    const headMotion = Math.max(
+      Math.abs(frame.headPose.pitch),
+      Math.abs(frame.headPose.yaw),
+      Math.abs(frame.headPose.roll)
+    )
+    if (headMotion > this.HEAD_MOTION_LIMIT) {
+      return false // Reject excessive head motion
+    }
+
+    // Gate 3: Bbox stability (face shouldn't jump more than 20% of width)
+    if (faceBounds && this.lastFacePosition) {
+      const xDiff = Math.abs(faceBounds.x - this.lastFacePosition.x)
+      const widthChange = Math.abs(faceBounds.width - this.lastFacePosition.width)
+      
+      if (xDiff > this.lastFacePosition.width * 0.2 || 
+          widthChange > this.lastFacePosition.width * 0.2) {
+        return false // Reject unstable face detection
+      }
+    }
+
     this.frames.push(frame)
+    if (faceBounds) {
+      this.lastFacePosition = faceBounds
+    }
+    return true
   }
 
   computeResult(): AlignmentResult {
-    if (this.frames.length < 10) {
+    if (this.frames.length < this.MIN_FRAMES) {
       return {
         timestamp: Date.now(),
         frames: this.frames,
         meanDeviation: { left: 0, right: 0 },
         alignmentIndex: 0,
-        screeningNote: 'Insufficient data for alignment assessment.',
+        screeningNote: `Insufficient frames captured (${this.frames.length}/${this.MIN_FRAMES}). Ensure face is visible and head is stable.`,
         usedSensorData: this.useSensorData,
       }
     }
 
     // Filter high-quality frames
-    const goodFrames = this.frames.filter((f) => f.quality > 0.6)
+    const goodFrames = this.frames.filter((f) => f.quality > this.QUALITY_THRESHOLD)
+
+    if (goodFrames.length < this.MIN_GOOD_FRAMES) {
+      return {
+        timestamp: Date.now(),
+        frames: this.frames,
+        meanDeviation: { left: 0, right: 0 },
+        alignmentIndex: 0,
+        screeningNote: `Insufficient high-quality frames (${goodFrames.length}/${this.MIN_GOOD_FRAMES}). Repeat with better lighting and stable head position.`,
+        usedSensorData: this.useSensorData,
+      }
+    }
 
     // Compute mean deviation from center
     const leftDeviations = goodFrames

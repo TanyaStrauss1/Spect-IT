@@ -72,6 +72,7 @@ export type CalibrationResult = {
   maxError: number // pixels
   isValid: boolean
   usedSensorData: boolean
+  rejectionReason?: string // why calibration failed (if !isValid)
 }
 
 // ============================================================================

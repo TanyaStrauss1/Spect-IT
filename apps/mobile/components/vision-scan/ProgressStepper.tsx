@@ -6,7 +6,7 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 
-type VisionScanStep = 'qualification' | 'calibration' | 'alignment' | 'motility' | 'convergence' | 'complete'
+type VisionScanStep = 'qualification' | 'calibration' | 'alignment' | 'motility' | 'convergence' | 'quality-review' | 'complete'
 
 interface ProgressStepperProps {
   currentStep: VisionScanStep
@@ -18,6 +18,7 @@ const STEPS: { id: VisionScanStep; label: string }[] = [
   { id: 'alignment', label: 'Alignment' },
   { id: 'motility', label: 'Motility' },
   { id: 'convergence', label: 'Convergence' },
+  { id: 'quality-review', label: 'Review' },
   { id: 'complete', label: 'Complete' },
 ]
 

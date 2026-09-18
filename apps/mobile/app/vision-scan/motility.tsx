@@ -9,7 +9,7 @@ import { Camera, CameraType } from 'expo-camera'
 import * as FaceDetector from 'expo-face-detector'
 import { MotilityTracker, type GazePosition, type MotilityFrame } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
-import { type DetectedFace, computeHeadPose, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+import { type DetectedFace, computeHeadPose, estimateFaceDistance, applyEMA, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 const { width: screenWidth } = Dimensions.get('window')
@@ -24,6 +24,13 @@ export default function MotilityScreen() {
   const [lastFacePosition, setLastFacePosition] = useState<{ x: number; y: number } | null>(null)
   const cameraRef = useRef<Camera>(null)
   const framesPerPosition = 10
+
+  // Temporal smoothing state
+  const [headPoseEMA, setHeadPoseEMA] = useState<{ pitch: number; yaw: number; roll: number } | null>(null)
+  const [faceBoundsEMA, setFaceBoundsEMA] = useState<{ x: number; y: number; width: number } | null>(null)
+  const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
+  const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const BUFFER_SIZE = 5
 
   const currentPosition = sequence[currentIndex]
 
@@ -53,14 +60,55 @@ export default function MotilityScreen() {
   }
 
   const captureFrame = () => {
-    if (!detectedFace) return
+    if (!detectedFace) {
+      // Track detection history
+      const now = Date.now()
+      setFaceDetectionHistory(prev => [...prev.slice(-BUFFER_SIZE + 1), false])
+      setTimestampHistory(prev => [...prev.slice(-BUFFER_SIZE + 1), now])
+      return
+    }
 
-    const headPose = computeHeadPose(detectedFace)
-    const faceDistance = estimateFaceDistance(detectedFace.bounds, screenWidth)
+    const now = Date.now()
+    
+    // Update detection history
+    const newDetectionHistory = [...faceDetectionHistory.slice(-BUFFER_SIZE + 1), true]
+    const newTimestampHistory = [...timestampHistory.slice(-BUFFER_SIZE + 1), now]
+    setFaceDetectionHistory(newDetectionHistory)
+    setTimestampHistory(newTimestampHistory)
+
+    // Check for face flicker - reject frame if flickering
+    if (detectFaceFlicker(newDetectionHistory, newTimestampHistory)) {
+      console.log('Motility: Face flicker detected, skipping frame')
+      return
+    }
+
+    // Smooth head pose
+    const rawHeadPose = computeHeadPose(detectedFace)
+    const smoothedHeadPose = {
+      pitch: applyEMA(rawHeadPose.pitch, headPoseEMA?.pitch ?? null, 0.3),
+      yaw: applyEMA(rawHeadPose.yaw, headPoseEMA?.yaw ?? null, 0.3),
+      roll: applyEMA(rawHeadPose.roll, headPoseEMA?.roll ?? null, 0.3),
+    }
+    setHeadPoseEMA(smoothedHeadPose)
+
+    // Smooth face bounds
+    const smoothedBounds = {
+      x: applyEMA(detectedFace.bounds.x, faceBoundsEMA?.x ?? null, 0.3),
+      y: applyEMA(detectedFace.bounds.y, faceBoundsEMA?.y ?? null, 0.3),
+      width: applyEMA(detectedFace.bounds.width, faceBoundsEMA?.width ?? null, 0.3),
+    }
+    setFaceBoundsEMA(smoothedBounds)
+
+    const faceDistanceResult = estimateFaceDistance(
+      { ...detectedFace.bounds, ...smoothedBounds, height: detectedFace.bounds.height },
+      screenWidth,
+      detectedFace.leftEye,
+      detectedFace.rightEye
+    )
     
     const currentFaceCenter = {
-      x: detectedFace.bounds.x + detectedFace.bounds.width / 2,
-      y: detectedFace.bounds.y + detectedFace.bounds.height / 2,
+      x: smoothedBounds.x + smoothedBounds.width / 2,
+      y: smoothedBounds.y + smoothedBounds.width / 2,
     }
 
     // Compute head displacement from first frame
@@ -75,11 +123,11 @@ export default function MotilityScreen() {
       setLastFacePosition(currentFaceCenter)
     }
 
-    // Compute head motion velocity (simplified)
+    // Compute head motion velocity using smoothed head pose
     const headMotion = {
-      pitch: Math.abs(headPose.pitch) > 0.1 ? headPose.pitch * 10 : 0,
-      yaw: Math.abs(headPose.yaw) > 0.1 ? headPose.yaw * 10 : 0,
-      roll: Math.abs(headPose.roll) > 0.1 ? headPose.roll * 10 : 0,
+      pitch: Math.abs(smoothedHeadPose.pitch) > 0.1 ? smoothedHeadPose.pitch * 10 : 0,
+      yaw: Math.abs(smoothedHeadPose.yaw) > 0.1 ? smoothedHeadPose.yaw * 10 : 0,
+      roll: Math.abs(smoothedHeadPose.roll) > 0.1 ? smoothedHeadPose.roll * 10 : 0,
     }
 
     const posCoord = getPositionCoord(currentPosition)
@@ -90,20 +138,22 @@ export default function MotilityScreen() {
       leftEye: {
         x: posCoord.x + (Math.random() - 0.5) * 2,
         y: posCoord.y + (Math.random() - 0.5) * 2,
-        z: faceDistance,
+        z: faceDistanceResult.distance,
       },
       rightEye: {
         x: posCoord.x + (Math.random() - 0.5) * 2,
         y: posCoord.y + (Math.random() - 0.5) * 2,
-        z: faceDistance,
+        z: faceDistanceResult.distance,
       },
       headMotion,
       headDisplacement,
-      quality: detectedFace.bounds.width > screenWidth * 0.25 ? 0.8 : 0.5,
+      quality: smoothedBounds.width > screenWidth * 0.25 ? 0.8 : 0.5,
       rejected: false,
     }
 
-    tracker.addFrame(frame)
+    // Compute face confidence from smoothed detection quality
+    const faceConfidence = smoothedBounds.width > screenWidth * 0.25 ? 0.9 : 0.6
+    tracker.addFrame(frame, faceConfidence)
     setFrameCount((prev) => prev + 1)
 
     if (frameCount >= framesPerPosition - 1) {
