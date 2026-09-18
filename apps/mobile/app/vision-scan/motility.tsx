@@ -56,7 +56,12 @@ export default function MotilityScreen() {
     if (!detectedFace) return
 
     const headPose = computeHeadPose(detectedFace)
-    const faceDistance = estimateFaceDistance(detectedFace.bounds, screenWidth)
+    const faceDistanceResult = estimateFaceDistance(
+      detectedFace.bounds,
+      screenWidth,
+      detectedFace.leftEye,
+      detectedFace.rightEye
+    )
     
     const currentFaceCenter = {
       x: detectedFace.bounds.x + detectedFace.bounds.width / 2,
@@ -90,12 +95,12 @@ export default function MotilityScreen() {
       leftEye: {
         x: posCoord.x + (Math.random() - 0.5) * 2,
         y: posCoord.y + (Math.random() - 0.5) * 2,
-        z: faceDistance,
+        z: faceDistanceResult.distance,
       },
       rightEye: {
         x: posCoord.x + (Math.random() - 0.5) * 2,
         y: posCoord.y + (Math.random() - 0.5) * 2,
-        z: faceDistance,
+        z: faceDistanceResult.distance,
       },
       headMotion,
       headDisplacement,
@@ -103,7 +108,9 @@ export default function MotilityScreen() {
       rejected: false,
     }
 
-    tracker.addFrame(frame)
+    // Compute face confidence from detection quality
+    const faceConfidence = detectedFace.bounds.width > screenWidth * 0.25 ? 0.9 : 0.6
+    tracker.addFrame(frame, faceConfidence)
     setFrameCount((prev) => prev + 1)
 
     if (frameCount >= framesPerPosition - 1) {

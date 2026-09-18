@@ -1,5 +1,6 @@
 /**
  * Camera & Face Detection Utilities
+ * Includes temporal smoothing to avoid one-frame spikes
  */
 
 import { Camera } from 'expo-camera'
@@ -25,6 +26,78 @@ export type DetectedFace = {
   yawAngle?: number
   smilingProbability?: number
 }
+
+// ============================================================================
+// Temporal Smoothing (EMA & Median Filters)
+// ============================================================================
+
+/**
+ * Exponential Moving Average (EMA) for single values
+ * Smooths face bounds, IPD, head pose to avoid one-frame spikes
+ * 
+ * @param currentValue - New measurement
+ * @param previousEMA - Previous EMA value (null for first frame)
+ * @param alpha - Smoothing factor (0-1, lower = more smoothing, default 0.3)
+ * @returns Smoothed value
+ */
+export function applyEMA(
+  currentValue: number,
+  previousEMA: number | null,
+  alpha: number = 0.3
+): number {
+  if (previousEMA === null) return currentValue
+  return alpha * currentValue + (1 - alpha) * previousEMA
+}
+
+/**
+ * Median filter for rejecting outliers
+ * Useful for detecting flicker: if face detection rapidly on/off, reject burst
+ * 
+ * @param values - Recent values (e.g. last 5 frames)
+ * @returns Median value
+ */
+export function medianFilter(values: number[]): number {
+  if (values.length === 0) return 0
+  const sorted = [...values].sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid]
+}
+
+/**
+ * Detect rapid face detection flicker (on/off/on pattern)
+ * If face detection flickers rapidly (>3 transitions in 1 second), reject burst
+ * 
+ * @param detectionHistory - Boolean array of recent detections (true = face present)
+ * @param timestampHistory - Timestamps of recent frames (milliseconds)
+ * @returns true if flickering detected
+ */
+export function detectFaceFlicker(
+  detectionHistory: boolean[],
+  timestampHistory: number[]
+): boolean {
+  if (detectionHistory.length < 5) return false
+
+  // Count transitions (true->false or false->true)
+  let transitions = 0
+  for (let i = 1; i < detectionHistory.length; i++) {
+    if (detectionHistory[i] !== detectionHistory[i - 1]) {
+      transitions++
+    }
+  }
+
+  // Check if transitions happened within 1 second
+  const timeSpan = timestampHistory[timestampHistory.length - 1] - timestampHistory[0]
+  const transitionsPerSecond = (transitions / timeSpan) * 1000
+
+  // Threshold: >3 transitions per second = flicker
+  return transitionsPerSecond > 3
+}
+
+// ============================================================================
+// Camera & Permissions
+// ============================================================================
 
 /**
  * Request camera permissions
@@ -100,7 +173,14 @@ export function estimateFaceDistance(
 }
 
 /**
- * Compute gaze deviation from eye positions (simplified)
+ * Compute gaze deviation from eye positions using eye landmarks relative to face
+ * 
+ * Improved method:
+ * 1. Normalize eye positions relative to face bounds (0-1 range)
+ * 2. Compare to target position (also normalized)
+ * 3. Convert pixel deviation to degrees using face width as reference
+ * 
+ * Assumption: At typical selfie distance (40-60cm), face width ~140mm corresponds to ~25-30° FOV
  */
 export function estimateGazeDeviation(
   leftEye: EyePosition | undefined,
@@ -109,28 +189,48 @@ export function estimateGazeDeviation(
   targetX: number,
   targetY: number
 ): { left: number; right: number } {
-  // If no eye positions, return zero deviation
-  if (!leftEye || !rightEye) {
-    return { left: 0, right: 0 }
-  }
-
-  // Compute eye positions relative to face center
+  // If no eye positions, use face center as fallback
   const faceCenterX = faceBounds.x + faceBounds.width / 2
   const faceCenterY = faceBounds.y + faceBounds.height / 2
 
-  // Estimate deviation in degrees (very simplified)
-  // This is a crude approximation for degraded mode
-  const leftDeviation = Math.sqrt(
-    Math.pow(leftEye.x - targetX, 2) + Math.pow(leftEye.y - targetY, 2)
-  ) / 50 // Rough pixel-to-degree conversion
+  const leftEyeX = leftEye?.x ?? faceCenterX
+  const leftEyeY = leftEye?.y ?? faceCenterY
+  const rightEyeX = rightEye?.x ?? faceCenterX
+  const rightEyeY = rightEye?.y ?? faceCenterY
 
-  const rightDeviation = Math.sqrt(
-    Math.pow(rightEye.x - targetX, 2) + Math.pow(rightEye.y - targetY, 2)
-  ) / 50
+  // Normalize eye positions relative to face bounds (0-1)
+  const leftEyeNormX = (leftEyeX - faceBounds.x) / faceBounds.width
+  const leftEyeNormY = (leftEyeY - faceBounds.y) / faceBounds.height
+  const rightEyeNormX = (rightEyeX - faceBounds.x) / faceBounds.width
+  const rightEyeNormY = (rightEyeY - faceBounds.y) / faceBounds.height
+
+  // Compute target position relative to face
+  // (gaze deviation is eye position offset from where eyes should point to hit target)
+  const targetRelativeX = (targetX - faceCenterX) / faceBounds.width
+  const targetRelativeY = (targetY - faceCenterY) / faceBounds.height
+
+  // Compute normalized deviations
+  const leftDeviationNormX = leftEyeNormX - 0.5 - targetRelativeX
+  const leftDeviationNormY = leftEyeNormY - 0.4 - targetRelativeY // 0.4 = typical eye Y position in face
+  const rightDeviationNormX = rightEyeNormX - 0.5 - targetRelativeX
+  const rightDeviationNormY = rightEyeNormY - 0.4 - targetRelativeY
+
+  // Convert to degrees using face width as angular reference
+  // Assumption: Face width ~140mm at 500mm distance = ~16° visual angle
+  const pixelToDegree = 16 / faceBounds.width // degrees per pixel
+
+  const leftDeviationPx = Math.sqrt(
+    Math.pow(leftDeviationNormX * faceBounds.width, 2) +
+    Math.pow(leftDeviationNormY * faceBounds.height, 2)
+  )
+  const rightDeviationPx = Math.sqrt(
+    Math.pow(rightDeviationNormX * faceBounds.width, 2) +
+    Math.pow(rightDeviationNormY * faceBounds.height, 2)
+  )
 
   return {
-    left: leftDeviation,
-    right: rightDeviation,
+    left: leftDeviationPx * pixelToDegree,
+    right: rightDeviationPx * pixelToDegree,
   }
 }
 
@@ -145,6 +245,66 @@ export function assessLightingQuality(brightness?: number): number {
   if (brightness >= 80 && brightness <= 180) return 100
   if (brightness < 50 || brightness > 220) return 30
   return 60
+}
+
+/**
+ * Estimate vergence angle from IPD change or face-width change
+ * 
+ * Vergence Methods (in priority order):
+ * 1. IPD pixel change (preferred) - More accurate, direct measure of eye separation
+ * 2. Face-width pixel change (fallback) - Less accurate but available when landmarks poor
+ * 
+ * Assumption: Vergence angle ≈ (real_IPD / distance)
+ * As distance decreases, vergence increases (eyes converge)
+ * 
+ * Returns: { vergenceAngle: degrees, method: 'ipd-change' | 'face-width-change' }
+ */
+export function estimateVergence(
+  currentLeftEye: EyePosition | undefined,
+  currentRightEye: EyePosition | undefined,
+  currentFaceBounds: FaceBounds,
+  baselineIPD: number | null, // baseline IPD in pixels at reference distance
+  baselineFaceWidth: number | null // baseline face width in pixels
+): { vergenceAngle: number; method: 'ipd-change' | 'face-width-change' } | null {
+  // Method 1: IPD change (preferred)
+  if (currentLeftEye && currentRightEye && baselineIPD && baselineIPD > 0) {
+    const currentIPD = Math.sqrt(
+      Math.pow(currentRightEye.x - currentLeftEye.x, 2) +
+      Math.pow(currentRightEye.y - currentLeftEye.y, 2)
+    )
+
+    if (currentIPD > 10) { // Validity check
+      // Larger IPD = closer distance = more convergence
+      // Approximate vergence angle from IPD ratio
+      // Real IPD = 63mm, at 500mm distance, vergence ≈ 7.2°
+      const ipdRatio = currentIPD / baselineIPD
+      const baselineVergence = 7.2 // degrees at 500mm
+      const vergenceAngle = baselineVergence * ipdRatio
+
+      return {
+        vergenceAngle,
+        method: 'ipd-change'
+      }
+    }
+  }
+
+  // Method 2: Face-width change (fallback)
+  if (baselineFaceWidth && baselineFaceWidth > 0) {
+    const currentFaceWidth = currentFaceBounds.width
+    
+    if (currentFaceWidth > 50) { // Validity check
+      const widthRatio = currentFaceWidth / baselineFaceWidth
+      const baselineVergence = 7.2 // degrees at 500mm
+      const vergenceAngle = baselineVergence * widthRatio
+
+      return {
+        vergenceAngle,
+        method: 'face-width-change'
+      }
+    }
+  }
+
+  return null
 }
 
 /**

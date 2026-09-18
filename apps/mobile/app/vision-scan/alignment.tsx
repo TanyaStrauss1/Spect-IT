@@ -74,7 +74,12 @@ export default function AlignmentScreen() {
     )
 
     const headPose = computeHeadPose(detectedFace)
-    const faceDistance = estimateFaceDistance(detectedFace.bounds, screenWidth)
+    const faceDistanceResult = estimateFaceDistance(
+      detectedFace.bounds,
+      screenWidth,
+      detectedFace.leftEye,
+      detectedFace.rightEye
+    )
 
     // Estimate eye positions in 3D (simplified)
     const faceCenterX = detectedFace.bounds.x + detectedFace.bounds.width / 2
@@ -91,20 +96,20 @@ export default function AlignmentScreen() {
       leftEye: {
         x: leftEyeX * pixelToDegree,
         y: leftEyeY * pixelToDegree,
-        z: faceDistance,
+        z: faceDistanceResult.distance,
       },
       rightEye: {
         x: rightEyeX * pixelToDegree,
         y: rightEyeY * pixelToDegree,
-        z: faceDistance,
+        z: faceDistanceResult.distance,
       },
       headPose,
-      faceDistance,
+      faceDistance: faceDistanceResult.distance,
       gazeDeviation,
       quality: detectedFace.bounds.width > screenWidth * 0.25 ? 0.8 : 0.5,
     }
 
-    tracker.addFrame(frame)
+    tracker.addFrame(frame, detectedFace.bounds)
     setFrameCount((prev) => prev + 1)
   }
 

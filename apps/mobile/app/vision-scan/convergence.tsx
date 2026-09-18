@@ -11,7 +11,7 @@ import { Camera, CameraType } from 'expo-camera'
 import * as FaceDetector from 'expo-face-detector'
 import { ConvergenceTracker, QualityEngine, type ConvergenceFrame } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
-import { type DetectedFace, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+import { type DetectedFace, estimateFaceDistance, estimateVergence } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 export default function ConvergenceScreen() {
@@ -29,6 +29,9 @@ export default function ConvergenceScreen() {
   const [frameCount, setFrameCount] = useState(0)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [initialFaceSize, setInitialFaceSize] = useState<number | null>(null)
+  const [baselineIPD, setBaselineIPD] = useState<number | null>(null)
+  const [baselineFaceWidth, setBaselineFaceWidth] = useState<number | null>(null)
+  const [vergenceMethod, setVergenceMethod] = useState<'ipd-change' | 'face-width-change' | null>(null)
   const cameraRef = useRef<Camera>(null)
 
   useEffect(() => {
@@ -53,9 +56,19 @@ export default function ConvergenceScreen() {
       }
       setDetectedFace(faceData)
       
-      // Store initial face size for distance calibration
+      // Store baseline measurements for vergence estimation
       if (!initialFaceSize) {
         setInitialFaceSize(face.bounds.width)
+        setBaselineFaceWidth(face.bounds.width)
+        
+        // Store baseline IPD if eye landmarks available
+        if (face.leftEyePosition && face.rightEyePosition) {
+          const ipd = Math.sqrt(
+            Math.pow(face.rightEyePosition.x - face.leftEyePosition.x, 2) +
+            Math.pow(face.rightEyePosition.y - face.leftEyePosition.y, 2)
+          )
+          setBaselineIPD(ipd)
+        }
       }
     } else {
       setDetectedFace(null)
@@ -65,26 +78,42 @@ export default function ConvergenceScreen() {
   const captureFrame = () => {
     if (!detectedFace || !initialFaceSize) return
 
-    // Use face size change to simulate distance change
-    const faceSizeRatio = detectedFace.bounds.width / initialFaceSize
-    const estimatedDistance = 500 / faceSizeRatio // Inverse relationship
-    
-    // Compute vergence angle (binocular convergence)
-    const interpupillaryDistance = 65 // mm average
-    const vergenceAngle = interpupillaryDistance / estimatedDistance * 1000 // Convert to appropriate units
+    // Estimate distance using improved method (IPD or face-width)
+    const faceDistanceResult = estimateFaceDistance(
+      detectedFace.bounds,
+      600, // Assume 600px width
+      detectedFace.leftEye,
+      detectedFace.rightEye
+    )
+
+    // Estimate vergence using IPD change or face-width change
+    const vergenceResult = estimateVergence(
+      detectedFace.leftEye,
+      detectedFace.rightEye,
+      detectedFace.bounds,
+      baselineIPD,
+      baselineFaceWidth
+    )
+
+    const vergenceAngle = vergenceResult?.vergenceAngle ?? 7.2 // Default if estimation fails
+
+    // Track which method is being used (for documentation)
+    if (vergenceResult && !vergenceMethod) {
+      setVergenceMethod(vergenceResult.method)
+    }
 
     const frame: ConvergenceFrame = {
       timestamp: Date.now(),
-      faceDistance: estimatedDistance,
+      faceDistance: faceDistanceResult.distance,
       leftEye: {
         x: Math.random() * 2 - 1,
         y: Math.random() * 2 - 1,
-        z: estimatedDistance,
+        z: faceDistanceResult.distance,
       },
       rightEye: {
         x: Math.random() * 2 - 1,
         y: Math.random() * 2 - 1,
-        z: estimatedDistance,
+        z: faceDistanceResult.distance,
       },
       vergenceAngle,
       quality: detectedFace.bounds.width > 100 ? 0.8 : 0.5,
@@ -92,7 +121,7 @@ export default function ConvergenceScreen() {
 
     tracker.addFrame(frame)
     setFrameCount((prev) => prev + 1)
-    setDistance(estimatedDistance)
+    setDistance(faceDistanceResult.distance)
 
     if (phase === 'approach' && frameCount > 50) {
       tracker.setPhase('recede')
