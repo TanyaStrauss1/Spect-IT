@@ -17,6 +17,8 @@ import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { type DetectedFace, computeHeadPose, estimateFaceDistance, applyEMA, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
+import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
+import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -27,10 +29,12 @@ export default function CalibrationScreen() {
   const [calibrationPoints] = useState(VisionScanCalibrator.getCalibrationPoints())
   const [isCapturing, setIsCapturing] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const [result, setResult] = useState<CalibrationResult | null>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
+  const faceLostTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Temporal smoothing state
   const [faceBoundsEMA, setFaceBoundsEMA] = useState<{ width: number; x: number; y: number } | null>(null)
@@ -42,13 +46,13 @@ export default function CalibrationScreen() {
   const currentPoint = calibrationPoints[currentPointIndex]
 
   useEffect(() => {
-    if (currentPointIndex < calibrationPoints.length && !isComplete && detectedFace) {
+    if (currentPointIndex < calibrationPoints.length && !isComplete && detectedFace && !isPaused) {
       const timer = setTimeout(() => {
         captureSample()
       }, 1500)
       return () => clearTimeout(timer)
     }
-  }, [currentPointIndex, detectedFace])
+  }, [currentPointIndex, detectedFace, isPaused])
 
   const handleFacesDetected = ({ faces }: { faces: any[] }) => {
     if (faces.length > 0) {
@@ -60,15 +64,100 @@ export default function CalibrationScreen() {
         rollAngle: face.rollAngle,
         yawAngle: face.yawAngle,
       })
+      
+      // Resume if was paused
+      if (isPaused) {
+        setIsPaused(false)
+      }
+      
+      // Clear any face-lost timeout
+      if (faceLostTimeoutRef.current) {
+        clearTimeout(faceLostTimeoutRef.current)
+        faceLostTimeoutRef.current = null
+      }
     } else {
       setDetectedFace(null)
+      
+      // Pause capture after 1 second of no face
+      if (!isPaused && !faceLostTimeoutRef.current && !isComplete) {
+        faceLostTimeoutRef.current = setTimeout(() => {
+          setIsPaused(true)
+        }, 1000)
+      }
     }
+  }
+  
+  const computeFaceHoldStatus = (): FaceHoldStatus => {
+    if (!detectedFace) return 'no-face'
+    
+    // Check distance
+    const faceWidth = detectedFace.bounds.width
+    if (faceWidth < screenWidth * 0.25) return 'too-far'
+    if (faceWidth > screenWidth * 0.6) return 'too-close'
+    
+    // Check centering
+    const faceCenterX = detectedFace.bounds.x + detectedFace.bounds.width / 2
+    const faceCenterY = detectedFace.bounds.y + detectedFace.bounds.height / 2
+    const screenCenterX = screenWidth / 2
+    const screenCenterY = screenHeight / 2
+    
+    const xOffset = Math.abs(faceCenterX - screenCenterX)
+    const yOffset = Math.abs(faceCenterY - screenCenterY)
+    
+    if (xOffset > screenWidth * 0.25 || yOffset > screenHeight * 0.25) {
+      return 'off-center'
+    }
+    
+    // Check head pose stability
+    if (headPoseEMA) {
+      if (Math.abs(headPoseEMA.yaw) > 20 || Math.abs(headPoseEMA.roll) > 20) {
+        return 'head-motion'
+      }
+    }
+    
+    // Excellent if large, centered, stable
+    if (faceWidth > screenWidth * 0.4 && xOffset < screenWidth * 0.1 && yOffset < screenHeight * 0.1) {
+      return 'excellent'
+    }
+    
+    return 'good'
   }
 
   const captureSample = () => {
     if (!detectedFace) return
 
+    const now = Date.now()
+    
+    // Update detection history
+    const newDetectionHistory = [...faceDetectionHistory.slice(-BUFFER_SIZE + 1), true]
+    const newTimestampHistory = [...timestampHistory.slice(-BUFFER_SIZE + 1), now]
+    setFaceDetectionHistory(newDetectionHistory)
+    setTimestampHistory(newTimestampHistory)
+
+    // Check for face flicker - reject frame if flickering
+    if (detectFaceFlicker(newDetectionHistory, newTimestampHistory)) {
+      console.log('Calibration: Face flicker detected, skipping sample')
+      return
+    }
+
     setIsCapturing(true)
+
+    // Apply EMA smoothing to face bounds
+    const smoothedBounds = {
+      x: applyEMA(detectedFace.bounds.x, faceBoundsEMA?.x ?? null, 0.3),
+      y: applyEMA(detectedFace.bounds.y, faceBoundsEMA?.y ?? null, 0.3),
+      width: applyEMA(detectedFace.bounds.width, faceBoundsEMA?.width ?? null, 0.3),
+    }
+    setFaceBoundsEMA(smoothedBounds)
+
+    // Apply EMA smoothing to head pose
+    const rawHeadPose = computeHeadPose(detectedFace)
+    const smoothedHeadPose = {
+      pitch: applyEMA(rawHeadPose.pitch, headPoseEMA?.pitch ?? null, 0.3),
+      yaw: applyEMA(rawHeadPose.yaw, headPoseEMA?.yaw ?? null, 0.3),
+      roll: applyEMA(rawHeadPose.roll, headPoseEMA?.roll ?? null, 0.3),
+    }
+    setHeadPoseEMA(smoothedHeadPose)
 
     // Compute target position in screen coordinates
     const targetScreenX = currentPoint.screenX * screenWidth
@@ -84,7 +173,6 @@ export default function CalibrationScreen() {
     const rightGazeX = detectedFace.rightEye?.x || faceCenterX
     const rightGazeY = detectedFace.rightEye?.y || faceCenterY
 
-    const headPose = computeHeadPose(detectedFace)
     const faceDistanceResult = estimateFaceDistance(
       detectedFace.bounds, 
       screenWidth,
@@ -287,6 +375,9 @@ export default function CalibrationScreen() {
     )
   }
 
+  const faceHoldStatus = computeFaceHoldStatus()
+  const useSensorMode = deviceQualification?.useSensorBasedMeasurements || false
+
   return (
     <View style={styles.container}>
       <ProgressStepper currentStep="calibration" />
@@ -304,6 +395,13 @@ export default function CalibrationScreen() {
       />
 
       <View style={styles.overlay}>
+        <FaceHoldCoaching 
+          status={faceHoldStatus}
+          frameCount={currentPointIndex}
+          targetFrames={calibrationPoints.length}
+          isPaused={isPaused}
+        />
+
         <View style={styles.instructions}>
           <Text style={styles.instructionText}>
             Look at the dots as they appear. Keep your head still.
@@ -311,14 +409,7 @@ export default function CalibrationScreen() {
           <Text style={styles.progressText}>
             Point {currentPointIndex + 1} of {calibrationPoints.length}
           </Text>
-          {!detectedFace && (
-            <View style={styles.coachingBanner} accessibilityRole="alert">
-              <Text style={styles.coachingText} accessibilityLabel="Position your face in view">
-                👤 Position your face in view
-              </Text>
-            </View>
-          )}
-          {detectedFace && isCapturing && (
+          {isCapturing && (
             <View style={styles.capturingBanner} accessibilityLiveRegion="polite">
               <Text style={styles.capturingText} accessibilityLabel="Capturing calibration sample">
                 ✓ Capturing...
@@ -355,6 +446,8 @@ export default function CalibrationScreen() {
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
+
+        <DegradedModeBanner useSensorMode={useSensorMode} />
       </View>
     </View>
   )
@@ -385,28 +478,6 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 14,
     color: '#9CA3AF',
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#F59E0B',
-    marginTop: 4,
-  },
-  coachingBanner: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginTop: 8,
-    borderWidth: 2,
-    borderColor: '#F59E0B',
-    minHeight: 40,
-    justifyContent: 'center',
-  },
-  coachingText: {
-    fontSize: 15,
-    color: '#78350F',
-    fontWeight: '700',
-    textAlign: 'center',
   },
   capturingBanner: {
     backgroundColor: '#D1FAE5',
