@@ -22,6 +22,9 @@ import {
   CATCH_TRIAL_CONFIG,
   DEFAULT_SCREENING_LEVEL,
   PASS_REFER_CRITERIA,
+  AMBIENT_NOISE_REQUIREMENTS,
+  HEADPHONE_REQUIREMENTS,
+  SCREENING_BANNERS,
   createMethodologyString,
   createScreeningNote,
   type ScreeningFrequency,
@@ -388,27 +391,28 @@ export default function HearingTestPage() {
             </div>
 
             <div className="space-y-4 mb-8">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Important Notice</h3>
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                <h3 className="font-semibold text-yellow-900 mb-2 flex items-center gap-2">
+                  ⚠️ {SCREENING_BANNERS.notDiagnostic.title}
+                </h3>
                 <p className="text-sm text-yellow-800">
-                  This is a <strong>basic screening tool</strong>, not a diagnostic audiological examination. 
-                  It cannot replace professional hearing evaluation by a licensed audiologist.
+                  {SCREENING_BANNERS.notDiagnostic.message}
                 </p>
               </div>
 
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <h3 className="font-semibold text-red-900 mb-2">🔊 Calibration Limitation</h3>
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                <h3 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
+                  🔊 {SCREENING_BANNERS.calibrationLimitation.title}
+                </h3>
                 <p className="text-sm text-red-800">
-                  This test uses <strong>relative device volumes, NOT calibrated dB HL</strong>. Results indicate 
-                  relative hearing sensitivity only, not absolute hearing thresholds. For calibrated audiometric 
-                  testing with standardized dB HL levels, consult an audiologist.
+                  {SCREENING_BANNERS.calibrationLimitation.message}
                 </p>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold text-blue-900 mb-3">Before You Begin:</h3>
                 <ul className="text-sm text-blue-800 space-y-2">
-                  <li>✓ Use <strong>stereo headphones or earbuds</strong> (not speakers)</li>
+                  <li>✓ Use <strong>stereo headphones or earbuds</strong> (NOT speakers — required!)</li>
                   <li>✓ Find a <strong>quiet environment</strong> with minimal background noise</li>
                   <li>✓ Set your device volume to a <strong>comfortable level</strong></li>
                   <li>✓ The test takes about <strong>3-5 minutes</strong></li>
@@ -418,10 +422,11 @@ export default function HearingTestPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">How It Works:</h3>
                 <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
-                  <li>We'll first check your headphones are connected correctly</li>
-                  <li>You'll set a comfortable volume level</li>
-                  <li>You'll listen for tones at different frequencies in each ear</li>
-                  <li>Click "I Heard It" when you hear a tone</li>
+                  <li>Verify your headphones are working correctly (left/right check)</li>
+                  <li>Confirm your environment is quiet enough for testing</li>
+                  <li>Set a comfortable volume level</li>
+                  <li>Listen for tones at different frequencies in each ear</li>
+                  <li>Click "I Heard It" when you hear a tone (respond honestly!)</li>
                   <li>Results provide a basic pass/refer screening outcome</li>
                 </ol>
               </div>
@@ -446,14 +451,24 @@ export default function HearingTestPage() {
           <div className="bg-white rounded-lg shadow-xl p-8">
             <div className="text-center mb-8">
               <div className="text-6xl mb-4">🎧</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Headphone Check</h2>
-              <p className="text-gray-600">Make sure your headphones are on correctly</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{HEADPHONE_REQUIREMENTS.title}</h2>
+              <p className="text-gray-600">{HEADPHONE_REQUIREMENTS.description}</p>
             </div>
 
             <div className="space-y-6">
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                <p className="text-sm font-semibold text-red-900 mb-2">
+                  🚫 {HEADPHONE_REQUIREMENTS.warningNote}
+                </p>
+              </div>
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <p className="text-sm text-blue-900 font-semibold mb-4">
+                  Step 1: Test Each Ear Separately
+                </p>
                 <p className="text-sm text-blue-800 mb-4">
-                  Click each button to hear a tone. Verify that you hear the tone in the correct ear.
+                  Click each button below. You should hear a tone ONLY in the indicated ear. 
+                  If you hear the tone in both ears or the wrong ear, your headphones may be worn incorrectly or your device may not support stereo output.
                 </p>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -462,34 +477,50 @@ export default function HearingTestPage() {
                     disabled={isPlaying}
                     className="bg-purple-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors disabled:opacity-50"
                   >
-                    ← Left Ear
+                    ← Test Left Ear
                   </button>
                   <button
                     onClick={() => playContinuousTone(1000, 'right', 1000)}
                     disabled={isPlaying}
                     className="bg-indigo-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
                   >
-                    Right Ear →
+                    Test Right Ear →
                   </button>
                 </div>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-xs text-green-800">
-                  ✓ <strong>Headphones are required</strong> for reliable left/right ear separation. 
-                  Speakers will not provide accurate screening results.
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900 font-semibold mb-2">
+                  Step 2: Verify Headphone Fit
                 </p>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  {HEADPHONE_REQUIREMENTS.instructions.map((instruction, idx) => (
+                    <li key={idx}>✓ {instruction}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs text-gray-700">
+                  <strong>Troubleshooting:</strong> If you hear tones in the wrong ear or both ears:
+                </p>
+                <ul className="text-xs text-gray-600 mt-2 space-y-1 list-disc list-inside">
+                  <li>Check headphone L/R markings and ensure they're worn correctly</li>
+                  <li>Verify your device's audio output is set to headphones (not speakers)</li>
+                  <li>Try a different pair of headphones or earbuds</li>
+                  <li>On some devices, mono audio settings may need to be disabled</li>
+                </ul>
               </div>
 
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
-                  Heard the correct tones in each ear?
+                <p className="text-sm text-gray-700 mb-4 font-medium">
+                  ✓ I verified the correct tone plays in each ear
                 </p>
                 <button
                   onClick={handleHeadphoneCheckPass}
                   className="bg-green-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-green-700 transition-colors"
                 >
-                  Yes, Continue
+                  Headphones Verified, Continue
                 </button>
               </div>
             </div>
@@ -506,42 +537,61 @@ export default function HearingTestPage() {
           <div className="bg-white rounded-lg shadow-xl p-8">
             <div className="text-center mb-8">
               <div className="text-6xl mb-4">🔇</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Ambient Noise Check</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{AMBIENT_NOISE_REQUIREMENTS.title}</h2>
               <p className="text-gray-600">Ensure a quiet testing environment</p>
             </div>
 
             <div className="space-y-6">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <h3 className="font-semibold text-yellow-900 mb-3">⚠️ Environmental Requirements</h3>
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
+                <h3 className="font-semibold text-yellow-900 mb-3">⚠️ {AMBIENT_NOISE_REQUIREMENTS.title}</h3>
                 <p className="text-sm text-yellow-800 mb-4">
-                  Clinical screening protocols require ambient noise levels below 50 dB for reliable results. 
-                  Background noise can mask tones and cause false failures.
+                  {AMBIENT_NOISE_REQUIREMENTS.description}
                 </p>
                 <ul className="text-sm text-yellow-800 space-y-2">
-                  <li>✓ Find a <strong>quiet room</strong> away from traffic, conversations, or machinery</li>
-                  <li>✓ Close windows and doors to reduce external noise</li>
-                  <li>✓ Turn off fans, air conditioning, or other noise sources if possible</li>
-                  <li>✓ Avoid testing in busy environments (cafeterias, hallways, open offices)</li>
-                  <li>✓ Silence phone notifications and other devices</li>
+                  {AMBIENT_NOISE_REQUIREMENTS.checklist.map((item, idx) => (
+                    <li key={idx}>✓ {item}</li>
+                  ))}
                 </ul>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-xs text-blue-800">
-                  <strong>Note:</strong> This screening cannot measure actual ambient noise levels (would require microphone permissions 
-                  and calibrated measurement). You are attesting that your environment meets the quiet conditions described above.
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                <p className="text-sm font-semibold text-red-900 mb-2">
+                  🚫 {AMBIENT_NOISE_REQUIREMENTS.warningNote}
                 </p>
               </div>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-xs text-blue-900 font-semibold mb-2">
+                  💡 Why This Matters
+                </p>
+                <p className="text-xs text-blue-800">
+                  {AMBIENT_NOISE_REQUIREMENTS.whyItMatters}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-xs text-gray-700 mb-2">
+                  <strong>Common noise sources that invalidate results:</strong>
+                </p>
+                <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                  <li>HVAC / air conditioning hum (continuous background noise)</li>
+                  <li>Computer fans or hard drive noise</li>
+                  <li>Refrigerator compressor cycling</li>
+                  <li>Distant traffic or outdoor construction</li>
+                  <li>Conversations in adjacent rooms</li>
+                  <li>Wind noise through windows or vents</li>
+                </ul>
+              </div>
+
               <div className="text-center">
-                <p className="text-sm text-gray-700 mb-4 font-medium">
-                  I am in a quiet environment suitable for hearing screening
+                <p className="text-sm text-gray-700 mb-4 font-semibold">
+                  {AMBIENT_NOISE_REQUIREMENTS.attestation}
                 </p>
                 <button
                   onClick={handleAmbientNoiseConfirm}
                   className="bg-green-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-green-700 transition-colors"
                 >
-                  ✓ Confirm & Continue
+                  ✓ Environment Verified, Continue
                 </button>
               </div>
             </div>
@@ -560,42 +610,64 @@ export default function HearingTestPage() {
               <div className="text-6xl mb-4">🔊</div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Volume Calibration</h2>
               <p className="text-gray-600">Set to a comfortable listening level</p>
-              <p className="text-xs text-gray-500 mt-1">(Relative volume only — not calibrated dB HL)</p>
             </div>
 
             <div className="space-y-6">
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
+                  🔊 {SCREENING_BANNERS.calibrationLimitation.title}
+                </h3>
+                <p className="text-sm text-red-800">
+                  {SCREENING_BANNERS.calibrationLimitation.message}
+                </p>
+              </div>
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                 <p className="text-sm text-blue-800 mb-4">
                   Adjust the volume slider until the tone is <strong>clearly audible but comfortable</strong>. 
-                  Not too loud, not too soft.
+                  Not too loud, not too soft. The test tone should be easily heard in a quiet room.
                 </p>
 
                 <div className="space-y-4">
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="0.5"
-                    step="0.01"
-                    value={volumeLevel}
-                    onChange={(e) => setVolumeLevel(parseFloat(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                  />
+                  <div>
+                    <label className="text-xs text-blue-900 font-semibold mb-2 block">
+                      Relative Volume Level: {Math.round(volumeLevel * 100)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="0.5"
+                      step="0.01"
+                      value={volumeLevel}
+                      onChange={(e) => setVolumeLevel(parseFloat(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                    />
+                    <div className="flex justify-between text-xs text-gray-600 mt-1">
+                      <span>Softer</span>
+                      <span>Louder</span>
+                    </div>
+                  </div>
 
                   <button
                     onClick={() => playContinuousTone(1000, 'right', 1500)}
                     disabled={isPlaying}
                     className="w-full bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-teal-700 transition-colors disabled:opacity-50"
                   >
-                    {isPlaying ? 'Playing...' : 'Play Test Tone (1000 Hz)'}
+                    {isPlaying ? '🔊 Playing...' : '▶ Play Test Tone (1000 Hz)'}
                   </button>
                 </div>
               </div>
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-xs text-yellow-800">
-                  <strong>Note:</strong> The actual screening uses a soft tone. 
-                  Set volume so you can hear soft tones clearly in a quiet room.
+                <p className="text-xs text-yellow-900 font-semibold mb-2">
+                  💡 Calibration Guidance
                 </p>
+                <ul className="text-xs text-yellow-800 space-y-1">
+                  <li>✓ The actual screening uses brief pulsed tones at this volume</li>
+                  <li>✓ Set volume so you can hear soft tones clearly in your quiet room</li>
+                  <li>✓ Avoid setting too loud—can cause discomfort or mask subtle hearing issues</li>
+                  <li>✓ If you can't hear the tone at max volume, your device/headphones may not support screening</li>
+                </ul>
               </div>
 
               <div className="text-center">
@@ -603,7 +675,7 @@ export default function HearingTestPage() {
                   onClick={handleCalibrationComplete}
                   className="bg-green-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-green-700 transition-colors"
                 >
-                  Volume Set, Start Test
+                  Volume Calibrated, Start Screening
                 </button>
               </div>
             </div>
@@ -720,81 +792,164 @@ export default function HearingTestPage() {
               <p className="text-gray-600">Your results have been {saving ? 'saving...' : 'saved'}</p>
             </div>
 
+            {/* Calibration Banner Reminder */}
+            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-red-900 mb-2 flex items-center gap-2">
+                🔊 {SCREENING_BANNERS.calibrationLimitation.title}
+              </h3>
+              <p className="text-sm text-red-800">
+                {SCREENING_BANNERS.calibrationLimitation.message}
+              </p>
+            </div>
+
             {/* Overall Status */}
-            <div className={`rounded-lg p-6 mb-6 text-center ${
+            <div className={`rounded-lg p-6 mb-6 text-center border-2 ${
               summary.passed 
-                ? 'bg-green-50 border border-green-200' 
-                : 'bg-yellow-50 border border-yellow-200'
+                ? 'bg-green-50 border-green-300' 
+                : 'bg-yellow-50 border-yellow-300'
             }`}>
-              <h3 className="text-2xl font-bold mb-2" style={{ color: summary.passed ? '#059669' : '#d97706' }}>
+              <h3 className="text-3xl font-bold mb-3" style={{ color: summary.passed ? '#059669' : '#d97706' }}>
                 {summary.passed ? 'PASS' : 'REFER'}
               </h3>
-              <p className={`text-sm ${summary.passed ? 'text-green-800' : 'text-yellow-800'}`}>
+              <p className={`text-sm font-semibold mb-2 ${summary.passed ? 'text-green-900' : 'text-yellow-900'}`}>
                 {summary.passed 
-                  ? 'Screening passed. Heard all frequencies in both ears.'
-                  : 'Screening incomplete or missed frequency detected. Audiological follow-up recommended.'}
+                  ? PASS_REFER_CRITERIA.passDefinition
+                  : PASS_REFER_CRITERIA.referDefinition}
+              </p>
+              <p className={`text-xs ${summary.passed ? 'text-green-800' : 'text-yellow-800'}`}>
+                {summary.passed 
+                  ? 'All screening frequencies detected at test volume in both ears.'
+                  : 'One or more screening tones were not detected. Follow-up with a licensed audiologist is recommended for comprehensive hearing evaluation.'}
+              </p>
+            </div>
+
+            {/* Results Interpretation Banner */}
+            <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                📊 {SCREENING_BANNERS.resultsInterpretation.title}
+              </h3>
+              <p className="text-sm text-blue-800">
+                {SCREENING_BANNERS.resultsInterpretation.message}
               </p>
             </div>
 
             {/* Results by Ear */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6">
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border-2 border-purple-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">← Left Ear</h3>
-                <p className="text-3xl font-bold text-purple-600 mb-2">
+                <p className="text-4xl font-bold text-purple-600 mb-2">
                   {summary.leftEarPassCount}/{summary.totalFrequencies}
                 </p>
-                <p className="text-sm text-gray-600">Frequencies passed</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Frequencies detected</p>
+                <p className={`text-xs font-semibold ${summary.leftEarPassCount >= summary.totalFrequencies ? 'text-green-700' : 'text-red-700'}`}>
+                  {summary.leftEarPassCount >= summary.totalFrequencies ? '✓ PASS' : '✗ REFER'}
+                </p>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-indigo-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Right Ear →</h3>
-                <p className="text-3xl font-bold text-indigo-600 mb-2">
+                <p className="text-4xl font-bold text-indigo-600 mb-2">
                   {summary.rightEarPassCount}/{summary.totalFrequencies}
                 </p>
-                <p className="text-sm text-gray-600">Frequencies passed</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Frequencies detected</p>
+                <p className={`text-xs font-semibold ${summary.rightEarPassCount >= summary.totalFrequencies ? 'text-green-700' : 'text-red-700'}`}>
+                  {summary.rightEarPassCount >= summary.totalFrequencies ? '✓ PASS' : '✗ REFER'}
+                </p>
               </div>
             </div>
 
-            {/* Frequency Details */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-6">
-              <h4 className="font-semibold text-gray-900 mb-4">Frequency Results</h4>
-              <div className="space-y-2">
-                {summary.frequencyResults.map(result => (
-                  <div key={result.frequency} className="flex items-center justify-between bg-white rounded p-3">
-                    <span className="font-medium text-gray-700">{result.frequency} Hz</span>
-                    <div className="flex gap-4">
-                      <span className={`text-sm ${result.leftEarPassed ? 'text-green-600' : 'text-red-600'}`}>
-                        Left: {result.leftEarPassed ? '✓' : '✗'}
-                      </span>
-                      <span className={`text-sm ${result.rightEarPassed ? 'text-green-600' : 'text-red-600'}`}>
-                        Right: {result.rightEarPassed ? '✓' : '✗'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+            {/* Enhanced Frequency Grid - ASHA Audiogram Style */}
+            <div className="bg-gray-50 rounded-lg p-6 mb-6 border-2 border-gray-200">
+              <h4 className="font-semibold text-gray-900 mb-4 text-center">
+                Frequency Results — ASHA Screening Grid
+              </h4>
+              <p className="text-xs text-gray-600 text-center mb-4">
+                {PASS_REFER_CRITERIA.description}
+              </p>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-gray-300">
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-900">Frequency</th>
+                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-900">Importance</th>
+                      <th className="text-center py-3 px-4 text-sm font-semibold text-purple-700">← Left</th>
+                      <th className="text-center py-3 px-4 text-sm font-semibold text-indigo-700">Right →</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.frequencyResults.map(result => {
+                      const importance = PASS_REFER_CRITERIA.frequencyImportance[result.frequency as keyof typeof PASS_REFER_CRITERIA.frequencyImportance]
+                      return (
+                        <tr key={result.frequency} className="border-b border-gray-200 hover:bg-gray-100 transition-colors">
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-gray-900">{result.frequency} Hz</span>
+                          </td>
+                          <td className="py-3 px-4 text-xs text-gray-600 text-center">
+                            {importance}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-flex items-center justify-center w-16 py-1 px-2 rounded-full text-sm font-bold ${
+                              result.leftEarPassed 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {result.leftEarPassed ? '✓ PASS' : '✗ MISS'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-flex items-center justify-center w-16 py-1 px-2 rounded-full text-sm font-bold ${
+                              result.rightEarPassed 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {result.rightEarPassed ? '✓ PASS' : '✗ MISS'}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
 
             {/* Protocol Info */}
             {falsePositiveCount > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 mb-6">
+                <p className="text-sm text-yellow-900 font-semibold mb-2">
+                  ⚠️ Response Reliability Alert
+                </p>
                 <p className="text-sm text-yellow-800">
-                  <strong>Response Reliability Note:</strong> You responded "heard" on {falsePositiveCount} silent catch trial(s). 
-                  This may indicate guessing or difficulty maintaining attention. Consider retesting in a quieter environment 
-                  or consulting an audiologist for comprehensive evaluation.
+                  You responded "heard" on {falsePositiveCount} silent catch trial(s) out of {catchTrialCount} total. 
+                  This may indicate guessing, difficulty maintaining attention, or external noise interference. 
+                  Consider retesting in a quieter environment or consulting an audiologist for comprehensive evaluation with controlled conditions.
                 </p>
               </div>
             )}
 
-            {/* Disclaimer */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-red-800">
-                <strong>SCREENING PROTOCOL — NOT DIAGNOSTIC AUDIOMETRY:</strong> This test follows clinical pure-tone screening 
-                methodology (pulsed tones, standard frequencies, catch trials) but uses relative device volumes via Web Audio API, 
-                <strong> NOT calibrated dB HL</strong>. Results indicate relative hearing sensitivity and screening pass/refer 
-                outcomes only, not absolute audiometric thresholds. This is <strong>NOT</strong> a diagnostic audiological 
-                examination. For diagnostic audiometry with calibrated equipment (ANSI S3.6, ISO 8253), threshold determination, 
-                bone conduction, tympanometry, otoacoustic emissions, or speech audiometry, consult a licensed audiologist.
+            {/* Professional Care Banner */}
+            {!summary.passed && (
+              <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                  👨‍⚕️ {SCREENING_BANNERS.requiresAudiologist.title}
+                </h3>
+                <p className="text-sm text-blue-800">
+                  {SCREENING_BANNERS.requiresAudiologist.message}
+                </p>
+              </div>
+            )}
+
+            {/* Full Disclaimer */}
+            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-6">
+              <p className="text-xs text-red-900 leading-relaxed">
+                <strong className="block mb-2">SCREENING PROTOCOL — NOT DIAGNOSTIC AUDIOMETRY</strong>
+                This test follows clinical pure-tone screening methodology (pulsed tones, standard frequencies, catch trials) 
+                but uses relative device volumes via Web Audio API, <strong>NOT calibrated dB HL</strong>. Results indicate 
+                relative hearing sensitivity and screening pass/refer outcomes only, not absolute audiometric thresholds. 
+                This is <strong>NOT</strong> a diagnostic audiological examination. For diagnostic audiometry with calibrated 
+                equipment (ANSI S3.6, ISO 8253), threshold determination, bone conduction, tympanometry, otoacoustic emissions, 
+                or speech audiometry, consult a licensed audiologist.
               </p>
             </div>
 
