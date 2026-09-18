@@ -15,6 +15,27 @@
 import type { CalibrationData } from '../calibration/screen-calibrator'
 
 /**
+ * Distance measurement source for geometry-aware angular sizing
+ */
+export type DistanceSource = 
+  | 'card-calibration'     // Credit card calibration (most accurate)
+  | 'lidar-measured'       // LiDAR/TrueDepth sensor measurement
+  | 'camera-estimated-ipd' // Camera-based IPD estimation
+  | 'camera-estimated-face'// Camera-based face width estimation
+  | 'assumed-default'      // Assumed default distance (least accurate)
+
+/**
+ * Distance metadata for clinical disclosure
+ */
+export interface DistanceMetadata {
+  source: DistanceSource
+  distanceCm: number
+  confidence: number // 0-1, where 1 is most confident
+  timestamp: number
+  isMedicalGrade: boolean // Only true for card-calibration
+}
+
+/**
  * Sloan letters used in ETDRS charts
  */
 export const SLOAN_LETTERS = ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'] as const
@@ -72,9 +93,10 @@ export interface EyeResult {
  */
 export interface VisualAcuityResult {
   testName: 'Visual Acuity (ETDRS/LogMAR)'
-  version: '2.0-clinical'
+  version: '2.1-geometry-aware'
   timestamp: number
   calibration: CalibrationData
+  distanceMetadata: DistanceMetadata
   rightEye: EyeResult | null
   leftEye: EyeResult | null
   methodology: string
@@ -216,21 +238,25 @@ export class VisualAcuityTest {
   }
 
   /**
-   * Create complete test result
-   */
+ * Create complete test result
+ */
   createResult(
     calibration: CalibrationData,
     rightEye: EyeResult | null,
-    leftEye: EyeResult | null
+    leftEye: EyeResult | null,
+    distanceSource?: DistanceSource
   ): VisualAcuityResult {
+    const distanceMetadata = determineDistanceMetadata(calibration, distanceSource)
+    
     return {
       testName: 'Visual Acuity (ETDRS/LogMAR)',
-      version: '2.0-clinical',
+      version: '2.1-geometry-aware',
       timestamp: Date.now(),
       calibration,
+      distanceMetadata,
       rightEye,
       leftEye,
-      methodology: 'ETDRS chart with Sloan letters, 5 letters per line, 0.1 logMAR steps, letter-by-letter scoring (0.02 logMAR per letter). Each eye tested separately with contralateral occlusion.',
+      methodology: `ETDRS chart with Sloan letters, 5 letters per line, 0.1 logMAR steps, letter-by-letter scoring (0.02 logMAR per letter). Each eye tested separately with contralateral occlusion. Distance: ${distanceMetadata.distanceCm}cm (${getDistanceSourceDescription(distanceMetadata.source)}).`,
     }
   }
 
@@ -274,4 +300,103 @@ export function shuffleLetters(letters: SloanLetter[]): SloanLetter[] {
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled
+}
+
+/**
+ * Determine distance metadata from calibration and optional source hint
+ * 
+ * Invention disclosure §21: Geometry-aware visual acuity
+ * Angular size driven by measured/estimated viewing distance where possible
+ */
+export function determineDistanceMetadata(
+  calibration: CalibrationData,
+  sourceHint?: DistanceSource
+): DistanceMetadata {
+  // If source is explicitly provided, use it
+  if (sourceHint) {
+    return {
+      source: sourceHint,
+      distanceCm: calibration.distanceCm,
+      confidence: getConfidenceForSource(sourceHint),
+      timestamp: Date.now(),
+      isMedicalGrade: sourceHint === 'card-calibration'
+    }
+  }
+
+  // Infer from calibration method
+  let source: DistanceSource
+  let confidence: number
+
+  switch (calibration.method) {
+    case 'credit-card':
+    case 'ruler':
+      source = 'card-calibration'
+      confidence = 0.95
+      break
+    case 'manual':
+      // Manual entry - treat as assumed default
+      source = 'assumed-default'
+      confidence = 0.5
+      break
+    default:
+      source = 'assumed-default'
+      confidence = 0.5
+  }
+
+  return {
+    source,
+    distanceCm: calibration.distanceCm,
+    confidence,
+    timestamp: Date.now(),
+    isMedicalGrade: source === 'card-calibration'
+  }
+}
+
+/**
+ * Get confidence score for a distance source
+ */
+export function getConfidenceForSource(source: DistanceSource): number {
+  switch (source) {
+    case 'card-calibration':
+      return 0.95
+    case 'lidar-measured':
+      return 0.90
+    case 'camera-estimated-ipd':
+      return 0.75
+    case 'camera-estimated-face':
+      return 0.65
+    case 'assumed-default':
+      return 0.50
+  }
+}
+
+/**
+ * Get user-friendly description of distance source
+ */
+export function getDistanceSourceDescription(source: DistanceSource): string {
+  switch (source) {
+    case 'card-calibration':
+      return 'card-calibrated'
+    case 'lidar-measured':
+      return 'LiDAR-measured'
+    case 'camera-estimated-ipd':
+      return 'camera-estimated via IPD'
+    case 'camera-estimated-face':
+      return 'camera-estimated via face width'
+    case 'assumed-default':
+      return 'assumed default'
+  }
+}
+
+/**
+ * Get screening disclaimer based on distance source
+ */
+export function getScreeningDisclaimer(distanceMetadata: DistanceMetadata): string {
+  const baseDisclaimer = 'This is a screening test, not a medical diagnosis. Please consult an eye care professional for a comprehensive eye examination.'
+  
+  if (distanceMetadata.isMedicalGrade) {
+    return `${baseDisclaimer} ETDRS methodology with calibrated angular sizing.`
+  } else {
+    return `${baseDisclaimer} Angular sizing based on ${getDistanceSourceDescription(distanceMetadata.source)} viewing distance (${distanceMetadata.distanceCm}cm). For clinical-grade results, perform card calibration.`
+  }
 }
