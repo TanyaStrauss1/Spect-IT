@@ -43,7 +43,7 @@ const tests = [
     icon: '🌀',
     duration: '2-3 min',
     route: '/tests/astigmatism',
-    available: false
+    available: true
   },
   {
     id: 'contrast',
@@ -52,7 +52,7 @@ const tests = [
     icon: '🌓',
     duration: '3-4 min',
     route: '/tests/contrast',
-    available: false
+    available: true
   },
   {
     id: 'visual-field',
@@ -61,16 +61,16 @@ const tests = [
     icon: '📍',
     duration: '5-7 min',
     route: '/tests/visual-field',
-    available: false
+    available: true
   },
   {
     id: 'prescription',
-    title: 'Prescription Measurement',
-    description: 'Estimate your eyeglass prescription using AI and computer vision',
+    title: 'Prescription Screening',
+    description: 'Detect whether refractive correction may help — NOT a dispensable prescription',
     icon: '🔬',
     duration: '5-10 min',
     route: '/tests/prescription',
-    available: false
+    available: true
   }
 ]
 
