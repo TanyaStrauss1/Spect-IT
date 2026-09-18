@@ -1,11 +1,11 @@
-# Vision Scan P3 Implementation Summary
+# Vision Scan P3 + P3.5 Implementation Summary
 
 ## Overview
-This PR implements comprehensive P3 improvements for Vision Scan: hardened estimate accuracy with stricter quality gates + UX polish (quality-review enhancements, accessibility, method transparency). One PR covering both technical accuracy and user experience improvements. All changes maintain screening-only honesty.
+This PR implements comprehensive P3 + P3.5 improvements for Vision Scan: hardened estimate accuracy with stricter quality gates + UX polish (quality-review enhancements, accessibility, method transparency) + **P3.5 additions** (gaze/vergence quality, temporal smoothing, repeat caps, share/export). Three commits covering technical accuracy and user experience improvements. All changes maintain screening-only honesty.
 
 ## Completed Tasks (All Priority Items)
 
-### ✅ A) Estimate Accuracy + Quality Gates
+### ✅ A) Estimate Accuracy + Quality Gates (Commit 1: P3)
 
 #### 1. Better Distance Estimation from Face
 **IPD-first approach with documented assumptions:**
@@ -110,7 +110,134 @@ This PR implements comprehensive P3 improvements for Vision Scan: hardened estim
 
 ---
 
-### ✅ B) UX Polish
+### ✅ A.5) Gaze/Vergence Quality + Temporal Smoothing (Commit 3: P3.5)
+
+#### 5. Improved Gaze Estimation from Eye Landmarks
+**Use eye landmarks relative to face bounds (not just face center):**
+
+**Method improvements:**
+- **Normalize eye positions:** Convert to 0-1 range relative to face bounds
+- **Target-relative comparison:** Compare normalized eye position to target with face-relative offset
+- **Pixel-to-degree conversion:** Use face width as angular reference
+  - Assumption: Face width ~140mm at 500mm distance = ~16° visual angle
+- **Benefits:** More accurate gaze deviation estimates for alignment scoring
+
+**Implementation:**
+```typescript
+// Normalize eye positions relative to face (0-1)
+leftEyeNormX = (leftEyeX - faceBounds.x) / faceBounds.width
+leftEyeNormY = (leftEyeY - faceBounds.y) / faceBounds.height
+
+// Compute target position relative to face
+targetRelativeX = (targetX - faceCenterX) / faceBounds.width
+targetRelativeY = (targetY - faceCenterY) / faceBounds.height
+
+// Compute deviation in normalized space
+leftDeviationNormX = leftEyeNormX - 0.5 - targetRelativeX
+leftDeviationNormY = leftEyeNormY - 0.4 - targetRelativeY // 0.4 = typical eye Y
+
+// Convert to degrees using face width
+pixelToDegree = 16° / faceBounds.width
+deviationDegrees = deviationPx * pixelToDegree
+```
+
+**Files changed:**
+- `apps/mobile/lib/vision-scan/camera-utils.ts` - `estimateGazeDeviation()` improved
+
+#### 6. Convergence/Vergence Estimation Improvements
+**Prefer IPD change over face-bbox scale when landmarks present:**
+
+**Method 1 (preferred): IPD pixel change**
+- Measures actual eye separation in pixels
+- More direct measure of vergence (eye convergence angle)
+- As distance decreases → IPD increases → vergence increases
+- Assumption: Baseline vergence = 7.2° at 500mm (real IPD = 63mm)
+- Formula: `vergenceAngle = 7.2° * (currentIPD / baselineIPD)`
+
+**Method 2 (fallback): Face-width pixel change**
+- Uses face bbox width scaling
+- Less accurate but works when eye landmarks poor
+- Same baseline assumption
+- Formula: `vergenceAngle = 7.2° * (currentWidth / baselineWidth)`
+
+**Implementation:**
+```typescript
+// Store baseline at start of convergence test
+baselineIPD = sqrt((rightEye.x - leftEye.x)² + (rightEye.y - leftEye.y)²)
+baselineFaceWidth = faceBounds.width
+
+// Each frame: compute vergence
+const vergenceResult = estimateVergence(
+  currentLeftEye,
+  currentRightEye,
+  currentFaceBounds,
+  baselineIPD,
+  baselineFaceWidth
+)
+
+// Returns: {vergenceAngle, method: 'ipd-change' | 'face-width-change'}
+```
+
+**Files changed:**
+- `apps/mobile/lib/vision-scan/camera-utils.ts` - `estimateVergence()` new function
+- `apps/mobile/app/vision-scan/convergence.tsx` - Use IPD/face-width vergence, track method
+
+#### 7. Temporal Smoothing Utilities
+**Light EMA/median filtering to avoid one-frame spikes:**
+
+**Exponential Moving Average (EMA):**
+```typescript
+applyEMA(currentValue, previousEMA, alpha=0.3)
+// Returns: smoothed value
+// Lower alpha = more smoothing
+// Use for: face bounds, IPD, head pose
+```
+
+**Median Filter:**
+```typescript
+medianFilter(values[]) // Remove outliers from last N frames
+// Returns: median value
+```
+
+**Face Flicker Detection:**
+```typescript
+detectFaceFlicker(detectionHistory[], timestamps[])
+// Detect rapid on/off pattern (>3 transitions/sec)
+// Returns: true if flickering detected
+// Use to: reject burst frames when flickering
+```
+
+**Status:** Utilities implemented but not yet applied in capture screens (future work)
+
+**Files changed:**
+- `apps/mobile/lib/vision-scan/camera-utils.ts` - Smoothing utilities exported
+
+#### 8. Wire All estimateFaceDistance Call Sites
+**Updated all capture screens to use new signature:**
+
+**Old signature:**
+```typescript
+estimateFaceDistance(bounds, width) => number
+```
+
+**New signature:**
+```typescript
+estimateFaceDistance(bounds, width, leftEye?, rightEye?) => {distance, method}
+```
+
+**Changes per screen:**
+- **Alignment:** Pass eye landmarks, handle `{distance, method}`, pass `faceBounds` to `tracker.addFrame()`
+- **Motility:** Pass eye landmarks, handle `{distance, method}`, pass `faceConfidence` to `tracker.addFrame()`
+- **Convergence:** Pass eye landmarks, handle `{distance, method}`, use improved vergence estimation
+
+**Files changed:**
+- `apps/mobile/app/vision-scan/alignment.tsx`
+- `apps/mobile/app/vision-scan/motility.tsx`
+- `apps/mobile/app/vision-scan/convergence.tsx`
+
+---
+
+### ✅ B) UX Polish (Commit 1: P3)
 
 #### 1. Quality-Review Screen Improvements
 **Clearer module issues + one-tap repeat + skip acknowledgment:**
@@ -278,9 +405,100 @@ This PR implements comprehensive P3 improvements for Vision Scan: hardened estim
 
 ---
 
-## Files Changed (12 total)
+### ✅ B.5) Quality-Review + Recovery UX + Share (Commit 3: P3.5)
 
-### Core CV Package (6 files)
+#### 5. Cap Repeat Attempts per Module
+**Maximum 2 attempts per module with clear messaging:**
+
+**Implementation:**
+- **MAX_REPEAT_ATTEMPTS = 2** constant
+- **Show attempt count:** "Attempt 1/2" or "Attempt 2/2" below Repeat button
+- **Disable when maxed:** Repeat button grayed out with disabled styling
+- **Alert when cap reached:** 
+  - Title: "Maximum Repeats Reached"
+  - Message: "You've already repeated [module] 2 times. Proceeding with current data is recommended."
+  - Button: "OK"
+- **Auto-return after repeat:** Navigation flows return to quality-review (existing behavior preserved)
+
+**User experience:**
+1. First repeat: Button active, no count shown
+2. Second repeat: Button active, shows "Attempt 1/2"
+3. After second repeat: Shows "Attempt 2/2", button disabled (grayed)
+4. Try again: Alert explains cap reached
+
+**Files changed:**
+- `apps/mobile/app/vision-scan/quality-review.tsx` - Repeat cap logic + UI + state
+
+#### 6. Soft Empty States
+**Already present from P3 + P1/P2:**
+- **Camera permission denied:** Error card with instructions, "Go Back" button
+- **Face never detected:** Yellow coaching badge "👤 Position your face in the oval"
+- **Low device quality:** Error card when "poor" quality, "Retry Qualification" button
+- **Calibration failure:** Shows specific rejection reason, "Retry Calibration" button
+- **Insufficient frames:** Quality-review shows specific counts (e.g. "8/12 minimum")
+- **Camera revoked mid-flow:** Handled by native expo-camera error boundaries
+
+**No additional empty states needed.**
+
+#### 7. Share Results via Native Share Sheet
+**Strengthen Share/export (no PDF builder needed):**
+
+**Implementation:**
+- **Share button on results:** Green button with 📤 emoji
+- **Uses React Native Share API:** Built-in `Share.share()`, no dependencies
+- **Share text format:**
+  ```
+  VISION SCAN SCREENING RESULTS
+  [Date]
+  
+  SCREENING SUMMARY:
+  [Summary text]
+  
+  [⚠️ or ✓] Status
+  
+  DATA QUALITY: X%
+  
+  MODULE RESULTS:
+  • Alignment Index: X/100
+  • Motility: Normal/Limited
+  • Convergence: Xmm/Inconclusive
+  
+  MEASUREMENT MODE: Full/Degraded
+  Distance Method: IPD/face-width vs Sensor
+  
+  IMPORTANT: This is a screening tool, not a diagnostic test...
+  
+  Technical Methods:
+  - Camera: Live front-facing
+  - Face Detection: Google ML Vision
+  - Gaze: Face/eye landmarks
+  - Distance: [Method]
+  - Quality Gating: Per-module confidence
+  
+  Generated by Spect-IT Vision Scan
+  ```
+
+**Accessibility:**
+- `accessibilityRole="button"`
+- `accessibilityLabel="Share results"`
+- `accessibilityHint="Export screening summary via share sheet"`
+
+**Screening-only compliance:**
+- No diagnosis language
+- Clear screening disclaimer
+- Method honesty (IPD/face-width estimation)
+- Professional exam recommendation when warranted
+
+**Files changed:**
+- `apps/mobile/app/vision-scan/results.tsx` - Share button + formatted text export
+
+---
+
+## Files Changed (18 total, across 3 commits)
+
+### Commit 1: P3 Core (12 files)
+
+#### Core CV Package (6 files)
 1. `packages/cv/src/depth/camera-depth-estimator.ts` - IPD + face-width methods with documented assumptions
 2. `packages/cv/src/vision-scan/calibrator.ts` - Min samples, outlier rejection, adaptive thresholds, rejection reasons
 3. `packages/cv/src/vision-scan/alignment-tracker.ts` - Face confidence, bbox stability, head motion gates
@@ -288,13 +506,26 @@ This PR implements comprehensive P3 improvements for Vision Scan: hardened estim
 5. `packages/cv/src/vision-scan/quality-engine.ts` - Stricter confidence when face intermittent
 6. `packages/cv/src/vision-scan/types.ts` - Add `rejectionReason` field to CalibrationResult
 
-### Mobile App (6 files)
+#### Mobile App (6 files)
 7. `apps/mobile/lib/vision-scan/camera-utils.ts` - IPD-first distance estimation with validation
 8. `apps/mobile/app/vision-scan/calibration.tsx` - Use IPD method, show rejection reasons, accessibility
 9. `apps/mobile/app/vision-scan/qualification.tsx` - Accessibility labels, larger tap targets, high-contrast badges
 10. `apps/mobile/app/vision-scan/quality-review.tsx` - One-tap repeat, skip acknowledgment, ProgressStepper, accessibility
 11. `apps/mobile/app/vision-scan/results.tsx` - Show distance method, document assumptions, accessibility
 12. `apps/mobile/components/vision-scan/ProgressStepper.tsx` - Add "quality-review" step
+
+### Commit 2: P3 Documentation (1 file)
+13. `VISION_SCAN_P3_SUMMARY.md` - Implementation summary document
+
+### Commit 3: P3.5 Enhancements (6 files - 1 overlap)
+14. `apps/mobile/lib/vision-scan/camera-utils.ts` - Gaze/vergence improvements + temporal smoothing utilities (updated again)
+15. `apps/mobile/app/vision-scan/alignment.tsx` - Wire new distance signature, improved gaze
+16. `apps/mobile/app/vision-scan/motility.tsx` - Wire new distance signature + face confidence
+17. `apps/mobile/app/vision-scan/convergence.tsx` - IPD/face-width vergence estimation
+18. `apps/mobile/app/vision-scan/quality-review.tsx` - Cap repeats (max 2), show attempts (updated again)
+19. `apps/mobile/app/vision-scan/results.tsx` - Share button with screening summary (updated again)
+
+**Note:** Files 7, 10, 11, 14, 18, 19 are same files updated in both commits (camera-utils, quality-review, results)
 
 ---
 
@@ -346,8 +577,43 @@ For each module:
 
 ---
 
-## Deferred / Out of Scope
-**Nothing deferred** - All priority items completed:
+## Summary: Landed vs Deferred
+
+### ✅ Landed (All Priority Items)
+
+**Commit 1 (P3):**
+1. ✅ Better distance from face bbox (IPD + face-width)
+2. ✅ Calibration quality gates (min samples, outliers, thresholds)
+3. ✅ Alignment/motility/convergence gating (face confidence, bbox stability, head motion)
+4. ✅ QualityEngine stricter (intermittent face penalty)
+5. ✅ Honest UI (show method used)
+6. ✅ Quality-review screen (clearer issues, one-tap repeat, skip acknowledgment)
+7. ✅ Accessibility (44-56px targets, screen-reader labels, high-contrast badges)
+8. ✅ ProgressStepper on quality-review
+
+**Commit 3 (P3.5):**
+9. ✅ Gaze/vergence quality (eye landmarks relative to face, IPD change for vergence)
+10. ✅ Temporal smoothing utilities (EMA, median filter, flicker detection)
+11. ✅ Cap repeat attempts (max 2 per module, show count, alert)
+12. ✅ Wire all estimateFaceDistance call sites (alignment, motility, convergence)
+13. ✅ Share/export (native share sheet with screening summary)
+
+### ⏸️ Deferred (Future Work)
+
+**Temporal smoothing application:**
+- ✅ Utilities implemented (EMA, median filter, flicker detection)
+- ⏸️ Application in capture screens: Not yet applied before scoring
+- Next: Apply EMA to face bounds, IPD, head pose across frames
+- Next: Use flicker detection to reject burst frames
+- Reason: Utilities ready for integration; capture screens need refactoring to maintain frame history
+
+**PDF generation:**
+- ✅ Strengthened share/export with native share sheet + formatted text
+- ⏸️ Full PDF builder: Would require library integration (react-native-pdf, expo-print)
+- Current solution: Plain text export via Share API (sufficient for screening summary)
+- Reason: No existing PDF infrastructure; share sheet covers primary use case
+
+**Original scope items NOT deferred:**
 
 ### A) Estimate Accuracy
 1. ✅ Better distance from face bbox (IPD + face-width)
@@ -462,9 +728,12 @@ For each module:
 ## PR Details
 - **PR Number:** [#91](https://github.com/TanyaStrauss1/Spect-IT/pull/91)
 - **Branch:** `cursor/vision-scan-p3-accuracy-ux-969d`
-- **Status:** Draft (ready for review, per task requirements)
+- **Status:** Draft (ready for review, per task requirements; NOT merged)
 - **Base Branch:** `main` (after PR #90 squash-merge)
-- **Commits:** 1 total (comprehensive P3 implementation)
+- **Commits:** 3 total
+  1. P3: Estimate accuracy hardening + UX polish (12 files)
+  2. P3 summary document (1 file)
+  3. P3.5: Gaze/vergence quality + temporal smoothing + UX recovery (6 files)
 
 ---
 
