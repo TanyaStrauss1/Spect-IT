@@ -8,7 +8,7 @@ import { router } from 'expo-router'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
-import type { VisionScanResult } from '@spect-it/cv'
+import { TEST_TYPE_ID, type VisionScanResult } from '@spect-it/cv'
 
 export default function ResultsScreen() {
   const { buildFinalResult, resetSession } = useVisionScan()
