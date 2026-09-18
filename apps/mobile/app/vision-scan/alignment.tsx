@@ -15,6 +15,7 @@ import {
   estimateFaceDistance,
   estimateGazeDeviation,
 } from '../../lib/vision-scan/camera-utils'
+import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -178,6 +179,7 @@ export default function AlignmentScreen() {
 
   return (
     <View style={styles.container}>
+      <ProgressStepper currentStep="alignment" />
       <Camera
         ref={cameraRef}
         style={styles.camera}

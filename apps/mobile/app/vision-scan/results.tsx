@@ -9,6 +9,7 @@ import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
 import { TEST_TYPE_ID, TEST_TYPE_DISPLAY, type VisionScanResult } from '@spect-it/cv'
+import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 export default function ResultsScreen() {
   const { buildFinalResult, resetSession } = useVisionScan()
@@ -145,6 +146,7 @@ export default function ResultsScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      <ProgressStepper currentStep="complete" />
       <View style={styles.content}>
         <Text style={styles.icon}>
           {result.recommendsProfessionalExam ? '⚠️' : '✓'}
