@@ -23,6 +23,7 @@ export default function ConvergenceScreen() {
     motility,
     setConvergence,
     setQualityAssessment,
+    updateMethodology,
   } = useVisionScan()
   const [tracker] = useState(() => new ConvergenceTracker(deviceQualification?.useSensorBasedMeasurements || false))
   const [phase, setPhase] = useState<'approach' | 'recede' | 'complete'>('approach')
@@ -166,6 +167,9 @@ export default function ConvergenceScreen() {
     // Track which method is being used (for documentation)
     if (vergenceResult && !vergenceMethod) {
       setVergenceMethod(vergenceResult.method)
+      updateMethodology({
+        vergenceMethod: vergenceResult.method === 'ipd-change' ? 'ipd-change-preferred' : 'face-width-change-fallback'
+      })
     }
 
     const frame: ConvergenceFrame = {

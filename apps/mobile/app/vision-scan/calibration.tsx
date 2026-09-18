@@ -21,7 +21,7 @@ import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function CalibrationScreen() {
-  const { deviceQualification, setCalibration, recordRepeatAttempt } = useVisionScan()
+  const { deviceQualification, setCalibration, recordRepeatAttempt, updateMethodology } = useVisionScan()
   const [calibrator] = useState(() => new VisionScanCalibrator(deviceQualification?.useSensorBasedMeasurements || false))
   const [currentPointIndex, setCurrentPointIndex] = useState(0)
   const [calibrationPoints] = useState(VisionScanCalibrator.getCalibrationPoints())
@@ -91,6 +91,12 @@ export default function CalibrationScreen() {
       detectedFace.leftEye,
       detectedFace.rightEye
     )
+
+    // Track the actual distance method used
+    updateMethodology({
+      distanceMethod: faceDistanceResult.method === 'ipd' ? 'ipd-preferred' : 'face-width-fallback',
+      gazeMethod: 'eye-landmarks-relative-to-face-bounds'
+    })
 
     // Compute quality based on smoothed face size, stability, and head pose
     const faceSizeScore = Math.min(1, smoothedBounds.width / (screenWidth * 0.4))
