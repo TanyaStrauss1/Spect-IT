@@ -116,8 +116,10 @@ export function ClassroomSession({ session: initialSession, onExit }: ClassroomS
     onExit()
   }
 
-  const handleTestClick = (route: string) => {
-    router.push(route)
+  const handleTestClick = (route: string | null) => {
+    if (route) {
+      router.push(route)
+    }
   }
 
   const getTestStatus = (testType: string) => {
