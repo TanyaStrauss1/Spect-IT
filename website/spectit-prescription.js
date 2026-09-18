@@ -234,18 +234,22 @@
     var c = el(); if (!c) return;
     c.innerHTML =
       '<div class="test-interface">' +
-        '<h2 class="test-title">Refractive Screening (Prescription Estimate)</h2>' +
+        '<h2 class="test-title">Refractive Screening (NOT a Prescription)</h2>' +
         '<div class="test-instructions">' +
-          '<p><strong>How this works</strong></p>' +
-          '<p>This estimate is built from your <strong>subjective vision tests</strong> — the same principle an optometrist uses with a trial lens set:</p>' +
+          '<div style="background:#fee2e2;border:2px solid #f87171;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">' +
+            '<p style="color:#991b1b;font-weight:700;font-size:1.05rem;margin-bottom:0.5rem;">⚠️ CRITICAL DISCLAIMER</p>' +
+            '<p style="color:#991b1b;font-weight:600;margin:0;">This is a SCREENING ESTIMATE ONLY. It is NOT a dispensable prescription. Never use these values to order eyewear without professional confirmation. Online refraction is regulated — always confirm with a licensed optometrist or ophthalmologist.</p>' +
+          '</div>' +
+          '<p><strong>How this screening works:</strong></p>' +
+          '<p>This estimate is built from your <strong>subjective vision tests</strong> — the same principles an optometrist uses with a trial lens set:</p>' +
           '<p>• <strong>Sphere</strong> from your distance visual acuity, refined by the duochrome (red/green) test<br>' +
           '• <strong>Cylinder &amp; axis</strong> from the astigmatism dial<br>' +
-          '• <strong>Calibration</strong> (screen size + viewing distance) so the tests were shown at the correct size</p>' +
-          '<p style="color:#b45309;margin-top:1rem;"><strong>Screening only.</strong> This is not a dispensable prescription. Online refraction is regulated — always confirm with a licensed eye-care professional.</p>' +
+          '• <strong>Calibration</strong> (screen size + viewing distance) so the tests were shown at the correct angular size</p>' +
+          '<p style="margin-top:1rem;"><strong>Limitations:</strong> Best for myopia; hyperopia often underestimated due to accommodation. No binocular balance, no cycloplegia, no retinoscopy, no subjective refinement.</p>' +
         '</div>' +
         '<div class="test-display" style="min-height:auto;padding:1.5rem;">' +
           '<div style="text-align:center;">' +
-            '<button class="btn btn-primary" onclick="SpectitRx.calibrate()">Start: Calibrate &amp; Estimate</button>' +
+            '<button class="btn btn-primary" onclick="SpectitRx.calibrate()">I Understand – Begin Screening</button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -348,16 +352,18 @@
     if (!est) return '';
     var axisStr = est.axis != null ? (' \u00d7 ' + est.axis + '\u00b0') : '';
     var cylStr = (est.cylinder < 0) ? (fmtD(est.cylinder) + axisStr) : 'none detected';
-    return '<div style="border:1px solid #e6e8f0;border-radius:16px;padding:1.25rem;margin-bottom:1rem;background:#fff;">' +
+    return '<div style="border:2px solid #e6e8f0;border-radius:16px;padding:1.25rem;margin-bottom:1rem;background:#fff;position:relative;">' +
+      '<div style="position:absolute;top:0.5rem;right:0.5rem;background:#fee2e2;color:#991b1b;font-size:0.7rem;font-weight:700;padding:0.25rem 0.5rem;border-radius:4px;text-transform:uppercase;">Screening Estimate</div>' +
       '<div style="font-weight:800;font-size:1.05rem;margin-bottom:.75rem;">' + title + '</div>' +
       '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;">' +
-        '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Sphere</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#4f46e5;">' + fmtD(est.sphere) + '</div></div>' +
-        '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Cylinder \u00d7 Axis</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#4f46e5;">' + cylStr + '</div></div>' +
-        '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Sph. equiv.</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#0f172a;">' + fmtD(est.sphericalEquivalent) + '</div></div>' +
+        '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Sphere (screening)</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#4f46e5;">' + fmtD(est.sphere) + '</div></div>' +
+        '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Cylinder \u00d7 Axis (screening)</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#4f46e5;">' + cylStr + '</div></div>' +
+        '<div><div style="font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">Sph. equiv. (est.)</div><div style="font-family:\'Sora\',sans-serif;font-size:1.6rem;font-weight:800;color:#0f172a;">' + fmtD(est.sphericalEquivalent) + '</div></div>' +
       '</div>' +
       '<div style="margin-top:.75rem;font-size:.82rem;color:#64748b;">' +
         'Sphere from: <strong style="color:#4f46e5;">' + (est.method === 'far-point' ? 'far-point ' + (est.farPointCm ? '(' + est.farPointCm + ' cm)' : '') : 'acuity chart') + '</strong>' +
         ' · VA ' + est.va + ' (logMAR ' + est.logMAR + ') · duochrome: ' + est.duochrome + ' · confidence ' + Math.round(est.confidence * 100) + '%</div>' +
+      '<div style="margin-top:.5rem;padding:.5rem;background:#fef3c7;border-radius:6px;font-size:.75rem;color:#92400e;font-weight:600;">Not a prescription – Professional refraction required before ordering eyewear</div>' +
     '</div>';
   }
 
@@ -388,9 +394,13 @@
 
     c.innerHTML =
       '<div class="test-interface">' +
-        '<h2 class="test-title">Your Refractive Estimate</h2>' +
-        '<div class="test-instructions" style="background:#fef3c7;border-color:#fde68a;">' +
-          '<p style="color:#92400e;"><strong>Screening estimate — not a prescription.</strong> Best for myopia; hyperopia can be underestimated because focusing muscles compensate. Confirm with a licensed optometrist before ordering eyewear.</p>' +
+        '<h2 class="test-title">Your Refractive Screening Estimate</h2>' +
+        '<div class="test-instructions" style="background:#fee2e2;border:2px solid #f87171;border-radius:12px;padding:1.25rem;margin-bottom:1rem;">' +
+          '<p style="color:#991b1b;font-weight:700;font-size:1.05rem;margin-bottom:0.5rem;">🚫 NOT A PRESCRIPTION</p>' +
+          '<p style="color:#991b1b;font-weight:600;margin:0;">These values are a SCREENING ESTIMATE. Do NOT use these to order eyewear. No sphere, cylinder, or axis value shown here is a dispensable prescription. You MUST see a licensed optometrist or ophthalmologist for a comprehensive refraction before ordering glasses or contact lenses.</p>' +
+        '</div>' +
+        '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:1rem;margin-bottom:1rem;">' +
+          '<p style="color:#92400e;font-size:0.95rem;margin:0;"><strong>Limitations:</strong> Best for myopia screening. Hyperopia often underestimated due to accommodation. No binocular balance, no cycloplegia, no vertex distance correction, no subjective refinement. Screen calibration and viewing distance affect accuracy.</p>' +
         '</div>' +
         body +
         '<div class="test-controls">' +

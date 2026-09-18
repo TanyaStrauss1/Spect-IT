@@ -1626,53 +1626,23 @@ function startAstigmatismTestInternal() {
     }
     
     // Generate test images
-    const fanChartTests = generateFanChartTests();
     const clockDialTests = generateClockDialTests();
-    const parallelLinesTests = generateParallelLinesTests();
-    const crossPatternTests = generateCrossPatternTests();
-    const starBurstTests = generateStarBurstTests();
     
-    const totalTestCount = fanChartTests.length + clockDialTests.length + 
-                          parallelLinesTests.length + crossPatternTests.length + 
-                          starBurstTests.length;
+    const totalTestCount = clockDialTests.length * 2; // Per eye
     
     console.log('[Astigmatism Test] Total tests: ', totalTestCount);
-    console.log('[Astigmatism Test] Version 2.0 - Essential tests only');
+    console.log('[Astigmatism Test] Version 3.0 - Per-eye clock dial protocol');
     
     currentTest = {
         type: 'astigmatism',
-        name: 'Enhanced Astigmatism Test',
-        currentTestType: 0,
+        name: 'Astigmatism Screening (Clock Dial)',
+        currentEye: 'right',
         currentImage: 0,
-        answers: [],
-        testTypes: [
-            {
-                name: 'Fan Chart Test',
-                description: 'Radiating lines at multiple angles',
-                images: fanChartTests
-            },
-            {
-                name: 'Clock Dial Test',
-                description: 'Clock face pattern for axis detection',
-                images: clockDialTests
-            },
-            {
-                name: 'Parallel Lines Test',
-                description: 'Parallel lines at various orientations',
-                images: parallelLinesTests
-            },
-            {
-                name: 'Cross Pattern Test',
-                description: 'Cross patterns for detailed analysis',
-                images: crossPatternTests
-            },
-            {
-                name: 'Star Burst Test',
-                description: 'Star pattern for comprehensive detection',
-                images: starBurstTests
-            }
-        ],
+        rightEyeAnswers: [],
+        leftEyeAnswers: [],
+        clockDialImages: clockDialTests,
         eyeTrackingData: [],
+        testPhase: 'calibration',
         startTime: Date.now()
     };
     
@@ -1763,11 +1733,39 @@ function generateStarBurstTests() {
 
 function renderAstigmatismTest() {
     const container = document.getElementById('test-container');
-    const testType = currentTest.testTypes[currentTest.currentTestType];
-    const image = testType.images[currentTest.currentImage];
-    const totalTests = currentTest.testTypes.reduce((sum, tt) => sum + tt.images.length, 0);
-    const currentTestNumber = currentTest.testTypes.slice(0, currentTest.currentTestType)
-        .reduce((sum, tt) => sum + tt.images.length, 0) + currentTest.currentImage + 1;
+    
+    // Calibration phase
+    if (currentTest.testPhase === 'calibration') {
+        container.innerHTML = `
+            <div class="test-interface">
+                <h2 class="test-title">Astigmatism Screening – Setup</h2>
+                <div class="test-instructions">
+                    <p><strong>Clinical Protocol:</strong></p>
+                    <ul style="text-align: left; margin: 1rem auto; max-width: 600px; line-height: 1.6;">
+                        <li><strong>Viewing distance:</strong> 3–4 meters (10–13 feet) for optimal angular resolution</li>
+                        <li><strong>Lighting:</strong> Moderate room lighting, avoid glare on screen</li>
+                        <li><strong>Correction:</strong> Wear your usual distance glasses or contact lenses if prescribed</li>
+                        <li><strong>Each eye separately:</strong> Cover one eye completely (e.g., with your palm or an opaque card)</li>
+                    </ul>
+                    <p style="margin-top: 1.5rem; padding: 1rem; background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea; border-radius: 6px;">
+                        <strong>⚕️ Clinical Note:</strong> This clock dial test screens for astigmatic axis <em>only</em>. It cannot measure cylinder power or provide a dispensable prescription. Comprehensive refraction by an optometrist or ophthalmologist is required.
+                    </p>
+                </div>
+                <div class="test-controls">
+                    <button class="btn btn-primary" onclick="currentTest.testPhase = 'testing'; renderAstigmatismTest();" style="padding: 1rem 2.5rem; font-size: 1.1rem;">
+                        ✓ Ready – Begin Clock Dial Test
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Testing phase
+    const image = currentTest.clockDialImages[currentTest.currentImage];
+    const eyeLabel = currentTest.currentEye === 'right' ? 'Right Eye (OD)' : 'Left Eye (OS)';
+    const coverEye = currentTest.currentEye === 'right' ? 'left' : 'right';
+    const progress = currentTest.currentEye === 'right' ? '1 of 2' : '2 of 2';
     
     // Collect eye tracking data if available
     if (window.aiVisionEngine && window.aiVisionEngine.getEyeMeasurements) {
@@ -1782,35 +1780,28 @@ function renderAstigmatismTest() {
     
     container.innerHTML = `
         <div class="test-interface">
-            <h2 class="test-title">Enhanced Astigmatism Test</h2>
+            <h2 class="test-title">Astigmatism Screening (Clock Dial) – ${eyeLabel}</h2>
             <div class="test-instructions">
-                <p><strong>Test Type:</strong> ${testType.name}</p>
-                <p><strong>Instructions:</strong></p>
-                <p>${getTestTypeInstructions(testType.name)}</p>
-                <p style="font-size: 0.9rem; color: #667eea; margin-top: 0.5rem;">
-                    Test ${currentTestNumber} of ${totalTests} | ${testType.name} (${currentTest.currentImage + 1}/${testType.images.length})
+                <p style="font-size: 1.1rem; font-weight: 600; color: #667eea; margin-bottom: 1rem;">
+                    Testing: ${eyeLabel} | Progress: ${progress}
                 </p>
-                ${image.angle !== undefined ? `<p style="font-size: 0.85rem; color: #6b7280;">Orientation: ${image.angle}°</p>` : ''}
+                <p><strong>Instructions:</strong></p>
+                <p>Cover or close your <strong>${coverEye}</strong> eye completely. Look at the center dot. Are all the radial lines equally dark and sharp, or do some lines appear darker, sharper, or clearer than others?</p>
             </div>
             <div class="test-display" style="display: flex; justify-content: center; align-items: center; min-height: 400px; padding: 20px;">
-                ${generateTestPattern(image, testType.name)}
+                ${generateTestPattern(image, 'Clock Dial Test')}
             </div>
-            <div class="test-controls" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <button class="btn-correct" onclick="answerAstigmatism(true, 'equal')" style="padding: 1rem 2rem; font-size: 1.1rem;">
-                    ✓ All lines equal
+            <div class="test-controls" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;">
+                <button class="btn-correct" onclick="answerAstigmatismPerEye('equal')" style="padding: 1rem 2rem; font-size: 1.05rem; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    ✓ All lines equally clear
                 </button>
-                <button class="btn-incorrect" onclick="answerAstigmatism(false, 'unequal')" style="padding: 1rem 2rem; font-size: 1.1rem;">
-                    ✗ Some lines darker/clearer
-                </button>
-                <button class="btn-secondary" onclick="answerAstigmatism(false, 'blurry')" style="padding: 1rem 2rem; font-size: 1.1rem; background: #f59e0b;">
-                    ⊙ Some lines blurry
+                <button class="btn-incorrect" onclick="answerAstigmatismPerEye('unequal')" style="padding: 1rem 2rem; font-size: 1.05rem; background: #f56565; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    ✗ Some lines darker/sharper
                 </button>
             </div>
-            <div style="margin-top: 1rem; text-align: center;">
-                <button class="btn-link" onclick="skipCurrentTestType()" style="color: #6b7280; text-decoration: underline; background: none; border: none; cursor: pointer;">
-                    Skip this test type
-                </button>
-            </div>
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: #666; text-align: center;">
+                If some lines stand out as darker or clearer, this may indicate astigmatism along that meridian.
+            </p>
         </div>
     `;
 }
@@ -1977,35 +1968,43 @@ function generateStarBurstSVG(size, points, angle, radiusOverride = null, lineWi
     return svg;
 }
 
-function answerAstigmatism(equal, responseType) {
-    const testType = currentTest.testTypes[currentTest.currentTestType];
-    const image = testType.images[currentTest.currentImage];
-    
-    currentTest.answers.push({
-        equal: equal,
+function answerAstigmatismPerEye(responseType) {
+    const image = currentTest.clockDialImages[currentTest.currentImage];
+    const answer = {
+        equal: responseType === 'equal',
         responseType: responseType,
+        eye: currentTest.currentEye,
         angle: image.angle,
-        testType: testType.name,
-        imageIndex: currentTest.currentImage,
         timestamp: Date.now()
-    });
+    };
+    
+    if (currentTest.currentEye === 'right') {
+        currentTest.rightEyeAnswers.push(answer);
+    } else {
+        currentTest.leftEyeAnswers.push(answer);
+    }
     
     currentTest.currentImage++;
     
-    // Move to next test type if current one is complete
-    if (currentTest.currentImage >= testType.images.length) {
-        currentTest.currentTestType++;
-        currentTest.currentImage = 0;
-        
-        // Check if all test types are complete
-        if (currentTest.currentTestType >= currentTest.testTypes.length) {
-            finishAstigmatismTest();
-        } else {
+    // Check if current eye test is complete
+    if (currentTest.currentImage >= currentTest.clockDialImages.length) {
+        if (currentTest.currentEye === 'right') {
+            // Switch to left eye
+            currentTest.currentEye = 'left';
+            currentTest.currentImage = 0;
             renderAstigmatismTest();
+        } else {
+            // Both eyes complete
+            finishAstigmatismTest();
         }
     } else {
         renderAstigmatismTest();
     }
+}
+
+// Legacy function for backward compatibility
+function answerAstigmatism(equal, responseType) {
+    answerAstigmatismPerEye(responseType);
 }
 
 function skipCurrentTestType() {
@@ -2025,114 +2024,57 @@ async function finishAstigmatismTest() {
         window.aiVisionEngine.stopEyeTracking();
     }
     
-    // Comprehensive analysis
-    const totalAnswers = currentTest.answers.length;
-    const unequalAnswers = currentTest.answers.filter(a => !a.equal);
-    const unequalCount = unequalAnswers.length;
-    const blurryAnswers = currentTest.answers.filter(a => a.responseType === 'blurry');
+    // Analyze right eye
+    const rightUnequalCount = currentTest.rightEyeAnswers.filter(a => !a.equal).length;
+    const rightTotal = currentTest.rightEyeAnswers.length;
+    const rightHasAstigmatism = rightUnequalCount > 0;
     
-    // Calculate score
-    const score = totalAnswers > 0 ? 1 - (unequalCount / totalAnswers) : 1;
+    // Analyze left eye
+    const leftUnequalCount = currentTest.leftEyeAnswers.filter(a => !a.equal).length;
+    const leftTotal = currentTest.leftEyeAnswers.length;
+    const leftHasAstigmatism = leftUnequalCount > 0;
     
-    // Analyze by test type
-    const testTypeAnalysis = {};
-    currentTest.testTypes.forEach(tt => {
-        const typeAnswers = currentTest.answers.filter(a => a.testType === tt.name);
-        const typeUnequal = typeAnswers.filter(a => !a.equal).length;
-        testTypeAnalysis[tt.name] = {
-            total: typeAnswers.length,
-            unequal: typeUnequal,
-            score: typeAnswers.length > 0 ? 1 - (typeUnequal / typeAnswers.length) : 1
-        };
-    });
+    // Screening result interpretation
+    let rightResult = '';
+    let leftResult = '';
     
-    // Detect astigmatism axis (angle where most problems occur)
-    const angleProblems = {};
-    unequalAnswers.forEach(answer => {
-        if (answer.angle !== undefined) {
-            const normalizedAngle = ((answer.angle % 180) + 180) % 180;
-            angleProblems[normalizedAngle] = (angleProblems[normalizedAngle] || 0) + 1;
-        }
-    });
-    
-    // Find most problematic angle (likely astigmatism axis)
-    let detectedAxis = null;
-    let maxProblems = 0;
-    Object.keys(angleProblems).forEach(angle => {
-        if (angleProblems[angle] > maxProblems) {
-            maxProblems = angleProblems[angle];
-            detectedAxis = parseFloat(angle);
-        }
-    });
-    
-    // Calculate severity
-    let severity = 'none';
-    let resultText = '';
-    let cylinderEstimate = 0;
-    
-    if (unequalCount === 0) {
-        severity = 'none';
-        resultText = 'No significant astigmatism detected - Excellent vision';
-    } else if (unequalCount <= totalAnswers * 0.1) {
-        severity = 'minimal';
-        resultText = 'Minimal astigmatism detected - Very mild irregularity';
-        cylinderEstimate = 0.25;
-    } else if (unequalCount <= totalAnswers * 0.25) {
-        severity = 'mild';
-        resultText = 'Mild astigmatism detected - Minor correction may be beneficial';
-        cylinderEstimate = 0.5;
-    } else if (unequalCount <= totalAnswers * 0.5) {
-        severity = 'moderate';
-        resultText = 'Moderate astigmatism detected - Correction recommended';
-        cylinderEstimate = 1.0;
+    if (rightHasAstigmatism) {
+        rightResult = `Right eye: Possible astigmatism detected (screening positive in ${rightUnequalCount}/${rightTotal} patterns)`;
     } else {
-        severity = 'significant';
-        resultText = 'Significant astigmatism detected - Professional consultation strongly recommended';
-        cylinderEstimate = 1.5;
+        rightResult = 'Right eye: No significant astigmatism detected in this screening';
     }
     
-    // AI-enhanced analysis if available - properly await async call
-    let aiAnalysis = null;
-    if (window.aiVisionEngine && window.aiVisionEngine.detectAstigmatism) {
-        try {
-            // Properly await the async AI detection
-            aiAnalysis = await window.aiVisionEngine.detectAstigmatism(currentTest.answers, currentTest.eyeTrackingData);
-            if (aiAnalysis && aiAnalysis.confidence > 0.7) {
-                // Use AI results if high confidence
-                if (aiAnalysis.axis !== undefined) detectedAxis = aiAnalysis.axis;
-                if (aiAnalysis.cylinder !== undefined) cylinderEstimate = aiAnalysis.cylinder;
-                if (aiAnalysis.severity) severity = aiAnalysis.severity;
-            }
-        } catch (error) {
-            console.log('AI analysis not available:', error);
-        }
+    if (leftHasAstigmatism) {
+        leftResult = `Left eye: Possible astigmatism detected (screening positive in ${leftUnequalCount}/${leftTotal} patterns)`;
+    } else {
+        leftResult = 'Left eye: No significant astigmatism detected in this screening';
     }
     
-    // Format axis text
-    let axisText = '';
-    if (detectedAxis !== null) {
-        axisText = `Detected axis: ${Math.round(detectedAxis)}°`;
-    }
+    const overallResult = (rightHasAstigmatism || leftHasAstigmatism) 
+        ? 'Astigmatism screening: REFER – Comprehensive eye examination recommended'
+        : 'Astigmatism screening: PASS – No significant concerns detected';
     
     const result = {
         type: 'astigmatism',
-        name: 'Enhanced Astigmatism Test',
-        score: score,
-        accuracy: (score * 100).toFixed(1) + '%',
-        result: resultText,
-        severity: severity,
-        cylinderEstimate: cylinderEstimate.toFixed(2) + ' D',
-        axis: detectedAxis !== null ? Math.round(detectedAxis) : null,
-        axisText: axisText,
-        totalTests: totalAnswers,
-        unequalCount: unequalCount,
-        blurryCount: blurryAnswers.length,
-        testTypeAnalysis: testTypeAnalysis,
-        aiEnhanced: !!aiAnalysis,
-        aiConfidence: aiAnalysis ? aiAnalysis.confidence : null,
+        name: 'Astigmatism Screening (Clock Dial)',
+        version: '3.0-per-eye',
+        rightEye: {
+            hasAstigmatism: rightHasAstigmatism,
+            unequalCount: rightUnequalCount,
+            totalTests: rightTotal,
+            result: rightResult
+        },
+        leftEye: {
+            hasAstigmatism: leftHasAstigmatism,
+            unequalCount: leftUnequalCount,
+            totalTests: leftTotal,
+            result: leftResult
+        },
+        overallResult: overallResult,
         testDuration: ((Date.now() - currentTest.startTime) / 1000).toFixed(1) + 's',
         date: new Date().toISOString(),
-        note: `Essential astigmatism test with ${currentTest.testTypes.length} test types and ${totalAnswers} individual tests. ${aiAnalysis ? 'AI-enhanced analysis included.' : 'Standard analysis.'}`
+        methodology: 'Clock dial with radial lines. Each eye tested separately. Screening for astigmatic axis indication only.',
+        limitations: 'This test provides axis INDICATION only. It CANNOT measure cylinder power or provide a precise prescription. Astigmatism requires comprehensive refraction by an optometrist or ophthalmologist.'
     };
     
     saveResult(result);
@@ -2159,13 +2101,30 @@ function startContrastTest() {
 }
 
 function startContrastTestInternal() {
+    // Get screen calibration if available
+    const calPxPerMm = parseFloat(localStorage.getItem('spectit_px_per_mm'));
+    const hasCalibration = Number.isFinite(calPxPerMm) && calPxPerMm > 0;
+    
     currentTest = {
         type: 'contrast',
-        name: 'Contrast Sensitivity Test',
+        name: 'Contrast Sensitivity Screening',
+        testPhase: 'calibration',
         currentLevel: 0,
         correct: 0,
         total: 0,
-        levels: [0.9, 0.7, 0.5, 0.3, 0.2, 0.1]
+        responses: [],
+        hasCalibration: hasCalibration,
+        pxPerMm: hasCalibration ? calPxPerMm : null,
+        // Simplified contrast levels (not Pelli-Robson, but directional screening)
+        levels: [
+            { contrast: 1.0, label: 'High (100%)', logCS: 0.0 },
+            { contrast: 0.7, label: 'Good (70%)', logCS: 0.15 },
+            { contrast: 0.5, label: 'Moderate (50%)', logCS: 0.3 },
+            { contrast: 0.3, label: 'Reduced (30%)', logCS: 0.52 },
+            { contrast: 0.2, label: 'Low (20%)', logCS: 0.7 },
+            { contrast: 0.1, label: 'Very Low (10%)', logCS: 1.0 }
+        ],
+        startTime: Date.now()
     };
     showTestModal();
     renderContrastTest();
@@ -2173,31 +2132,103 @@ function startContrastTestInternal() {
 
 function renderContrastTest() {
     const container = document.getElementById('test-container');
-    const contrast = currentTest.levels[currentTest.currentLevel];
+    
+    // Calibration phase
+    if (currentTest.testPhase === 'calibration') {
+        const calStatus = currentTest.hasCalibration 
+            ? '<span style="color: #48bb78;">✓ Screen calibrated</span>' 
+            : '<span style="color: #f59e0b;">⚠️ Screen not calibrated – results approximate</span>';
+        
+        container.innerHTML = `
+            <div class="test-interface">
+                <h2 class="test-title">Contrast Sensitivity Screening – Setup</h2>
+                <div class="test-instructions">
+                    <p><strong>Clinical Protocol:</strong></p>
+                    <ul style="text-align: left; margin: 1rem auto; max-width: 600px; line-height: 1.6;">
+                        <li><strong>Screen brightness:</strong> Set to at least 70% and clean your screen</li>
+                        <li><strong>Room lighting:</strong> Moderate ambient lighting (not too bright or dark)</li>
+                        <li><strong>Viewing distance:</strong> Hold at comfortable reading distance (~35–40 cm)</li>
+                        <li><strong>Correction:</strong> Wear your usual glasses or contact lenses if prescribed</li>
+                    </ul>
+                    <p style="margin-top: 1.5rem; padding: 1rem; background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea; border-radius: 6px;">
+                        <strong>📏 Calibration Status:</strong> ${calStatus}<br>
+                        <span style="font-size: 0.9rem; margin-top: 0.5rem; display: block;">Without screen calibration, letter size and contrast accuracy depend on your device. Results are screening only.</span>
+                    </p>
+                    <p style="margin-top: 1rem; padding: 1rem; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; border-radius: 6px; font-size: 0.95rem;">
+                        <strong>⚕️ Screening Note:</strong> This is a simplified contrast screening (not Pelli-Robson). It provides directional screening only and cannot substitute for clinical contrast sensitivity testing.
+                    </p>
+                </div>
+                <div class="test-controls">
+                    ${!currentTest.hasCalibration ? `
+                        <button class="btn btn-secondary" onclick="window.location.href='#tests'; setTimeout(() => startPrescriptionTest(), 500);" style="padding: 0.875rem 1.75rem; font-size: 1rem; margin-bottom: 0.75rem;">
+                            📏 Calibrate Screen First (Recommended)
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-primary" onclick="currentTest.testPhase = 'testing'; renderContrastTest();" style="padding: 1rem 2.5rem; font-size: 1.1rem;">
+                        ${currentTest.hasCalibration ? '✓ Ready – Begin Test' : 'Continue Without Calibration'}
+                    </button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Testing phase
+    const level = currentTest.levels[currentTest.currentLevel];
+    const contrastValue = level.contrast;
+    
+    // Generate random letter from Sloan set
+    const sloanLetters = ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'];
+    const targetLetter = sloanLetters[Math.floor(Math.random() * sloanLetters.length)];
+    
+    // Store target letter for validation
+    currentTest.currentTargetLetter = targetLetter;
+    
+    // Calculate letter size - aim for ~3 degrees visual angle at 35cm
+    const letterSizePx = currentTest.hasCalibration 
+        ? Math.max(60, currentTest.pxPerMm * 25)  // ~25mm letter height at calibrated scale
+        : 80; // Fallback size
     
     container.innerHTML = `
         <div class="test-interface">
-            <h2 class="test-title">Contrast Sensitivity Test</h2>
+            <h2 class="test-title">Contrast Sensitivity Screening</h2>
             <div class="test-instructions">
-                <p><strong>Instructions:</strong></p>
-                <p>Look at the circle. Can you see the pattern inside?</p>
-                <p>Level ${currentTest.currentLevel + 1} of ${currentTest.levels.length}</p>
+                <p style="font-size: 1rem; font-weight: 600; color: #667eea; margin-bottom: 1rem;">
+                    Level ${currentTest.currentLevel + 1} of ${currentTest.levels.length} | Contrast: ${level.label}
+                </p>
+                <p><strong>Instructions:</strong> Read the letter shown below. Click "I can see it" if you can identify the letter, or "Cannot see it" if the letter is too faint to read.</p>
             </div>
-            <div class="test-display">
-                <div style="width: 300px; height: 300px; border-radius: 50%; background: linear-gradient(45deg, rgba(0,0,0,${contrast}) 50%, rgba(255,255,255,${contrast}) 50%); margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: rgba(0,0,0,${contrast});">
-                    Pattern
+            <div class="test-display" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 350px; background: #f8f9fa; border-radius: 12px; padding: 2rem;">
+                <div style="font-size: ${letterSizePx}px; font-weight: 900; font-family: 'Arial Black', Arial, sans-serif; color: rgba(0, 0, 0, ${contrastValue}); text-shadow: none; line-height: 1; margin-bottom: 2rem;">
+                    ${targetLetter}
                 </div>
+                <p style="font-size: 0.9rem; color: #666;">As contrast decreases, letters become harder to see</p>
             </div>
-            <div class="test-controls">
-                <button class="btn-correct" onclick="answerContrast(true)">I can see it</button>
-                <button class="btn-incorrect" onclick="answerContrast(false)">I cannot see it</button>
+            <div class="test-controls" style="margin-top: 1.5rem;">
+                <button class="btn-correct" onclick="answerContrast(true)" style="padding: 1rem 2.5rem; font-size: 1.05rem; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-right: 1rem;">
+                    ✓ I can see it
+                </button>
+                <button class="btn-incorrect" onclick="answerContrast(false)" style="padding: 1rem 2.5rem; font-size: 1.05rem; background: #f56565; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    ✗ Cannot see it
+                </button>
             </div>
         </div>
     `;
 }
 
 function answerContrast(visible) {
+    const level = currentTest.levels[currentTest.currentLevel];
+    
+    currentTest.responses.push({
+        level: currentTest.currentLevel,
+        contrast: level.contrast,
+        logCS: level.logCS,
+        visible: visible,
+        timestamp: Date.now()
+    });
+    
     currentTest.total++;
+    
     if (visible) {
         currentTest.correct++;
         currentTest.currentLevel++;
@@ -2214,13 +2245,43 @@ function answerContrast(visible) {
 }
 
 function finishContrastTest() {
-    const score = currentTest.correct / currentTest.total;
+    const levelsVisible = currentTest.correct;
+    const totalLevels = currentTest.levels.length;
+    
+    // Determine screening category
+    let category = '';
+    let interpretation = '';
+    let recommendation = '';
+    
+    if (levelsVisible >= 5) {
+        category = 'NORMAL';
+        interpretation = 'Normal contrast sensitivity in this screening. You were able to see letters at low contrast levels.';
+        recommendation = 'No immediate concerns. Regular eye examinations recommended.';
+    } else if (levelsVisible >= 3) {
+        category = 'BORDERLINE';
+        interpretation = 'Borderline contrast sensitivity. You had difficulty seeing letters at lower contrast levels.';
+        recommendation = 'Consider comprehensive eye examination to evaluate contrast sensitivity function.';
+    } else {
+        category = 'REDUCED';
+        interpretation = 'Reduced contrast sensitivity detected in this screening. You had difficulty seeing letters even at moderate contrast.';
+        recommendation = 'Comprehensive eye examination recommended to assess contrast sensitivity and rule out optical/neurological causes.';
+    }
+    
     const result = {
         type: 'contrast',
-        name: 'Contrast Sensitivity Test',
-        score: score,
-        levels: currentTest.correct,
-        date: new Date().toISOString()
+        name: 'Contrast Sensitivity Screening',
+        version: '2.0-calibration-aware',
+        levelsVisible: levelsVisible,
+        totalLevels: totalLevels,
+        category: category,
+        interpretation: interpretation,
+        recommendation: recommendation,
+        responses: currentTest.responses,
+        calibrated: currentTest.hasCalibration,
+        testDuration: ((Date.now() - currentTest.startTime) / 1000).toFixed(1) + 's',
+        date: new Date().toISOString(),
+        methodology: 'Simplified contrast screening with letters at decreasing contrast levels. Directional screening only.',
+        limitations: 'This is NOT a Pelli-Robson test. Screen calibration and room lighting significantly affect results. Screening approximation only – clinical contrast sensitivity testing required for definitive assessment.'
     };
     
     saveResult(result);
@@ -2342,11 +2403,12 @@ function startAmslerGridTest() {
 function startAmslerGridTestInternal() {
     currentTest = {
         type: 'amsler-grid',
-        name: 'Amsler Grid',
+        name: 'Amsler Grid – Central Vision Screening',
         step: 'instructions',
-        eye: 'both',
-        distortion: null,
-        date: new Date().toISOString()
+        currentEye: 'right',
+        rightEyeResult: null,
+        leftEyeResult: null,
+        startTime: Date.now()
     };
     showTestModal();
     renderAmslerGridTest();
@@ -2354,51 +2416,82 @@ function startAmslerGridTestInternal() {
 
 function renderAmslerGridTest() {
     const container = document.getElementById('test-container');
+    
     if (currentTest.step === 'instructions') {
         container.innerHTML = `
             <div class="test-interface">
-                <h2 class="test-title">Amsler Grid</h2>
+                <h2 class="test-title">Amsler Grid – Central Vision Screening</h2>
                 <div class="test-instructions">
-                    <p><strong>Purpose:</strong> Screens for central vision problems (e.g. macular changes).</p>
-                    <p><strong>Instructions:</strong></p>
-                    <ul style="text-align: left; margin: 1rem 0;">
-                        <li>Hold the device at normal reading distance (about 35 cm / 14 in).</li>
-                        <li>Cover one eye. Stare only at the center dot.</li>
-                        <li>Check if all lines are straight and the grid is complete (no waviness, blank areas, or distortion).</li>
-                        <li>Repeat with the other eye.</li>
+                    <p><strong>Purpose:</strong> Screens for central visual field problems such as macular changes, metamorphopsia (distortion), or scotomas (blind spots).</p>
+                    <p><strong>Clinical Protocol:</strong></p>
+                    <ul style="text-align: left; margin: 1rem auto; max-width: 600px; line-height: 1.6;">
+                        <li><strong>Distance:</strong> Hold the screen at normal reading distance (~35 cm / 14 inches)</li>
+                        <li><strong>Lighting:</strong> Ensure adequate room lighting</li>
+                        <li><strong>Correction:</strong> Wear your usual reading glasses if prescribed</li>
+                        <li><strong>Each eye separately:</strong> Cover one eye completely with your hand or an opaque card</li>
+                        <li><strong>Fixation:</strong> Stare ONLY at the center dot – do not look around the grid</li>
                     </ul>
+                    <p style="margin-top: 1.5rem; padding: 1rem; background: rgba(245, 101, 101, 0.1); border-left: 3px solid #f56565; border-radius: 6px;">
+                        <strong>🚨 Urgent Alert:</strong> This test screens the CENTRAL visual field only (central ~10°). It does NOT detect peripheral field loss, glaucoma, or other peripheral conditions. Any distortion, missing areas, or wavy lines require same-day professional evaluation.
+                    </p>
                 </div>
                 <div class="test-controls">
-                    <button class="btn btn-primary" onclick="currentTest.step='grid'; renderAmslerGridTest();">Show Grid</button>
+                    <button class="btn btn-primary" onclick="currentTest.step='grid-right'; renderAmslerGridTest();" style="padding: 1rem 2.5rem; font-size: 1.1rem;">
+                        ✓ Ready – Begin Right Eye
+                    </button>
                 </div>
             </div>
         `;
         return;
     }
-    if (currentTest.step === 'grid') {
+    
+    if (currentTest.step === 'grid-right' || currentTest.step === 'grid-left') {
+        const eyeLabel = currentTest.step === 'grid-right' ? 'Right Eye (OD)' : 'Left Eye (OS)';
+        const coverEye = currentTest.step === 'grid-right' ? 'left' : 'right';
+        const progress = currentTest.step === 'grid-right' ? '1 of 2' : '2 of 2';
+        
         const size = Math.min(400, window.innerWidth - 60);
         const cell = Math.max(8, Math.floor(size / 20));
         const gridSize = cell * 20;
+        
         container.innerHTML = `
             <div class="test-interface">
-                <h2 class="test-title">Amsler Grid – Stare at the center dot</h2>
-                <p style="margin-bottom: 1rem;">Cover one eye. Keep your gaze on the center. Are all lines straight? Any missing or wavy areas?</p>
-                <div class="test-display" style="display: flex; justify-content: center;">
-                    <div id="amsler-canvas-wrap" style="width: ${gridSize}px; height: ${gridSize}px; background: #fff; border: 2px solid #333;">
+                <h2 class="test-title">Amsler Grid – ${eyeLabel}</h2>
+                <p style="font-size: 1.1rem; font-weight: 600; color: #667eea; margin-bottom: 1rem;">
+                    Testing: ${eyeLabel} | Progress: ${progress}
+                </p>
+                <div class="test-instructions">
+                    <p><strong>Cover or close your ${coverEye} eye completely.</strong> Stare ONLY at the center dot. While maintaining fixation on the center dot:</p>
+                    <ul style="text-align: left; margin: 0.5rem auto; max-width: 500px; line-height: 1.5;">
+                        <li>Are all the lines straight?</li>
+                        <li>Are there any missing or blank areas?</li>
+                        <li>Are any lines wavy or distorted?</li>
+                        <li>Is the entire grid visible?</li>
+                    </ul>
+                </div>
+                <div class="test-display" style="display: flex; justify-content: center; padding: 2rem 1rem;">
+                    <div id="amsler-canvas-wrap" style="width: ${gridSize}px; height: ${gridSize}px; background: #fff; border: 2px solid #333; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                         <canvas id="amsler-canvas" width="${gridSize}" height="${gridSize}"></canvas>
                     </div>
                 </div>
-                <div class="test-controls" style="flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
-                    <button class="btn btn-primary" onclick="finishAmslerGridTest(false)">All lines straight, no issues</button>
-                    <button class="btn btn-incorrect" onclick="finishAmslerGridTest(true)">I see waviness, blank spots, or distortion</button>
+                <div class="test-controls" style="flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="answerAmslerGrid(false)" style="padding: 1rem 2rem; font-size: 1.05rem; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        ✓ All lines straight, grid complete
+                    </button>
+                    <button class="btn btn-incorrect" onclick="answerAmslerGrid(true)" style="padding: 1rem 2rem; font-size: 1.05rem; background: #f56565; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        ✗ I see distortion, missing areas, or waviness
+                    </button>
                 </div>
             </div>
         `;
+        
         const canvas = document.getElementById('amsler-canvas');
         const ctx = canvas.getContext('2d');
         const s = gridSize;
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 1;
+        
+        // Draw grid
         for (let i = 0; i <= 20; i++) {
             const p = (i / 20) * s;
             ctx.beginPath();
@@ -2410,6 +2503,8 @@ function renderAmslerGridTest() {
             ctx.lineTo(s, p);
             ctx.stroke();
         }
+        
+        // Draw center dot
         const cx = s / 2, cy = s / 2, r = 4;
         ctx.fillStyle = '#000';
         ctx.beginPath();
@@ -2419,15 +2514,63 @@ function renderAmslerGridTest() {
     }
 }
 
-function finishAmslerGridTest(hasDistortion) {
-    currentTest.distortion = hasDistortion;
+function answerAmslerGrid(hasDistortion) {
+    if (currentTest.step === 'grid-right') {
+        currentTest.rightEyeResult = {
+            eye: 'right',
+            hasDistortion: hasDistortion,
+            result: hasDistortion 
+                ? 'Right eye: Distortion, missing areas, or waviness detected' 
+                : 'Right eye: All lines straight, grid complete'
+        };
+        currentTest.step = 'grid-left';
+        renderAmslerGridTest();
+    } else if (currentTest.step === 'grid-left') {
+        currentTest.leftEyeResult = {
+            eye: 'left',
+            hasDistortion: hasDistortion,
+            result: hasDistortion 
+                ? 'Left eye: Distortion, missing areas, or waviness detected' 
+                : 'Left eye: All lines straight, grid complete'
+        };
+        finishAmslerGridTest();
+    }
+}
+
+function finishAmslerGridTest() {
+    const rightHasIssue = currentTest.rightEyeResult && currentTest.rightEyeResult.hasDistortion;
+    const leftHasIssue = currentTest.leftEyeResult && currentTest.leftEyeResult.hasDistortion;
+    const anyIssue = rightHasIssue || leftHasIssue;
+    
+    let overallResult = '';
+    let urgencyLevel = '';
+    let recommendation = '';
+    
+    if (anyIssue) {
+        overallResult = 'Central vision screening: URGENT REFERRAL';
+        urgencyLevel = 'URGENT';
+        recommendation = 'Same-day professional eye examination strongly recommended. Sudden distortion, missing areas, or wavy lines can indicate a retinal or macular issue (e.g., macular degeneration, retinal detachment). Seek professional care promptly.';
+    } else {
+        overallResult = 'Central vision screening: PASS';
+        urgencyLevel = 'ROUTINE';
+        recommendation = 'No significant central field distortion detected. Continue routine eye examinations as recommended by your eye care provider.';
+    }
+    
     const result = {
         type: 'amsler-grid',
-        name: 'Amsler Grid',
-        result: hasDistortion ? 'Possible central vision concern – same-day professional exam recommended' : 'No distortion reported',
-        note: hasDistortion ? 'Urgent: sudden distortion, missing areas, or wavy lines can indicate a retinal/macular issue. Seek professional care promptly.' : null,
-        date: new Date().toISOString()
+        name: 'Amsler Grid – Central Vision Screening',
+        version: '2.0-per-eye',
+        rightEye: currentTest.rightEyeResult,
+        leftEye: currentTest.leftEyeResult,
+        overallResult: overallResult,
+        urgencyLevel: urgencyLevel,
+        recommendation: recommendation,
+        testDuration: ((Date.now() - currentTest.startTime) / 1000).toFixed(1) + 's',
+        date: new Date().toISOString(),
+        methodology: '10×10 Amsler grid covering central ~10° of visual field. Each eye tested separately while maintaining fixation on central point.',
+        limitations: 'This test screens the CENTRAL visual field only (central ~10°). It does NOT detect peripheral field loss, glaucoma, or other conditions affecting peripheral vision. Comprehensive perimetry required for full visual field assessment.'
     };
+    
     saveResult(result);
     showResult(result);
 }
