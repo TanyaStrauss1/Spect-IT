@@ -9,7 +9,7 @@ import { Camera, CameraType } from 'expo-camera'
 import * as FaceDetector from 'expo-face-detector'
 import { DeviceQualifier, type DeviceQualification, type CapabilityMatrix } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
-import { requestCameraPermission, type DetectedFace } from '../../lib/vision-scan/camera-utils'
+import { requestCameraPermission, type DetectedFace, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 export default function QualificationScreen() {
@@ -20,6 +20,11 @@ export default function QualificationScreen() {
   const [capabilityMatrix, setCapabilityMatrix] = useState<CapabilityMatrix | null>(null)
   const [faceDetected, setFaceDetected] = useState(false)
   const cameraRef = useRef<Camera>(null)
+
+  // Temporal smoothing state for face flicker detection
+  const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
+  const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const BUFFER_SIZE = 8
 
   useEffect(() => {
     setupCamera()
@@ -44,7 +49,22 @@ export default function QualificationScreen() {
   }
 
   const handleFacesDetected = ({ faces }: { faces: any[] }) => {
-    setFaceDetected(faces.length > 0)
+    const now = Date.now()
+    const detected = faces.length > 0
+    
+    // Update detection history for flicker detection
+    const newDetectionHistory = [...faceDetectionHistory.slice(-BUFFER_SIZE + 1), detected]
+    const newTimestampHistory = [...timestampHistory.slice(-BUFFER_SIZE + 1), now]
+    setFaceDetectionHistory(newDetectionHistory)
+    setTimestampHistory(newTimestampHistory)
+
+    // Check for flicker - only set detected if not flickering
+    const isFlickering = detectFaceFlicker(newDetectionHistory, newTimestampHistory)
+    if (!isFlickering) {
+      setFaceDetected(detected)
+    } else {
+      console.log('Qualification: Face flicker detected, maintaining previous state')
+    }
   }
 
   const runQualification = async () => {

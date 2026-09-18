@@ -14,7 +14,7 @@ import {
   type CalibrationResult,
 } from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
-import { type DetectedFace, computeHeadPose, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+import { type DetectedFace, computeHeadPose, estimateFaceDistance, applyEMA, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
@@ -29,6 +29,13 @@ export default function CalibrationScreen() {
   const [result, setResult] = useState<CalibrationResult | null>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const cameraRef = useRef<Camera>(null)
+
+  // Temporal smoothing state
+  const [faceBoundsEMA, setFaceBoundsEMA] = useState<{ width: number; x: number; y: number } | null>(null)
+  const [headPoseEMA, setHeadPoseEMA] = useState<{ pitch: number; yaw: number; roll: number } | null>(null)
+  const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
+  const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const BUFFER_SIZE = 5
 
   const currentPoint = calibrationPoints[currentPointIndex]
 
@@ -83,18 +90,18 @@ export default function CalibrationScreen() {
       detectedFace.rightEye
     )
 
-    // Compute quality based on face size, stability, and head pose
-    const faceSizeScore = Math.min(1, detectedFace.bounds.width / (screenWidth * 0.4))
-    const headPoseScore = Math.max(0, 1 - (Math.abs(headPose.yaw) + Math.abs(headPose.roll)) / 60)
+    // Compute quality based on smoothed face size, stability, and head pose
+    const faceSizeScore = Math.min(1, smoothedBounds.width / (screenWidth * 0.4))
+    const headPoseScore = Math.max(0, 1 - (Math.abs(smoothedHeadPose.yaw) + Math.abs(smoothedHeadPose.roll)) / 60)
     const methodScore = faceDistanceResult.method === 'ipd' ? 1.0 : 0.8
     const quality = (faceSizeScore * 0.5 + headPoseScore * 0.3 + methodScore * 0.2)
 
     const sample: GazeCalibrationSample = {
-      timestamp: Date.now(),
+      timestamp: now,
       targetPoint: currentPoint,
       leftEyeGaze: { x: leftGazeX, y: leftGazeY },
       rightEyeGaze: { x: rightGazeX, y: rightGazeY },
-      headPose,
+      headPose: smoothedHeadPose,
       faceDistance: faceDistanceResult.distance,
       quality,
     }

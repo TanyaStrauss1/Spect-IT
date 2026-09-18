@@ -14,6 +14,8 @@ import {
   computeHeadPose,
   estimateFaceDistance,
   estimateGazeDeviation,
+  applyEMA,
+  detectFaceFlicker,
 } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 
@@ -28,6 +30,14 @@ export default function AlignmentScreen() {
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const cameraRef = useRef<Camera>(null)
   const targetFrames = 30
+
+  // Temporal smoothing state
+  const [faceBoundsEMA, setFaceBoundsEMA] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [ipdEMA, setIpdEMA] = useState<number | null>(null)
+  const [headPoseEMA, setHeadPoseEMA] = useState<{ pitch: number; yaw: number; roll: number } | null>(null)
+  const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
+  const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const FRAME_BUFFER_SIZE = 8
 
   useEffect(() => {
     if (isCapturing && frameCount < targetFrames && detectedFace) {
@@ -60,22 +70,72 @@ export default function AlignmentScreen() {
   }
 
   const captureFrame = () => {
-    if (!detectedFace) return
+    if (!detectedFace) {
+      // Track detection history for flicker detection
+      const now = Date.now()
+      setFaceDetectionHistory(prev => [...prev.slice(-FRAME_BUFFER_SIZE + 1), false])
+      setTimestampHistory(prev => [...prev.slice(-FRAME_BUFFER_SIZE + 1), now])
+      return
+    }
+
+    const now = Date.now()
+    
+    // Update detection history
+    const newDetectionHistory = [...faceDetectionHistory.slice(-FRAME_BUFFER_SIZE + 1), true]
+    const newTimestampHistory = [...timestampHistory.slice(-FRAME_BUFFER_SIZE + 1), now]
+    setFaceDetectionHistory(newDetectionHistory)
+    setTimestampHistory(newTimestampHistory)
+
+    // Check for face flicker - reject frame if flickering
+    if (detectFaceFlicker(newDetectionHistory, newTimestampHistory)) {
+      console.log('Face flicker detected, skipping frame')
+      return
+    }
+
+    // Apply EMA smoothing to face bounds
+    const smoothedBounds = {
+      x: applyEMA(detectedFace.bounds.x, faceBoundsEMA?.x ?? null, 0.3),
+      y: applyEMA(detectedFace.bounds.y, faceBoundsEMA?.y ?? null, 0.3),
+      width: applyEMA(detectedFace.bounds.width, faceBoundsEMA?.width ?? null, 0.3),
+      height: applyEMA(detectedFace.bounds.height, faceBoundsEMA?.height ?? null, 0.3),
+    }
+    setFaceBoundsEMA(smoothedBounds)
+
+    // Apply EMA smoothing to IPD if eye landmarks available
+    let smoothedIPD: number | null = null
+    if (detectedFace.leftEye && detectedFace.rightEye) {
+      const currentIPD = Math.sqrt(
+        Math.pow(detectedFace.rightEye.x - detectedFace.leftEye.x, 2) +
+        Math.pow(detectedFace.rightEye.y - detectedFace.leftEye.y, 2)
+      )
+      smoothedIPD = applyEMA(currentIPD, ipdEMA, 0.3)
+      setIpdEMA(smoothedIPD)
+    }
+
+    // Apply EMA smoothing to head pose
+    const rawHeadPose = computeHeadPose(detectedFace)
+    const smoothedHeadPose = {
+      pitch: applyEMA(rawHeadPose.pitch, headPoseEMA?.pitch ?? null, 0.3),
+      yaw: applyEMA(rawHeadPose.yaw, headPoseEMA?.yaw ?? null, 0.3),
+      roll: applyEMA(rawHeadPose.roll, headPoseEMA?.roll ?? null, 0.3),
+    }
+    setHeadPoseEMA(smoothedHeadPose)
 
     const targetX = screenWidth / 2
     const targetY = screenHeight / 2
 
+    // Use smoothed bounds for gaze deviation
     const gazeDeviation = estimateGazeDeviation(
       detectedFace.leftEye,
       detectedFace.rightEye,
-      detectedFace.bounds,
+      smoothedBounds,
       targetX,
       targetY
     )
 
-    const headPose = computeHeadPose(detectedFace)
+    // Use smoothed bounds for distance estimation
     const faceDistanceResult = estimateFaceDistance(
-      detectedFace.bounds,
+      smoothedBounds,
       screenWidth,
       detectedFace.leftEye,
       detectedFace.rightEye
@@ -91,8 +151,13 @@ export default function AlignmentScreen() {
     // Convert pixel deviations to approximate degrees (rough estimate)
     const pixelToDegree = 0.05 // Approximate conversion factor
 
+    // Quality based on smoothed face size and stability
+    const faceQuality = smoothedBounds.width > screenWidth * 0.25 ? 0.8 : 0.5
+    const stabilityPenalty = Math.abs(smoothedHeadPose.yaw) > 15 || Math.abs(smoothedHeadPose.roll) > 15 ? 0.2 : 0
+    const adjustedQuality = Math.max(0.3, faceQuality - stabilityPenalty)
+
     const frame: AlignmentFrame = {
-      timestamp: Date.now(),
+      timestamp: now,
       leftEye: {
         x: leftEyeX * pixelToDegree,
         y: leftEyeY * pixelToDegree,
@@ -103,13 +168,14 @@ export default function AlignmentScreen() {
         y: rightEyeY * pixelToDegree,
         z: faceDistanceResult.distance,
       },
-      headPose,
+      headPose: smoothedHeadPose,
       faceDistance: faceDistanceResult.distance,
       gazeDeviation,
-      quality: detectedFace.bounds.width > screenWidth * 0.25 ? 0.8 : 0.5,
+      quality: adjustedQuality,
     }
 
-    tracker.addFrame(frame, detectedFace.bounds)
+    // Pass smoothed bounds to tracker for stability check
+    tracker.addFrame(frame, smoothedBounds)
     setFrameCount((prev) => prev + 1)
   }
 
