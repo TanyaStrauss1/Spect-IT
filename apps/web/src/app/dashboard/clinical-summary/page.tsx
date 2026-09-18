@@ -502,11 +502,25 @@ export default function ClinicalSummaryPage() {
                         {summary.visionScan.test_data?.screeningSummary || 'Mobile camera wellness screening'}
                       </div>
                       <div className="text-xs text-purple-700 mt-1 font-semibold">
-                        Wellness screening via mobile camera (alignment, motility, convergence)
+                        Wellness screening via mobile camera (alignment, motility, convergence, pupil examination)
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
                       </div>
+
+                      {summary.visionScan.test_data?.pupilExamination && (
+                        <div className="bg-gray-50 p-3 rounded-lg mt-2">
+                          <p className="text-sm font-medium text-gray-700 mb-1">Pupils</p>
+                          <p className="text-gray-900 text-sm">
+                            {summary.visionScan.test_data.pupilExamination.meanDiameterMM.left.toFixed(1)}mm (L) /{' '}
+                            {summary.visionScan.test_data.pupilExamination.meanDiameterMM.right.toFixed(1)}mm (R) -{' '}
+                            {summary.visionScan.test_data.pupilExamination.asymmetryDetected ? 'Asymmetric' : 'Symmetric'}
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {summary.visionScan.test_data.pupilExamination.screeningNote}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

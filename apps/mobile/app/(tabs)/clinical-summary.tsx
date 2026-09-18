@@ -419,9 +419,23 @@ export default function ClinicalSummaryScreen() {
                   Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
                 </Text>
                 <Text style={[styles.testDate, { fontSize: 10, marginTop: 2, fontStyle: 'italic' }]}>
-                  Wellness screening via mobile camera (alignment, motility, convergence)
+                  Wellness screening via mobile camera (alignment, motility, convergence, pupil examination)
                 </Text>
               </View>
+              
+              {summary.visionScan.test_data?.pupilExamination && (
+                <View style={styles.submetric}>
+                  <Text style={styles.submetricLabel}>Pupils:</Text>
+                  <Text style={styles.submetricValue}>
+                    {summary.visionScan.test_data.pupilExamination.meanDiameterMM.left.toFixed(1)}mm (L) / {' '}
+                    {summary.visionScan.test_data.pupilExamination.meanDiameterMM.right.toFixed(1)}mm (R) - {' '}
+                    {summary.visionScan.test_data.pupilExamination.asymmetryDetected ? 'Asymmetric' : 'Symmetric'}
+                  </Text>
+                  <Text style={styles.submetricNote}>
+                    {summary.visionScan.test_data.pupilExamination.screeningNote}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
         </View>

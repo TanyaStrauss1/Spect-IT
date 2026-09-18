@@ -13,6 +13,7 @@ import type {
   AlignmentResult,
   MotilityResult,
   ConvergenceResult,
+  PupilExaminationResult,
   QualityAssessment,
   VisionScanResult,
 } from '@spect-it/cv'
@@ -29,6 +30,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     alignment: null,
     motility: null,
     convergence: null,
+    pupilExamination: null,
     qualityAssessment: null,
     methodology: {},
     repeatAttempts: {},
@@ -46,6 +48,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       alignment: null,
       motility: null,
       convergence: null,
+      pupilExamination: null,
       qualityAssessment: null,
       methodology: {},
       repeatAttempts: {},
@@ -74,6 +77,10 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     setSession((prev) => ({ ...prev, convergence: result }))
   }, [])
 
+  const setPupilExamination = useCallback((result: PupilExaminationResult) => {
+    setSession((prev) => ({ ...prev, pupilExamination: result }))
+  }, [])
+
   const setQualityAssessment = useCallback((assessment: QualityAssessment) => {
     setSession((prev) => ({ ...prev, qualityAssessment: assessment }))
   }, [])
@@ -88,7 +95,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     }))
   }, [])
 
-  const updateMethodology = useCallback((methodologyUpdate: Partial<{ distanceMethod: string; gazeMethod: string; vergenceMethod: string }>) => {
+  const updateMethodology = useCallback((methodologyUpdate: Partial<{ distanceMethod: string; gazeMethod: string; vergenceMethod: string; pupilMethod: string }>) => {
     setSession((prev) => ({
       ...prev,
       methodology: {
@@ -116,6 +123,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       alignment: null,
       motility: null,
       convergence: null,
+      pupilExamination: null,
       qualityAssessment: null,
       methodology: {},
       repeatAttempts: {},
@@ -148,6 +156,14 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     if (!session.convergence.nearPoint || session.convergence.nearPoint > 100) {
       issues.push('convergence variation')
     }
+    if (session.pupilExamination) {
+      if (session.pupilExamination.asymmetryDetected) {
+        issues.push('pupil asymmetry detected')
+      }
+      if (!session.pupilExamination.reactivityDetected && session.pupilExamination.dataQuality !== 'low') {
+        issues.push('limited pupillary reactivity')
+      }
+    }
 
     const recommendsProfessionalExam = 
       issues.length > 0 || 
@@ -170,6 +186,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       alignment: session.alignment,
       motility: session.motility,
       convergence: session.convergence,
+      pupilExamination: session.pupilExamination,
       qualityAssessment: session.qualityAssessment,
       screeningSummary,
       recommendsProfessionalExam,
@@ -186,6 +203,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     setAlignment,
     setMotility,
     setConvergence,
+    setPupilExamination,
     setQualityAssessment,
     recordRepeatAttempt,
     updateMethodology,
