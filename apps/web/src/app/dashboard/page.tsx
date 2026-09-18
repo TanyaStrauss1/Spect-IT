@@ -269,7 +269,7 @@ export default function DashboardPage() {
                 href="/dashboard/clinical-summary"
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-colors text-sm"
               >
-                📊 Clinical Summary
+                📋 Screening Profile
               </Link>
               {participants.length > 0 && (
                 <Link

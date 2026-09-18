@@ -1,6 +1,6 @@
 /**
- * Clinical Summary Screen (React Native)
- * Unified results page with per-eye breakdown and recommendations
+ * Wellness Screening Summary Screen (React Native)
+ * Unified screening results with per-eye breakdown and recommendations
  */
 
 import { useState, useEffect } from 'react'
@@ -66,8 +66,8 @@ export default function ClinicalSummaryScreen() {
   }
 
   const handleShare = async () => {
-    // Build structured clinical summary text
-    let text = `SPECT-IT VISION SCREENING REPORT\n`
+    // Build structured wellness screening summary text
+    let text = `SPECT-IT WELLNESS SCREENING REPORT\n`
     text += `Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}\n`
     text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`
     
@@ -135,7 +135,7 @@ export default function ClinicalSummaryScreen() {
     try {
       await Share.share({
         message: text,
-        title: 'Spect-IT Vision Screening Report'
+        title: 'Spect-IT Wellness Screening Report'
       })
     } catch (error) {
       console.error('Error sharing:', error)
@@ -146,7 +146,7 @@ export default function ClinicalSummaryScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={styles.loadingText}>Loading your clinical summary...</Text>
+        <Text style={styles.loadingText}>Loading your wellness screening summary...</Text>
       </View>
     )
   }
@@ -155,7 +155,7 @@ export default function ClinicalSummaryScreen() {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Clinical Summary</Text>
+          <Text style={styles.title}>Wellness Screening Profile</Text>
           <Text style={styles.subtitle}>Comprehensive screening results</Text>
         </View>
 
@@ -168,8 +168,8 @@ export default function ClinicalSummaryScreen() {
           </Text>
           <Text style={styles.emptyText}>
             {activeParticipant && !activeParticipant.is_self
-              ? `Complete some vision tests for ${activeParticipant.display_name} to see their clinical summary`
-              : 'Complete some vision tests to see your clinical summary'}
+              ? `Complete some vision tests for ${activeParticipant.display_name} to see their wellness screening profile`
+              : 'Complete some vision tests to see your wellness screening profile'}
           </Text>
           <TouchableOpacity
             style={styles.primaryButton}
@@ -187,12 +187,12 @@ export default function ClinicalSummaryScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>
-          Clinical Screening Summary
+          Wellness Screening Profile
           {activeParticipant && !activeParticipant.is_self && (
             <Text style={styles.participantName}> ({activeParticipant.display_name})</Text>
           )}
         </Text>
-        <Text style={styles.subtitle}>Generated {new Date().toLocaleDateString()}</Text>
+        <Text style={styles.subtitle}>Screening Summary · {new Date().toLocaleDateString()}</Text>
         {activeParticipant && (
           <Text style={styles.participantInfo}>
             {activeParticipant.display_name}
@@ -204,16 +204,16 @@ export default function ClinicalSummaryScreen() {
 
       {/* Disclaimer */}
       <View style={styles.disclaimer}>
-        <Text style={styles.disclaimerTitle}>Important</Text>
+        <Text style={styles.disclaimerTitle}>Wellness Screening Only</Text>
         <Text style={styles.disclaimerText}>
-          This is a screening, not a diagnosis or dispensable prescription. 
-          Consult a licensed optometrist or ophthalmologist for clinical decisions.
+          These results are wellness screening assessments for informational purposes only — NOT medical diagnoses, clinical exams, or dispensable prescriptions. 
+          Always consult a licensed optometrist or ophthalmologist for comprehensive eye examinations, clinical diagnoses, treatment decisions, and prescription eyewear.
         </Text>
       </View>
 
       {/* Share Button */}
       <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-        <Text style={styles.shareButtonText}>📤 Share Clinical Summary</Text>
+        <Text style={styles.shareButtonText}>📤 Share Screening Profile</Text>
       </TouchableOpacity>
 
       {/* Vision Trends */}
@@ -287,11 +287,12 @@ export default function ClinicalSummaryScreen() {
           {/* Recommendation */}
           {(summary.leftEye?.interpretation || summary.rightEye?.interpretation || summary.bothEyes?.interpretation) && (
             <View style={styles.recommendationBox}>
-              <Text style={styles.recommendationTitle}>Recommendation</Text>
+              <Text style={styles.recommendationTitle}>Screening Guidance</Text>
               <Text style={styles.recommendationText}>
                 {summary.leftEye?.interpretation?.recommendation || 
                  summary.rightEye?.interpretation?.recommendation || 
                  summary.bothEyes?.interpretation?.recommendation}
+                {' '}This is screening guidance only — consult an eye care professional for a comprehensive exam.
               </Text>
             </View>
           )}
@@ -301,7 +302,7 @@ export default function ClinicalSummaryScreen() {
       {/* Other Tests Summary */}
       {(summary.colorVision || summary.contrast || summary.astigmatism || summary.prescription || summary.visualField || summary.hearing || summary.visionScan) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎨 Other Screening Tests</Text>
+          <Text style={styles.sectionTitle}>🎨 Additional Wellness Screenings</Text>
           
           {summary.colorVision && (
             <View style={styles.testCard}>
@@ -355,7 +356,7 @@ export default function ClinicalSummaryScreen() {
               <View style={styles.testInfo}>
                 <Text style={styles.testName}>Refractive Screening</Text>
                 <Text style={[styles.testResult, { color: '#B45309', fontWeight: '600' }]}>
-                  Screening estimate only — NOT dispensable
+                  Wellness screening only — NOT a dispensable prescription
                 </Text>
                 <Text style={styles.testDate}>
                   Tested {new Date(summary.prescription.created_at).toLocaleDateString()}
@@ -402,23 +403,23 @@ export default function ClinicalSummaryScreen() {
             <View style={[styles.testCard, { backgroundColor: '#F5F3FF', borderColor: '#A78BFA' }]}>
               <Text style={styles.testIcon}>👁️</Text>
               <View style={styles.testInfo}>
-                <Text style={styles.testName}>Vision Scan - Ocular Function</Text>
+                <Text style={styles.testName}>Vision Scan – Ocular Function Screening</Text>
                 <Text style={[styles.testResult, { 
                   color: summary.visionScan.test_data?.recommendsProfessionalExam ? '#B45309' : '#059669',
                   fontWeight: '600' 
                 }]}>
                   {summary.visionScan.test_data?.recommendsProfessionalExam 
                     ? '⚠️ Professional exam recommended'
-                    : '✓ No significant issues detected'}
+                    : '✓ No significant issues detected in screening'}
                 </Text>
                 <Text style={[styles.testResult, { fontSize: 12, marginTop: 4 }]}>
-                  {summary.visionScan.test_data?.screeningSummary || 'Mobile camera screening'}
+                  {summary.visionScan.test_data?.screeningSummary || 'Mobile camera wellness screening'}
                 </Text>
                 <Text style={[styles.testDate, { marginTop: 4 }]}>
                   Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
                 </Text>
                 <Text style={[styles.testDate, { fontSize: 10, marginTop: 2, fontStyle: 'italic' }]}>
-                  Mobile camera screening (alignment, motility, convergence)
+                  Wellness screening via mobile camera (alignment, motility, convergence)
                 </Text>
               </View>
             </View>
@@ -428,13 +429,13 @@ export default function ClinicalSummaryScreen() {
 
       {/* When to See an Optometrist */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>👁️ When to See an Optometrist</Text>
+        <Text style={styles.sectionTitle}>👁️ Professional Eye Care</Text>
         
         <View style={styles.guidanceCard}>
           <Text style={styles.guidanceIcon}>✓</Text>
           <View style={styles.guidanceContent}>
-            <Text style={styles.guidanceTitle}>Annual eye exams</Text>
-            <Text style={styles.guidanceText}>Recommended for everyone, even with good screening results.</Text>
+            <Text style={styles.guidanceTitle}>Annual comprehensive eye exams</Text>
+            <Text style={styles.guidanceText}>Recommended for everyone, even with good screening results. Screening does not replace professional care.</Text>
           </View>
         </View>
 
