@@ -20,6 +20,9 @@ import {
   CATCH_TRIAL_CONFIG,
   DEFAULT_SCREENING_LEVEL,
   PASS_REFER_CRITERIA,
+  AMBIENT_NOISE_REQUIREMENTS,
+  HEADPHONE_REQUIREMENTS,
+  SCREENING_BANNERS,
   createMethodologyString,
   createScreeningNote,
   type ScreeningFrequency,
@@ -453,29 +456,36 @@ export default function HearingTestScreen() {
           <Text style={styles.title}>Hearing Screening Test</Text>
           <Text style={styles.subtitle}>Basic pure-tone screening</Text>
 
-          <View style={styles.noticeBox}>
-            <Text style={styles.noticeTitle}>⚠️ Important Notice</Text>
+          <View style={[styles.noticeBox, { backgroundColor: '#FEF3C7', borderColor: '#FCD34D' }]}>
+            <Text style={styles.noticeTitle}>⚠️ {SCREENING_BANNERS.notDiagnostic.title}</Text>
             <Text style={styles.noticeText}>
-              This is a <Text style={styles.bold}>basic screening tool</Text>, not a diagnostic audiological examination.
-              It cannot replace professional hearing evaluation by a licensed audiologist.
+              {SCREENING_BANNERS.notDiagnostic.message}
+            </Text>
+          </View>
+
+          <View style={[styles.noticeBox, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}>
+            <Text style={[styles.noticeTitle, { color: '#991B1B' }]}>🔊 {SCREENING_BANNERS.calibrationLimitation.title}</Text>
+            <Text style={[styles.noticeText, { color: '#7F1D1D' }]}>
+              {SCREENING_BANNERS.calibrationLimitation.message}
             </Text>
           </View>
 
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Before You Begin:</Text>
-            <Text style={styles.infoItem}>✓ Use <Text style={styles.bold}>stereo headphones or earbuds</Text> (not speakers)</Text>
-            <Text style={styles.infoItem}>✓ Find a <Text style={styles.bold}>quiet environment</Text> with minimal background noise</Text>
+            <Text style={styles.infoItem}>✓ Use <Text style={styles.bold}>stereo headphones or earbuds</Text> (NOT speakers — required!)</Text>
+            <Text style={styles.infoItem}>✓ Find a <Text style={styles.bold}>QUIET environment</Text> with minimal background noise</Text>
             <Text style={styles.infoItem}>✓ Set your device volume to a <Text style={styles.bold}>comfortable level</Text></Text>
             <Text style={styles.infoItem}>✓ The test takes about <Text style={styles.bold}>3-5 minutes</Text></Text>
           </View>
 
           <View style={styles.howBox}>
             <Text style={styles.howTitle}>How It Works:</Text>
-            <Text style={styles.howItem}>1. We'll first check your headphones are connected correctly</Text>
-            <Text style={styles.howItem}>2. You'll set a comfortable volume level</Text>
-            <Text style={styles.howItem}>3. You'll listen for tones at different frequencies in each ear</Text>
-            <Text style={styles.howItem}>4. Tap "I Heard It" when you hear a tone</Text>
-            <Text style={styles.howItem}>5. Results provide a basic pass/refer screening outcome</Text>
+            <Text style={styles.howItem}>1. Verify your headphones are working correctly (left/right check)</Text>
+            <Text style={styles.howItem}>2. Confirm your environment is quiet enough for testing</Text>
+            <Text style={styles.howItem}>3. Set a comfortable volume level</Text>
+            <Text style={styles.howItem}>4. Listen for tones at different frequencies in each ear</Text>
+            <Text style={styles.howItem}>5. Tap "I Heard It" when you hear a tone (respond honestly!)</Text>
+            <Text style={styles.howItem}>6. Results provide a basic pass/refer screening outcome</Text>
           </View>
 
           <TouchableOpacity
@@ -494,12 +504,22 @@ export default function HearingTestScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.emoji}>🎧</Text>
-          <Text style={styles.title}>Headphone Check</Text>
-          <Text style={styles.subtitle}>Make sure your headphones are on correctly</Text>
+          <Text style={styles.title}>{HEADPHONE_REQUIREMENTS.title}</Text>
+          <Text style={styles.subtitle}>{HEADPHONE_REQUIREMENTS.description}</Text>
+
+          <View style={[styles.noticeBox, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}>
+            <Text style={[styles.noticeTitle, { color: '#991B1B' }]}>
+              🚫 {HEADPHONE_REQUIREMENTS.warningNote}
+            </Text>
+          </View>
 
           <View style={styles.checkBox}>
+            <Text style={[styles.checkText, { fontWeight: '600', marginBottom: 8 }]}>
+              Step 1: Test Each Ear Separately
+            </Text>
             <Text style={styles.checkText}>
-              Tap each button to hear a tone. Verify that you hear the tone in the correct ear.
+              Tap each button below. You should hear a tone ONLY in the indicated ear. 
+              If you hear the tone in both ears or the wrong ear, your headphones may be worn incorrectly.
             </Text>
 
             <View style={styles.buttonRow}>
@@ -508,29 +528,40 @@ export default function HearingTestScreen() {
                 onPress={() => playContinuousTone(1000, 'left', 1000)}
                 disabled={isPlaying}
               >
-                <Text style={styles.earButtonText}>← Left Ear</Text>
+                <Text style={styles.earButtonText}>← Test Left</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.earButton, styles.rightEarButton]}
                 onPress={() => playContinuousTone(1000, 'right', 1000)}
                 disabled={isPlaying}
               >
-                <Text style={styles.earButtonText}>Right Ear →</Text>
+                <Text style={styles.earButtonText}>Test Right →</Text>
               </TouchableOpacity>
             </View>
+          </View>
 
-            <Text style={styles.checkNote}>
-              ✓ Headphones are required for reliable left/right ear separation. Speakers will not provide accurate screening results.
-            </Text>
+          <View style={[styles.infoBox, { marginBottom: 16 }]}>
+            <Text style={[styles.infoTitle, { fontSize: 13 }]}>Step 2: Verify Headphone Fit</Text>
+            {HEADPHONE_REQUIREMENTS.instructions.map((instruction, idx) => (
+              <Text key={idx} style={styles.infoItem}>✓ {instruction}</Text>
+            ))}
+          </View>
+
+          <View style={[styles.howBox, { marginBottom: 16 }]}>
+            <Text style={[styles.howTitle, { fontSize: 12 }]}>Troubleshooting:</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Check headphone L/R markings and ensure they're worn correctly</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Verify your device's audio output is set to headphones</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Try a different pair of headphones or earbuds</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• On some devices, mono audio settings may need to be disabled</Text>
           </View>
 
           <View style={styles.centerContent}>
-            <Text style={styles.questionText}>Heard the correct tones in each ear?</Text>
+            <Text style={[styles.questionText, { fontWeight: '600' }]}>✓ I verified the correct tone plays in each ear</Text>
             <TouchableOpacity
               style={styles.continueButton}
               onPress={handleHeadphoneCheckPass}
             >
-              <Text style={styles.continueButtonText}>Yes, Continue</Text>
+              <Text style={styles.continueButtonText}>Headphones Verified, Continue</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -543,41 +574,57 @@ export default function HearingTestScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.emoji}>🔇</Text>
-          <Text style={styles.title}>Ambient Noise Check</Text>
+          <Text style={styles.title}>{AMBIENT_NOISE_REQUIREMENTS.title}</Text>
           <Text style={styles.subtitle}>Ensure a quiet testing environment</Text>
 
-          <View style={styles.noticeBox}>
-            <Text style={styles.noticeTitle}>⚠️ Environmental Requirements</Text>
+          <View style={[styles.noticeBox, { backgroundColor: '#FEF3C7', borderColor: '#FCD34D' }]}>
+            <Text style={styles.noticeTitle}>⚠️ {AMBIENT_NOISE_REQUIREMENTS.title}</Text>
             <Text style={styles.noticeText}>
-              Clinical screening protocols require ambient noise levels below 50 dB for reliable results. 
-              Background noise can mask tones and cause false failures.
+              {AMBIENT_NOISE_REQUIREMENTS.description}
             </Text>
           </View>
 
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Before proceeding, ensure:</Text>
-            <Text style={styles.infoItem}>✓ You are in a <Text style={styles.bold}>quiet room</Text> away from traffic, conversations, or machinery</Text>
-            <Text style={styles.infoItem}>✓ Windows and doors are closed to reduce external noise</Text>
-            <Text style={styles.infoItem}>✓ Fans, air conditioning, or other noise sources are off if possible</Text>
-            <Text style={styles.infoItem}>✓ You are not in a busy environment (cafeteria, hallway, open office)</Text>
-            <Text style={styles.infoItem}>✓ Phone notifications and other devices are silenced</Text>
+            {AMBIENT_NOISE_REQUIREMENTS.checklist.map((item, idx) => (
+              <Text key={idx} style={styles.infoItem}>✓ {item}</Text>
+            ))}
           </View>
 
-          <View style={[styles.infoBox, { backgroundColor: '#EFF6FF' }]}>
-            <Text style={[styles.infoItem, { fontSize: 11, color: '#1E3A8A' }]}>
-              <Text style={styles.bold}>Note:</Text> This screening cannot measure actual ambient noise levels. You are attesting that your environment meets the quiet conditions described above.
+          <View style={[styles.noticeBox, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' }]}>
+            <Text style={[styles.noticeTitle, { color: '#991B1B' }]}>
+              🚫 {AMBIENT_NOISE_REQUIREMENTS.warningNote}
             </Text>
           </View>
 
+          <View style={[styles.infoBox, { backgroundColor: '#EFF6FF' }]}>
+            <Text style={[styles.infoTitle, { color: '#1E3A8A', fontSize: 12 }]}>
+              💡 Why This Matters
+            </Text>
+            <Text style={[styles.infoItem, { fontSize: 11, color: '#1E3A8A' }]}>
+              {AMBIENT_NOISE_REQUIREMENTS.whyItMatters}
+            </Text>
+          </View>
+
+          <View style={[styles.howBox, { marginBottom: 16 }]}>
+            <Text style={[styles.howTitle, { fontSize: 12 }]}>Common noise sources that invalidate results:</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• HVAC / air conditioning hum (continuous background)</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Computer fans or hard drive noise</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Refrigerator compressor cycling</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Distant traffic or outdoor construction</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Conversations in adjacent rooms</Text>
+            <Text style={[styles.howItem, { fontSize: 11 }]}>• Wind noise through windows or vents</Text>
+          </View>
+
           <View style={styles.centerContent}>
-            <Text style={[styles.questionText, { fontWeight: '600' }]}>
-              I am in a quiet environment suitable for hearing screening
+            <Text style={[styles.questionText, { fontWeight: '600', fontSize: 13, textAlign: 'center' }]}>
+              {AMBIENT_NOISE_REQUIREMENTS.attestation}
             </Text>
             <TouchableOpacity
               style={styles.continueButton}
               onPress={handleAmbientNoiseConfirm}
             >
-              <Text style={styles.continueButtonText}>✓ Confirm & Continue</Text>
+              <Text style={styles.continueButtonText}>✓ Environment Verified, Continue</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -593,14 +640,23 @@ export default function HearingTestScreen() {
           <Text style={styles.title}>Volume Calibration</Text>
           <Text style={styles.subtitle}>Set to a comfortable listening level</Text>
 
+          <View style={[styles.noticeBox, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', marginBottom: 16 }]}>
+            <Text style={[styles.noticeTitle, { color: '#991B1B' }]}>
+              🔊 {SCREENING_BANNERS.calibrationLimitation.title}
+            </Text>
+            <Text style={[styles.noticeText, { color: '#7F1D1D' }]}>
+              {SCREENING_BANNERS.calibrationLimitation.message}
+            </Text>
+          </View>
+
           <View style={styles.calibrationBox}>
             <Text style={styles.calibrationText}>
               Adjust the volume slider until the tone is <Text style={styles.bold}>clearly audible but comfortable</Text>.
-              Not too loud, not too soft.
+              Not too loud, not too soft. The test tone should be easily heard in a quiet room.
             </Text>
 
             <View style={styles.volumeControl}>
-              <Text style={styles.volumeLabel}>Volume: {Math.round(volumeLevel * 100)}%</Text>
+              <Text style={styles.volumeLabel}>Relative Volume Level: {Math.round(volumeLevel * 100)}%</Text>
               <Slider
                 style={styles.slider}
                 minimumValue={0.05}
@@ -612,6 +668,10 @@ export default function HearingTestScreen() {
                 maximumTrackTintColor="#E5E7EB"
                 thumbTintColor="#14B8A6"
               />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                <Text style={{ fontSize: 10, color: '#6B7280' }}>Softer</Text>
+                <Text style={{ fontSize: 10, color: '#6B7280' }}>Louder</Text>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -623,17 +683,23 @@ export default function HearingTestScreen() {
                 {isPlaying ? '🔊 Playing...' : '▶ Play Test Tone (1000 Hz)'}
               </Text>
             </TouchableOpacity>
+          </View>
 
-            <Text style={styles.calibrationNote}>
-              Note: The actual screening uses a soft tone. Set volume so you can hear soft tones clearly in a quiet room.
+          <View style={[styles.infoBox, { backgroundColor: '#FEF3C7', borderColor: '#FCD34D', marginBottom: 16 }]}>
+            <Text style={[styles.infoTitle, { color: '#92400E', fontSize: 12 }]}>
+              💡 Calibration Guidance
             </Text>
+            <Text style={[styles.infoItem, { color: '#78350F', fontSize: 11 }]}>✓ The actual screening uses brief pulsed tones at this volume</Text>
+            <Text style={[styles.infoItem, { color: '#78350F', fontSize: 11 }]}>✓ Set volume so you can hear soft tones clearly in your quiet room</Text>
+            <Text style={[styles.infoItem, { color: '#78350F', fontSize: 11 }]}>✓ Avoid setting too loud—can cause discomfort or mask hearing issues</Text>
+            <Text style={[styles.infoItem, { color: '#78350F', fontSize: 11 }]}>✓ If you can't hear at max volume, your device may not support screening</Text>
           </View>
 
           <TouchableOpacity
             style={styles.startButton}
             onPress={handleCalibrationComplete}
           >
-            <Text style={styles.startButtonText}>Volume Set, Start Test</Text>
+            <Text style={styles.startButtonText}>Volume Calibrated, Start Screening</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -734,70 +800,174 @@ export default function HearingTestScreen() {
           <Text style={styles.title}>Screening Complete!</Text>
           <Text style={styles.subtitle}>{saving ? 'Saving results...' : 'Your results have been saved'}</Text>
 
+          {/* Calibration Banner Reminder */}
+          <View style={[styles.noticeBox, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', marginBottom: 16 }]}>
+            <Text style={[styles.noticeTitle, { color: '#991B1B' }]}>
+              🔊 {SCREENING_BANNERS.calibrationLimitation.title}
+            </Text>
+            <Text style={[styles.noticeText, { color: '#7F1D1D' }]}>
+              {SCREENING_BANNERS.calibrationLimitation.message}
+            </Text>
+          </View>
+
           <View style={[styles.statusBox, summary.passed ? styles.passBox : styles.referBox]}>
             <Text style={[styles.statusText, summary.passed ? styles.passText : styles.referText]}>
               {summary.passed ? 'PASS' : 'REFER'}
             </Text>
+            <Text style={[styles.statusDesc, summary.passed ? { color: '#065F46', fontWeight: '600' } : { color: '#92400E', fontWeight: '600' }]}>
+              {summary.passed ? PASS_REFER_CRITERIA.passDefinition : PASS_REFER_CRITERIA.referDefinition}
+            </Text>
             <Text style={[styles.statusDesc, summary.passed ? styles.passDesc : styles.referDesc]}>
               {summary.passed
-                ? 'Screening passed. Heard all frequencies in both ears.'
-                : 'Screening incomplete or missed frequency detected. Audiological follow-up recommended.'}
+                ? 'All screening frequencies detected at test volume in both ears.'
+                : 'One or more screening tones were not detected. Follow-up with a licensed audiologist is recommended.'}
+            </Text>
+          </View>
+
+          {/* Results Interpretation Banner */}
+          <View style={[styles.infoBox, { marginBottom: 16 }]}>
+            <Text style={[styles.infoTitle, { fontSize: 12 }]}>
+              📊 {SCREENING_BANNERS.resultsInterpretation.title}
+            </Text>
+            <Text style={[styles.infoItem, { fontSize: 11 }]}>
+              {SCREENING_BANNERS.resultsInterpretation.message}
             </Text>
           </View>
 
           <View style={styles.earResults}>
-            <View style={styles.earResultCard}>
+            <View style={[styles.earResultCard, { borderWidth: 2, borderColor: '#A78BFA' }]}>
               <Text style={styles.earResultLabel}>← Left Ear</Text>
               <Text style={styles.earResultScore}>
                 {summary.leftEarPassCount}/{summary.totalFrequencies}
               </Text>
-              <Text style={styles.earResultText}>Frequencies passed</Text>
+              <Text style={styles.earResultText}>Frequencies detected</Text>
+              <Text style={[styles.earResultText, { fontWeight: '700', marginTop: 4, color: summary.leftEarPassCount >= summary.totalFrequencies ? '#16A34A' : '#DC2626' }]}>
+                {summary.leftEarPassCount >= summary.totalFrequencies ? '✓ PASS' : '✗ REFER'}
+              </Text>
             </View>
 
-            <View style={styles.earResultCard}>
+            <View style={[styles.earResultCard, { borderWidth: 2, borderColor: '#818CF8' }]}>
               <Text style={styles.earResultLabel}>Right Ear →</Text>
               <Text style={styles.earResultScore}>
                 {summary.rightEarPassCount}/{summary.totalFrequencies}
               </Text>
-              <Text style={styles.earResultText}>Frequencies passed</Text>
+              <Text style={styles.earResultText}>Frequencies detected</Text>
+              <Text style={[styles.earResultText, { fontWeight: '700', marginTop: 4, color: summary.rightEarPassCount >= summary.totalFrequencies ? '#16A34A' : '#DC2626' }]}>
+                {summary.rightEarPassCount >= summary.totalFrequencies ? '✓ PASS' : '✗ REFER'}
+              </Text>
             </View>
           </View>
 
-          <View style={styles.freqBox}>
-            <Text style={styles.freqTitle}>Frequency Results</Text>
-            {summary.frequencyResults.map(result => (
-              <View key={result.frequency} style={styles.freqRow}>
-                <Text style={styles.freqLabel}>{result.frequency} Hz</Text>
-                <View style={styles.freqResults}>
-                  <Text style={result.leftEarPassed ? styles.freqPass : styles.freqFail}>
-                    Left: {result.leftEarPassed ? '✓' : '✗'}
-                  </Text>
-                  <Text style={result.rightEarPassed ? styles.freqPass : styles.freqFail}>
-                    Right: {result.rightEarPassed ? '✓' : '✗'}
-                  </Text>
+          {/* Enhanced Frequency Grid */}
+          <View style={[styles.freqBox, { borderWidth: 2, borderColor: '#D1D5DB' }]}>
+            <Text style={[styles.freqTitle, { textAlign: 'center', marginBottom: 8 }]}>
+              Frequency Results — ASHA Screening Grid
+            </Text>
+            <Text style={{ fontSize: 10, color: '#6B7280', textAlign: 'center', marginBottom: 12 }}>
+              {PASS_REFER_CRITERIA.description}
+            </Text>
+
+            {summary.frequencyResults.map(result => {
+              const importance = PASS_REFER_CRITERIA.frequencyImportance[result.frequency as keyof typeof PASS_REFER_CRITERIA.frequencyImportance]
+              return (
+                <View key={result.frequency} style={[styles.freqRow, { marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.freqLabel, { fontSize: 16, fontWeight: '700' }]}>
+                      {result.frequency} Hz
+                    </Text>
+                    <Text style={{ fontSize: 9, color: '#6B7280', marginTop: 2 }}>
+                      {importance}
+                    </Text>
+                  </View>
+                  <View style={styles.freqResults}>
+                    <View style={{
+                      backgroundColor: result.leftEarPassed ? '#D1FAE5' : '#FEE2E2',
+                      paddingVertical: 6,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+                      marginRight: 8,
+                      minWidth: 65,
+                    }}>
+                      <Text style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        color: result.leftEarPassed ? '#065F46' : '#991B1B',
+                        textAlign: 'center',
+                      }}>
+                        {result.leftEarPassed ? '✓ PASS' : '✗ MISS'}
+                      </Text>
+                      <Text style={{
+                        fontSize: 9,
+                        color: result.leftEarPassed ? '#047857' : '#DC2626',
+                        textAlign: 'center',
+                      }}>
+                        Left
+                      </Text>
+                    </View>
+                    <View style={{
+                      backgroundColor: result.rightEarPassed ? '#D1FAE5' : '#FEE2E2',
+                      paddingVertical: 6,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+                      minWidth: 65,
+                    }}>
+                      <Text style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        color: result.rightEarPassed ? '#065F46' : '#991B1B',
+                        textAlign: 'center',
+                      }}>
+                        {result.rightEarPassed ? '✓ PASS' : '✗ MISS'}
+                      </Text>
+                      <Text style={{
+                        fontSize: 9,
+                        color: result.rightEarPassed ? '#047857' : '#DC2626',
+                        textAlign: 'center',
+                      }}>
+                        Right
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            ))}
+              )
+            })}
           </View>
 
           {falsePositiveCount > 0 && (
             <View style={[styles.noticeBox, { backgroundColor: '#FEF3C7', borderColor: '#FCD34D', marginBottom: 16 }]}>
-              <Text style={[styles.disclaimerText, { color: '#92400E' }]}>
-                <Text style={styles.bold}>Response Reliability Note:</Text> You responded "heard" on {falsePositiveCount} silent catch trial(s). 
-                This may indicate guessing or difficulty maintaining attention. Consider retesting in a quieter environment 
-                or consulting an audiologist for comprehensive evaluation.
+              <Text style={[styles.noticeTitle, { color: '#92400E' }]}>
+                ⚠️ Response Reliability Alert
+              </Text>
+              <Text style={[styles.disclaimerText, { color: '#78350F' }]}>
+                You responded "heard" on {falsePositiveCount} silent catch trial(s) out of {catchTrialCount} total.
+                This may indicate guessing, difficulty maintaining attention, or external noise interference.
+                Consider retesting in a quieter environment or consulting an audiologist.
               </Text>
             </View>
           )}
 
-          <View style={styles.disclaimerBox}>
+          {!summary.passed && (
+            <View style={[styles.infoBox, { marginBottom: 16 }]}>
+              <Text style={[styles.infoTitle, { fontSize: 12 }]}>
+                👨‍⚕️ {SCREENING_BANNERS.requiresAudiologist.title}
+              </Text>
+              <Text style={[styles.infoItem, { fontSize: 11 }]}>
+                {SCREENING_BANNERS.requiresAudiologist.message}
+              </Text>
+            </View>
+          )}
+
+          <View style={[styles.disclaimerBox, { borderWidth: 2, borderColor: '#FCA5A5' }]}>
+            <Text style={[styles.disclaimerText, { fontWeight: '700', marginBottom: 8 }]}>
+              SCREENING PROTOCOL — NOT DIAGNOSTIC AUDIOMETRY
+            </Text>
             <Text style={styles.disclaimerText}>
-              <Text style={styles.bold}>SCREENING PROTOCOL — NOT DIAGNOSTIC AUDIOMETRY:</Text> This test follows clinical pure-tone screening 
-              methodology (pulsed tones, standard frequencies, catch trials) but uses relative device volumes, 
-              <Text style={styles.bold}> NOT calibrated dB HL</Text>. Results indicate relative hearing sensitivity and screening pass/refer 
-              outcomes only, not absolute audiometric thresholds. This is <Text style={styles.bold}>NOT</Text> a diagnostic audiological 
-              examination. For diagnostic audiometry with calibrated equipment (ANSI S3.6, ISO 8253), threshold determination, 
-              bone conduction, tympanometry, otoacoustic emissions, or speech audiometry, consult a licensed audiologist.
+              This test follows clinical pure-tone screening methodology (pulsed tones, standard frequencies, catch trials)
+              but uses relative device volumes, <Text style={styles.bold}>NOT calibrated dB HL</Text>. Results indicate
+              relative hearing sensitivity and screening pass/refer outcomes only, not absolute audiometric thresholds.
+              This is <Text style={styles.bold}>NOT</Text> a diagnostic audiological examination. For diagnostic audiometry with
+              calibrated equipment (ANSI S3.6, ISO 8253), threshold determination, bone conduction, tympanometry, otoacoustic
+              emissions, or speech audiometry, consult a licensed audiologist.
             </Text>
           </View>
 

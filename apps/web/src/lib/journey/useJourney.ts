@@ -54,7 +54,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     name: 'Hearing Screening',
     icon: '🎧',
     duration: '3-5 min',
-    why: 'Basic pure-tone hearing screening at key frequencies with stereo testing',
+    why: 'Pure-tone hearing screening at key frequencies (500, 1000, 2000, 4000 Hz) following ASHA guidelines. Requires stereo headphones and quiet environment. Provides pass/refer screening outcome.',
     requires: [],
     category: 'recommended',
     route: '/tests/hearing'
