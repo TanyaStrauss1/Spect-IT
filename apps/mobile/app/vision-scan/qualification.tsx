@@ -1,26 +1,66 @@
 /**
- * Device & Environment Qualification Screen
+ * Device & Environment Qualification Screen with Live Camera
  */
 
-import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { router } from 'expo-router'
+import { Camera, CameraType } from 'expo-camera'
+import * as FaceDetector from 'expo-face-detector'
 import { DeviceQualifier, type DeviceQualification, type CapabilityMatrix } from '@spect-it/cv'
+import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
+import { requestCameraPermission, type DetectedFace } from '../../lib/vision-scan/camera-utils'
 
 export default function QualificationScreen() {
+  const { setDeviceQualification } = useVisionScan()
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
+  const [isQualifying, setIsQualifying] = useState(false)
   const [qualification, setQualification] = useState<DeviceQualification | null>(null)
   const [capabilityMatrix, setCapabilityMatrix] = useState<CapabilityMatrix | null>(null)
-  const [isQualifying, setIsQualifying] = useState(true)
+  const [faceDetected, setFaceDetected] = useState(false)
+  const cameraRef = useRef<Camera>(null)
 
   useEffect(() => {
-    runQualification()
+    setupCamera()
   }, [])
+
+  const setupCamera = async () => {
+    const granted = await requestCameraPermission()
+    setHasPermission(granted)
+    
+    if (!granted) {
+      Alert.alert(
+        'Camera Permission Required',
+        'Vision Scan requires camera access to assess your eye function. Please grant camera permission in settings.',
+        [{ text: 'OK' }]
+      )
+    } else {
+      // Auto-start qualification after a short delay
+      setTimeout(() => {
+        runQualification()
+      }, 1500)
+    }
+  }
+
+  const handleFacesDetected = ({ faces }: { faces: any[] }) => {
+    setFaceDetected(faces.length > 0)
+  }
 
   const runQualification = async () => {
     setIsQualifying(true)
 
     const capability = await DeviceQualifier.assessCapabilities()
+    
+    // Give time for face detection to stabilize
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
     const result = await DeviceQualifier.qualify(capability)
+
+    // Adjust scores based on face detection
+    if (!faceDetected) {
+      result.distanceScore = Math.min(result.distanceScore, 40)
+      result.warnings.push('Face not detected. Ensure your face is visible in the camera.')
+    }
 
     const matrix: CapabilityMatrix = {
       mode: result.useSensorBasedMeasurements ? 'full' : 'degraded',
@@ -44,6 +84,7 @@ export default function QualificationScreen() {
 
     setQualification(result)
     setCapabilityMatrix(matrix)
+    setDeviceQualification(result)
     setIsQualifying(false)
   }
 
@@ -54,14 +95,65 @@ export default function QualificationScreen() {
   }
 
   const handleRetry = () => {
+    setQualification(null)
+    setCapabilityMatrix(null)
+    setFaceDetected(false)
     runQualification()
+  }
+
+  if (hasPermission === null) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+        <Text style={styles.loadingText}>Requesting camera permission...</Text>
+      </View>
+    )
+  }
+
+  if (hasPermission === false) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorIcon}>⚠️</Text>
+        <Text style={styles.errorTitle}>Camera Permission Denied</Text>
+        <Text style={styles.errorText}>
+          Vision Scan requires camera access to function. Please enable camera permission in your device settings.
+        </Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    )
   }
 
   if (isQualifying || !qualification || !capabilityMatrix) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={styles.loadingText}>Qualifying device and environment...</Text>
+        <View style={styles.cameraContainer}>
+          <Camera
+            ref={cameraRef}
+            style={styles.camera}
+            type={CameraType.front}
+            onFacesDetected={handleFacesDetected}
+            faceDetectorSettings={{
+              mode: FaceDetector.FaceDetectorMode.fast,
+              detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
+              runClassifications: FaceDetector.FaceDetectorClassifications.none,
+            }}
+          />
+          <View style={styles.overlay}>
+            <View style={styles.faceGuide} />
+            {faceDetected && (
+              <View style={styles.faceDetectedBadge}>
+                <Text style={styles.faceDetectedText}>✓ Face Detected</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <View style={styles.qualifyingOverlay}>
+          <ActivityIndicator size="large" color="#4F46E5" />
+          <Text style={styles.qualifyingText}>Qualifying device and environment...</Text>
+          <Text style={styles.qualifyingSubtext}>Position your face in the frame</Text>
+        </View>
       </View>
     )
   }
@@ -112,19 +204,22 @@ export default function QualificationScreen() {
           <Text style={styles.capabilityNote}>
             {capabilityMatrix.mode === 'full'
               ? 'Using sensor-based measurements for highest accuracy.'
-              : 'Using estimated measurements. Results are screening-level only.'}
+              : 'Using camera + face detection with estimated measurements. No TrueDepth/LiDAR detected.'}
           </Text>
           
           <View style={styles.featureList}>
-            <Text style={styles.featureTitle}>Sensor Status:</Text>
+            <Text style={styles.featureTitle}>Live Camera Status:</Text>
+            <Text style={styles.feature}>
+              Camera: ✓ Active
+            </Text>
+            <Text style={styles.feature}>
+              Face Detection: {faceDetected ? '✓ Working' : '○ Not detected'}
+            </Text>
             <Text style={styles.feature}>
               Depth: {capabilityMatrix.features.depthMeasurement === 'sensor' ? '✓ Sensor' : '○ Estimated'}
             </Text>
             <Text style={styles.feature}>
-              Gaze: {capabilityMatrix.features.gazeTracking === 'sensor' ? '✓ Sensor' : '○ Estimated'}
-            </Text>
-            <Text style={styles.feature}>
-              Head Pose: {capabilityMatrix.features.headPose === 'sensor' ? '✓ Sensor' : '○ Estimated'}
+              Gaze: {capabilityMatrix.features.gazeTracking === 'sensor' ? '✓ Sensor' : '○ Estimated (face-based)'}
             </Text>
           </View>
         </View>
@@ -169,16 +264,81 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#EEF2FF',
+  },
+  cameraContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  camera: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
-    padding: 20,
+    alignItems: 'center',
+  },
+  faceGuide: {
+    width: 250,
+    height: 320,
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 125,
+    borderStyle: 'dashed',
+  },
+  faceDetectedBadge: {
+    position: 'absolute',
+    top: 40,
+    backgroundColor: '#10B981',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  faceDetectedText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  qualifyingOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(31, 41, 55, 0.95)',
+    padding: 24,
+    alignItems: 'center',
+  },
+  qualifyingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
+  },
+  qualifyingSubtext: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#9CA3AF',
   },
   content: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
     alignItems: 'center',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
     color: '#6B7280',
+  },
+  errorIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 16,
+    textAlign: 'center',
   },
   icon: {
     fontSize: 64,
@@ -248,6 +408,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     marginBottom: 16,
+    lineHeight: 20,
   },
   featureList: {
     gap: 6,

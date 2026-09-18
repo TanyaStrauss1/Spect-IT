@@ -7,9 +7,16 @@
 
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { router } from 'expo-router'
+import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
+import { useParticipant } from '../../lib/participants/participant-context'
 
 export default function VisionScanHome() {
+  const { startSession, resetSession } = useVisionScan()
+  const { activeParticipant } = useParticipant()
+
   const handleStart = () => {
+    resetSession() // Clear any previous session
+    startSession(activeParticipant?.id || null)
     router.push('/vision-scan/qualification')
   }
 

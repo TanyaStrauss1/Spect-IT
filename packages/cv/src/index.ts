@@ -184,5 +184,8 @@ export {
   type VisionScanResult,
   type CapabilityMode,
   type CapabilityMatrix,
+  type VisionScanSessionState,
+  type VisionScanSessionActions,
+  type VisionScanSession,
 } from './vision-scan'
 

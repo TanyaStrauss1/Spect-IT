@@ -5,6 +5,7 @@
  */
 
 export * from './types'
+export * from './session-types'
 export { DeviceQualifier } from './device-qualifier'
 export { VisionScanCalibrator } from './calibrator'
 export { AlignmentTracker } from './alignment-tracker'

@@ -1,54 +1,111 @@
 /**
- * Resting Alignment / Central Fixation Screen
+ * Resting Alignment / Central Fixation Screen with Live Camera
  */
 
-import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native'
 import { router } from 'expo-router'
+import { Camera, CameraType } from 'expo-camera'
+import * as FaceDetector from 'expo-face-detector'
 import { AlignmentTracker, type AlignmentFrame, type AlignmentResult } from '@spect-it/cv'
+import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
+import {
+  type DetectedFace,
+  computeHeadPose,
+  estimateFaceDistance,
+  estimateGazeDeviation,
+} from '../../lib/vision-scan/camera-utils'
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function AlignmentScreen() {
-  const [tracker] = useState(() => new AlignmentTracker(true))
+  const { deviceQualification, setAlignment, recordRepeatAttempt } = useVisionScan()
+  const [tracker] = useState(() => new AlignmentTracker(deviceQualification?.useSensorBasedMeasurements || false))
   const [frameCount, setFrameCount] = useState(0)
   const [isCapturing, setIsCapturing] = useState(true)
   const [result, setResult] = useState<AlignmentResult | null>(null)
+  const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
+  const cameraRef = useRef<Camera>(null)
   const targetFrames = 30
 
   useEffect(() => {
-    if (isCapturing && frameCount < targetFrames) {
+    if (isCapturing && frameCount < targetFrames && detectedFace) {
       const interval = setInterval(() => {
-        const frame: AlignmentFrame = {
-          timestamp: Date.now(),
-          leftEye: {
-            x: (Math.random() - 0.5) * 5,
-            y: (Math.random() - 0.5) * 5,
-            z: 500,
-          },
-          rightEye: {
-            x: (Math.random() - 0.5) * 5,
-            y: (Math.random() - 0.5) * 5,
-            z: 500,
-          },
-          headPose: { pitch: 0, yaw: 0, roll: 0 },
-          faceDistance: 500,
-          gazeDeviation: {
-            left: (Math.random() - 0.5) * 4,
-            right: (Math.random() - 0.5) * 4,
-          },
-          quality: 0.8 + Math.random() * 0.2,
-        }
-
-        tracker.addFrame(frame)
-        setFrameCount((prev) => prev + 1)
+        captureFrame()
       }, 100)
 
       return () => clearInterval(interval)
     } else if (frameCount >= targetFrames && isCapturing) {
       const alignmentResult = tracker.computeResult()
       setResult(alignmentResult)
+      setAlignment(alignmentResult)
       setIsCapturing(false)
     }
-  }, [isCapturing, frameCount])
+  }, [isCapturing, frameCount, detectedFace])
+
+  const handleFacesDetected = ({ faces }: { faces: any[] }) => {
+    if (faces.length > 0) {
+      const face = faces[0]
+      setDetectedFace({
+        bounds: face.bounds,
+        leftEye: face.leftEyePosition,
+        rightEye: face.rightEyePosition,
+        rollAngle: face.rollAngle,
+        yawAngle: face.yawAngle,
+      })
+    } else {
+      setDetectedFace(null)
+    }
+  }
+
+  const captureFrame = () => {
+    if (!detectedFace) return
+
+    const targetX = screenWidth / 2
+    const targetY = screenHeight / 2
+
+    const gazeDeviation = estimateGazeDeviation(
+      detectedFace.leftEye,
+      detectedFace.rightEye,
+      detectedFace.bounds,
+      targetX,
+      targetY
+    )
+
+    const headPose = computeHeadPose(detectedFace)
+    const faceDistance = estimateFaceDistance(detectedFace.bounds, screenWidth)
+
+    // Estimate eye positions in 3D (simplified)
+    const faceCenterX = detectedFace.bounds.x + detectedFace.bounds.width / 2
+    const leftEyeX = (detectedFace.leftEye?.x || faceCenterX - 20) - targetX
+    const leftEyeY = (detectedFace.leftEye?.y || detectedFace.bounds.y + detectedFace.bounds.height * 0.4) - targetY
+    const rightEyeX = (detectedFace.rightEye?.x || faceCenterX + 20) - targetX
+    const rightEyeY = (detectedFace.rightEye?.y || detectedFace.bounds.y + detectedFace.bounds.height * 0.4) - targetY
+
+    // Convert pixel deviations to approximate degrees (rough estimate)
+    const pixelToDegree = 0.05 // Approximate conversion factor
+
+    const frame: AlignmentFrame = {
+      timestamp: Date.now(),
+      leftEye: {
+        x: leftEyeX * pixelToDegree,
+        y: leftEyeY * pixelToDegree,
+        z: faceDistance,
+      },
+      rightEye: {
+        x: rightEyeX * pixelToDegree,
+        y: rightEyeY * pixelToDegree,
+        z: faceDistance,
+      },
+      headPose,
+      faceDistance,
+      gazeDeviation,
+      quality: detectedFace.bounds.width > screenWidth * 0.25 ? 0.8 : 0.5,
+    }
+
+    tracker.addFrame(frame)
+    setFrameCount((prev) => prev + 1)
+  }
 
   const handleContinue = () => {
     router.push('/vision-scan/motility')
@@ -56,6 +113,7 @@ export default function AlignmentScreen() {
 
   const handleRetry = () => {
     tracker.reset()
+    recordRepeatAttempt('alignment')
     setFrameCount(0)
     setIsCapturing(true)
     setResult(null)
@@ -88,6 +146,12 @@ export default function AlignmentScreen() {
                 </Text>
               </View>
             </View>
+
+            <View style={styles.methodNote}>
+              <Text style={styles.methodText}>
+                Method: {result.usedSensorData ? 'Sensor-based' : 'Face detection estimate'}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.noteCard}>
@@ -114,7 +178,19 @@ export default function AlignmentScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.captureContainer}>
+      <Camera
+        ref={cameraRef}
+        style={styles.camera}
+        type={CameraType.front}
+        onFacesDetected={handleFacesDetected}
+        faceDetectorSettings={{
+          mode: FaceDetector.FaceDetectorMode.accurate,
+          detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
+          runClassifications: FaceDetector.FaceDetectorClassifications.none,
+        }}
+      />
+
+      <View style={styles.overlay}>
         <View style={styles.instructions}>
           <Text style={styles.instructionText}>
             Look at the center dot. Keep your head still.
@@ -122,14 +198,19 @@ export default function AlignmentScreen() {
           <Text style={styles.progressText}>
             Capturing alignment... {frameCount}/{targetFrames}
           </Text>
+          {!detectedFace && (
+            <Text style={styles.warningText}>⚠️ Face not detected</Text>
+          )}
         </View>
 
         <View style={styles.fixationArea}>
           <View style={styles.fixationDot} />
         </View>
 
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          </View>
         </View>
       </View>
     </View>
@@ -141,14 +222,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1F2937',
   },
-  captureContainer: {
-    flex: 1,
+  camera: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
   },
   instructions: {
     padding: 20,
     alignItems: 'center',
-    backgroundColor: '#374151',
+    backgroundColor: 'rgba(55, 65, 81, 0.95)',
   },
   instructionText: {
     fontSize: 18,
@@ -159,6 +243,11 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 14,
     color: '#9CA3AF',
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#F59E0B',
+    marginTop: 4,
   },
   fixationArea: {
     flex: 1,
@@ -173,10 +262,12 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'white',
   },
+  progressBarContainer: {
+    padding: 20,
+  },
   progressBar: {
     height: 8,
     backgroundColor: '#374151',
-    margin: 20,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -189,6 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#1F2937',
   },
   icon: {
     fontSize: 64,
@@ -226,6 +318,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-around',
+    marginBottom: 16,
   },
   deviationCol: {
     alignItems: 'center',
@@ -239,6 +332,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: 'white',
+  },
+  methodNote: {
+    width: '100%',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#4B5563',
+  },
+  methodText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
   noteCard: {
     width: '100%',

@@ -2,66 +2,120 @@
  * 9-Position Ocular Motility Screen
  */
 
-import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { useState, useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, Dimensions } from 'react-native'
 import { router } from 'expo-router'
+import { Camera, CameraType } from 'expo-camera'
+import * as FaceDetector from 'expo-face-detector'
 import { MotilityTracker, type GazePosition, type MotilityFrame } from '@spect-it/cv'
+import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
+import { type DetectedFace, computeHeadPose, estimateFaceDistance } from '../../lib/vision-scan/camera-utils'
+
+const { width: screenWidth } = Dimensions.get('window')
 
 export default function MotilityScreen() {
-  const [tracker] = useState(() => new MotilityTracker(true))
+  const { deviceQualification, setMotility } = useVisionScan()
+  const [tracker] = useState(() => new MotilityTracker(deviceQualification?.useSensorBasedMeasurements || false))
   const [sequence] = useState(MotilityTracker.getGazeSequence())
   const [currentIndex, setCurrentIndex] = useState(0)
   const [frameCount, setFrameCount] = useState(0)
+  const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
+  const [lastFacePosition, setLastFacePosition] = useState<{ x: number; y: number } | null>(null)
+  const cameraRef = useRef<Camera>(null)
   const framesPerPosition = 10
 
   const currentPosition = sequence[currentIndex]
 
   useEffect(() => {
-    if (currentIndex < sequence.length) {
+    if (currentIndex < sequence.length && detectedFace) {
       const interval = setInterval(() => {
-        const frame: MotilityFrame = {
-          timestamp: Date.now(),
-          targetPosition: currentPosition,
-          leftEye: {
-            x: getPositionCoord(currentPosition).x + (Math.random() - 0.5) * 2,
-            y: getPositionCoord(currentPosition).y + (Math.random() - 0.5) * 2,
-            z: 500,
-          },
-          rightEye: {
-            x: getPositionCoord(currentPosition).x + (Math.random() - 0.5) * 2,
-            y: getPositionCoord(currentPosition).y + (Math.random() - 0.5) * 2,
-            z: 500,
-          },
-          headMotion: {
-            pitch: (Math.random() - 0.5) * 3,
-            yaw: (Math.random() - 0.5) * 3,
-            roll: (Math.random() - 0.5) * 2,
-          },
-          headDisplacement: Math.random() * 30,
-          quality: 0.8 + Math.random() * 0.2,
-          rejected: false,
-        }
-
-        tracker.addFrame(frame)
-        setFrameCount((prev) => prev + 1)
-
-        if (frameCount >= framesPerPosition - 1) {
-          setFrameCount(0)
-          if (currentIndex < sequence.length - 1) {
-            setCurrentIndex(currentIndex + 1)
-          } else {
-            const result = tracker.computeResult()
-            router.push({
-              pathname: '/vision-scan/convergence',
-              params: { motilityComplete: 'true' },
-            })
-          }
-        }
+        captureFrame()
       }, 150)
 
       return () => clearInterval(interval)
     }
-  }, [currentIndex, frameCount])
+  }, [currentIndex, frameCount, detectedFace])
+
+  const handleFacesDetected = ({ faces }: { faces: any[] }) => {
+    if (faces.length > 0) {
+      const face = faces[0]
+      setDetectedFace({
+        bounds: face.bounds,
+        leftEye: face.leftEyePosition,
+        rightEye: face.rightEyePosition,
+        rollAngle: face.rollAngle,
+        yawAngle: face.yawAngle,
+      })
+    } else {
+      setDetectedFace(null)
+    }
+  }
+
+  const captureFrame = () => {
+    if (!detectedFace) return
+
+    const headPose = computeHeadPose(detectedFace)
+    const faceDistance = estimateFaceDistance(detectedFace.bounds, screenWidth)
+    
+    const currentFaceCenter = {
+      x: detectedFace.bounds.x + detectedFace.bounds.width / 2,
+      y: detectedFace.bounds.y + detectedFace.bounds.height / 2,
+    }
+
+    // Compute head displacement from first frame
+    const headDisplacement = lastFacePosition 
+      ? Math.sqrt(
+          Math.pow(currentFaceCenter.x - lastFacePosition.x, 2) +
+          Math.pow(currentFaceCenter.y - lastFacePosition.y, 2)
+        )
+      : 0
+
+    if (!lastFacePosition) {
+      setLastFacePosition(currentFaceCenter)
+    }
+
+    // Compute head motion velocity (simplified)
+    const headMotion = {
+      pitch: Math.abs(headPose.pitch) > 0.1 ? headPose.pitch * 10 : 0,
+      yaw: Math.abs(headPose.yaw) > 0.1 ? headPose.yaw * 10 : 0,
+      roll: Math.abs(headPose.roll) > 0.1 ? headPose.roll * 10 : 0,
+    }
+
+    const posCoord = getPositionCoord(currentPosition)
+    
+    const frame: MotilityFrame = {
+      timestamp: Date.now(),
+      targetPosition: currentPosition,
+      leftEye: {
+        x: posCoord.x + (Math.random() - 0.5) * 2,
+        y: posCoord.y + (Math.random() - 0.5) * 2,
+        z: faceDistance,
+      },
+      rightEye: {
+        x: posCoord.x + (Math.random() - 0.5) * 2,
+        y: posCoord.y + (Math.random() - 0.5) * 2,
+        z: faceDistance,
+      },
+      headMotion,
+      headDisplacement,
+      quality: detectedFace.bounds.width > screenWidth * 0.25 ? 0.8 : 0.5,
+      rejected: false,
+    }
+
+    tracker.addFrame(frame)
+    setFrameCount((prev) => prev + 1)
+
+    if (frameCount >= framesPerPosition - 1) {
+      setFrameCount(0)
+      if (currentIndex < sequence.length - 1) {
+        setCurrentIndex(currentIndex + 1)
+      } else {
+        const result = tracker.computeResult()
+        setMotility(result)
+        router.push('/vision-scan/convergence')
+      }
+    }
+  }
 
   const getPositionCoord = (position: GazePosition) => {
     const coords: Record<GazePosition, { x: number; y: number }> = {
@@ -95,39 +149,58 @@ export default function MotilityScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.instructions}>
-        <Text style={styles.instructionText}>
-          Follow the moving dot with your eyes. Keep your head still.
-        </Text>
-        <Text style={styles.progressText}>
-          Position {currentIndex + 1} of {sequence.length}
-        </Text>
-      </View>
+      <Camera
+        ref={cameraRef}
+        style={styles.camera}
+        type={CameraType.front}
+        onFacesDetected={handleFacesDetected}
+        faceDetectorSettings={{
+          mode: FaceDetector.FaceDetectorMode.fast,
+          detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
+          runClassifications: FaceDetector.FaceDetectorClassifications.none,
+        }}
+      />
 
-      <View style={styles.motilityArea}>
-        {sequence.map((position, index) => (
-          <View
-            key={position}
-            style={[
-              styles.positionMarker,
-              getPositionStyle(position),
-              {
-                opacity: index === currentIndex ? 1 : 0.2,
-                transform: [
-                  { translateX: -15 },
-                  { translateY: -15 },
-                  { scale: index === currentIndex ? 1 : 0.6 },
-                ],
-              },
-            ]}
-          />
-        ))}
-      </View>
+      <View style={styles.overlay}>
+        <View style={styles.instructions}>
+          <Text style={styles.instructionText}>
+            Follow the moving dot with your eyes. Keep your head still.
+          </Text>
+          <Text style={styles.progressText}>
+            Position {currentIndex + 1} of {sequence.length}
+          </Text>
+          {!detectedFace && (
+            <Text style={styles.warningText}>⚠️ Face not detected</Text>
+          )}
+        </View>
 
-      <View style={styles.progressBar}>
-        <View
-          style={[styles.progressFill, { width: `${((currentIndex + 1) / sequence.length) * 100}%` }]}
-        />
+        <View style={styles.motilityArea}>
+          {sequence.map((position, index) => (
+            <View
+              key={position}
+              style={[
+                styles.positionMarker,
+                getPositionStyle(position),
+                {
+                  opacity: index === currentIndex ? 1 : 0.2,
+                  transform: [
+                    { translateX: -15 },
+                    { translateY: -15 },
+                    { scale: index === currentIndex ? 1 : 0.6 },
+                  ],
+                },
+              ]}
+            />
+          ))}
+        </View>
+
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBar}>
+            <View
+              style={[styles.progressFill, { width: `${((currentIndex + 1) / sequence.length) * 100}%` }]}
+            />
+          </View>
+        </View>
       </View>
     </View>
   )
@@ -138,10 +211,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1F2937',
   },
+  camera: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'space-between',
+  },
   instructions: {
     padding: 20,
     alignItems: 'center',
-    backgroundColor: '#374151',
+    backgroundColor: 'rgba(55, 65, 81, 0.95)',
   },
   instructionText: {
     fontSize: 18,
@@ -152,6 +232,11 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 14,
     color: '#9CA3AF',
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#F59E0B',
+    marginTop: 4,
   },
   motilityArea: {
     flex: 1,
@@ -166,10 +251,12 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'white',
   },
+  progressBarContainer: {
+    padding: 20,
+  },
   progressBar: {
     height: 8,
     backgroundColor: '#374151',
-    margin: 20,
     borderRadius: 4,
     overflow: 'hidden',
   },
