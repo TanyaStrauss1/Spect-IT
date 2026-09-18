@@ -1,12 +1,14 @@
-# Vision Scan - Prototype 1 Implementation
+# Vision Scan - Prototype 1 Implementation (HARDENED)
 
 ## Overview
 
-Self-administered smartphone eye-screening sequence using front-facing camera, depth sensors (when available), eye tracking, screen, device sensors, and software analysis.
+Self-administered smartphone eye-screening sequence using **live front-facing camera + face detection**.
 
 **Objective:** Generate a repeatable digital ocular-function profile and flag results that warrant professional examination. NOT to diagnose disease or issue spectacle prescriptions.
 
 **Duration:** 3–5 minutes for full sequence.
+
+**Status:** ✅ **HARDENED** - Live camera, real face detection, session state, quality engine, Supabase persistence all implemented.
 
 ## Prototype 1 Features Implemented
 
