@@ -69,6 +69,26 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     route: '/test/visual-field'
   },
   {
+    id: 'hearing',
+    name: 'Hearing Screening',
+    icon: '🎧',
+    duration: '3-5 min',
+    why: 'Pure-tone screening at key frequencies (500-4000 Hz)',
+    requires: ['headphones', 'quiet-room'],
+    category: 'recommended',
+    route: '/test/hearing'
+  },
+  {
+    id: 'vision-scan',
+    name: 'Vision Scan',
+    icon: '👁️',
+    duration: '5-7 min',
+    why: 'Mobile camera screening for eye alignment, motility, and convergence',
+    requires: ['mobile-camera', 'good-lighting', 'stable-position'],
+    category: 'advanced',
+    route: '/vision-scan'
+  },
+  {
     id: 'prescription',
     name: 'Refractive Screening',
     icon: '🔍',
@@ -117,6 +137,36 @@ export const CHECKLIST_ITEMS: Record<string, ChecklistItem> = {
     text: 'You will need to cover one eye during this test',
     detail: 'Use your hand, a tissue, or an eye patch. Do not press on the closed eye.',
     icon: '👁️'
+  },
+  headphones: {
+    id: 'headphones',
+    text: 'Wear stereo headphones or earbuds (not speakers)',
+    detail: 'Headphones are required for left/right ear separation.',
+    icon: '🎧'
+  },
+  'quiet-room': {
+    id: 'quiet-room',
+    text: 'Find a quiet environment',
+    detail: 'Background noise can mask tones and affect results.',
+    icon: '🔇'
+  },
+  'mobile-camera': {
+    id: 'mobile-camera',
+    text: 'Mobile front-facing camera required',
+    detail: 'Vision Scan uses live camera feed for face detection and eye tracking.',
+    icon: '📱'
+  },
+  'good-lighting': {
+    id: 'good-lighting',
+    text: 'Ensure good, even lighting on your face',
+    detail: 'Well-lit environment helps face detection accuracy.',
+    icon: '💡'
+  },
+  'stable-position': {
+    id: 'stable-position',
+    text: 'Hold device steady at 40-60cm from face',
+    detail: 'Stable position improves tracking and measurement quality.',
+    icon: '📏'
   },
   'completed-acuity': {
     id: 'completed-acuity',
