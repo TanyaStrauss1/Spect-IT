@@ -7,6 +7,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { router } from 'expo-router'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { useAuth } from '../../lib/auth/auth-context'
+import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { TEST_TYPE_ID, TEST_TYPE_DISPLAY, type VisionScanResult } from '@spect-it/cv'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
@@ -15,6 +16,7 @@ import { generateVisionScanPDF } from '../../lib/vision-scan/pdf-generator'
 export default function ResultsScreen() {
   const { buildFinalResult, resetSession } = useVisionScan()
   const { user } = useAuth()
+  const { participants } = useParticipants()
   const [result, setResult] = useState<VisionScanResult | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
@@ -45,19 +47,18 @@ export default function ResultsScreen() {
         test_data: {
           sessionId: scanResult.timestamp.toString(),
           participantId: scanResult.participantId,
-          // Methodology and capability transparency
-          methodology: {
+          // Observed methodology (actual methods used during capture)
+          methodology: scanResult.methodology || {
             cameraType: 'front-facing',
             faceDetection: 'expo-face-detector (Google ML Vision)',
             gazeEstimation: 'face landmarks + eye positions (estimated)',
             depthEstimation: scanResult.calibration.usedSensorData 
               ? 'TrueDepth/LiDAR sensor'
               : 'IPD/face-width estimation',
-            distanceMethod: scanResult.calibration.usedSensorData 
-              ? 'sensor' 
-              : 'ipd-first-with-face-width-fallback', // Detailed method
-            gazeMethod: 'eye-landmarks-relative-to-face-bounds',
-            vergenceMethod: 'ipd-change-with-face-width-fallback', // From convergence
+            distanceMethod: scanResult.methodology?.distanceMethod || 
+              (scanResult.calibration.usedSensorData ? 'sensor' : 'ipd-first-with-face-width-fallback'),
+            gazeMethod: scanResult.methodology?.gazeMethod || 'eye-landmarks-relative-to-face-bounds',
+            vergenceMethod: scanResult.methodology?.vergenceMethod || 'ipd-change-with-face-width-fallback',
             headPoseTracking: 'face detector roll/yaw',
             qualityGating: 'per-module confidence with selective repeat',
             temporalSmoothing: 'EMA + median filter + flicker detection',
@@ -143,21 +144,56 @@ export default function ResultsScreen() {
   const handleExportPDF = async () => {
     if (!result) return
 
+    // Find participant display name
+    let participantName: string | undefined
+    if (result.participantId) {
+      const participant = participants.find(p => p.id === result.participantId)
+      participantName = participant?.display_name
+    }
+
     const pdfResult = await generateVisionScanPDF(result, {
-      participantName: result.participantId || undefined,
-      includeMethodology: true
+      participantName,
+      includeMethodology: true,
+      includeRepeatAttempts: true
     })
 
     if (!pdfResult.success) {
-      Alert.alert('Export Error', pdfResult.error || 'Failed to export PDF')
+      Alert.alert(
+        'Export Error', 
+        pdfResult.error || 'Could not generate PDF. Please try again.',
+        [{ text: 'OK' }]
+      )
     }
   }
 
   const handleShare = async () => {
     if (!result) return
 
-    const shareCapabilityMode = result.deviceQualification.useSensorBasedMeasurements ? 'full' : 'degraded'
-    const shareDistanceMethod = result.calibration.usedSensorData ? 'Sensor (TrueDepth/LiDAR)' : 'IPD/face-width estimation'
+    const capabilityMode = result.deviceQualification.useSensorBasedMeasurements ? 'full' : 'degraded'
+    
+    // Use observed methodology (not static strings)
+    const methodology = result.methodology || {}
+    const distanceMethod = methodology.distanceMethod || 
+      (result.calibration.usedSensorData ? 'sensor' : 'ipd-first-with-face-width-fallback')
+    const gazeMethod = methodology.gazeMethod || 'eye-landmarks-relative-to-face-bounds'
+    const vergenceMethod = methodology.vergenceMethod || 'ipd-change-with-face-width-fallback'
+    
+    // Friendly method names
+    const friendlyDistanceMethod = distanceMethod.includes('sensor') 
+      ? 'Sensor (TrueDepth/LiDAR)'
+      : distanceMethod.includes('ipd-preferred') || distanceMethod.includes('ipd-first')
+        ? 'IPD (eye landmarks, preferred)'
+        : 'Face-width estimation (fallback)'
+    
+    const friendlyVergenceMethod = vergenceMethod.includes('ipd-change-preferred') || vergenceMethod.includes('ipd-change')
+      ? 'IPD pixel change (preferred)'
+      : 'Face-width pixel change (fallback)'
+    
+    // Include repeat attempts if any
+    const totalRepeats = Object.values(result.repeatAttempts || {}).reduce((sum, count) => sum + count, 0)
+    const repeatInfo = totalRepeats > 0 
+      ? `\nQuality Review: User repeated ${totalRepeats} module${totalRepeats > 1 ? 's' : ''} to improve data quality`
+      : ''
 
     const shareMessage = `
 VISION SCAN SCREENING RESULTS
@@ -168,29 +204,22 @@ ${result.screeningSummary}
 
 ${result.recommendsProfessionalExam ? '⚠️ PROFESSIONAL EYE EXAMINATION RECOMMENDED' : '✓ No significant issues detected'}
 
-DATA QUALITY: ${(result.qualityAssessment.overallConfidence * 100).toFixed(0)}%
+DATA QUALITY: ${(result.qualityAssessment.overallConfidence * 100).toFixed(0)}%${repeatInfo}
 
 MODULE RESULTS:
 • Alignment Index: ${result.alignment.alignmentIndex.toFixed(0)}/100
 • Motility: ${result.motility.excessiveHeadMotion ? 'Limited (head motion)' : 'Normal'}
 • Convergence: ${result.convergence.nearPoint ? result.convergence.nearPoint.toFixed(0) + 'mm' : 'Inconclusive'}
 
-MEASUREMENT MODE: ${shareCapabilityMode === 'full' ? 'Full (sensor-based)' : 'Degraded (camera estimate)'}
-Distance Method: ${shareDistanceMethod}
-Gaze Method: Eye landmarks relative to face bounds
-Vergence Method: IPD change (preferred) / face-width fallback
+MEASUREMENT MODE: ${capabilityMode === 'full' ? 'Full (sensor-based)' : 'Degraded (camera estimate)'}
+
+OBSERVED METHODS:
+Distance: ${friendlyDistanceMethod}
+Gaze: ${gazeMethod.replace(/-/g, ' ')}
+Vergence: ${friendlyVergenceMethod}
 Temporal Smoothing: EMA + median filter + flicker rejection
 
-IMPORTANT: This is a screening tool, not a diagnostic test. It does not diagnose eye diseases or provide spectacle prescriptions. Results flag potential issues that warrant professional examination.
-
-Technical Methods:
-- Camera: Live front-facing camera
-- Face Detection: Google ML Vision
-- Gaze: Eye landmarks relative to face bounds
-- Distance: ${shareDistanceMethod}
-- Vergence: IPD change (preferred) / face-width fallback
-- Temporal Smoothing: EMA + median filter + flicker rejection
-- Quality Gating: Per-module confidence with selective repeat
+IMPORTANT: This is a SCREENING tool, not a diagnostic test. It does not diagnose eye diseases or provide spectacle prescriptions. Results flag potential issues that warrant professional examination by a licensed optometrist or ophthalmologist.
 
 Generated by Spect-IT Vision Scan
 `.trim()
@@ -202,6 +231,11 @@ Generated by Spect-IT Vision Scan
       })
     } catch (error) {
       console.error('Error sharing:', error)
+      Alert.alert(
+        'Share Error',
+        'Could not share results. Please try again.',
+        [{ text: 'OK' }]
+      )
     }
   }
 

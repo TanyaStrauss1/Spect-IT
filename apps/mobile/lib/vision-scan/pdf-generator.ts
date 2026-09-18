@@ -10,6 +10,7 @@ import { type VisionScanResult } from '@spect-it/cv'
 export interface PDFGenerationOptions {
   participantName?: string
   includeMethodology?: boolean
+  includeRepeatAttempts?: boolean
 }
 
 /**
@@ -19,7 +20,7 @@ function generatePDFHTML(
   result: VisionScanResult,
   options: PDFGenerationOptions = {}
 ): string {
-  const { participantName, includeMethodology = true } = options
+  const { participantName, includeMethodology = true, includeRepeatAttempts = true } = options
   
   const testDate = new Date(result.timestamp).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -30,16 +31,28 @@ function generatePDFHTML(
   })
 
   const capabilityMode = result.deviceQualification.useSensorBasedMeasurements ? 'Full' : 'Degraded'
-  const distanceMethod = result.calibration.usedSensorData 
-    ? 'Sensor (TrueDepth/LiDAR)' 
-    : 'IPD/face-width estimation'
   
-  // Extract methodology details from test_data if available
-  const methodology = result.methodology || {
-    distanceMethod: result.calibration.usedSensorData ? 'sensor' : 'ipd-first-with-face-width-fallback',
-    gazeMethod: 'eye-landmarks-relative-to-face-bounds',
-    vergenceMethod: 'ipd-change-with-face-width-fallback'
-  }
+  // Use observed methodology from session (not static strings)
+  const methodology = result.methodology || {}
+  const distanceMethod = methodology.distanceMethod || 
+    (result.calibration.usedSensorData ? 'sensor' : 'ipd-first-with-face-width-fallback')
+  const gazeMethod = methodology.gazeMethod || 'eye-landmarks-relative-to-face-bounds'
+  const vergenceMethod = methodology.vergenceMethod || 'ipd-change-with-face-width-fallback'
+  
+  // Friendly method names for PDF
+  const friendlyDistanceMethod = distanceMethod.includes('sensor') 
+    ? 'Sensor (TrueDepth/LiDAR)'
+    : distanceMethod.includes('ipd-preferred') || distanceMethod.includes('ipd-first')
+      ? 'IPD (eye landmark distance, preferred)'
+      : 'Face-width estimation (fallback)'
+  
+  const friendlyVergenceMethod = vergenceMethod.includes('ipd-change-preferred') || vergenceMethod.includes('ipd-change')
+    ? 'IPD pixel change (preferred)'
+    : 'Face-width pixel change (fallback)'
+  
+  // Count repeat attempts
+  const totalRepeats = Object.values(result.repeatAttempts || {}).reduce((sum, count) => sum + count, 0)
+  const hasRepeats = totalRepeats > 0
 
   return `
 <!DOCTYPE html>
@@ -374,30 +387,52 @@ function generatePDFHTML(
   <div class="section">
     <h2 class="section-title">Technical Methodology</h2>
     <div class="methodology-box">
-      <div class="methodology-title">Measurement Methods</div>
+      <div class="methodology-title">Observed Measurement Methods</div>
       <div class="methodology-item">• Camera: Live front-facing camera feed</div>
       <div class="methodology-item">• Face Detection: expo-face-detector (Google ML Vision)</div>
-      <div class="methodology-item">• Distance: ${distanceMethod}</div>
-      <div class="methodology-item">• Gaze Estimation: ${methodology.gazeMethod || 'Eye landmarks relative to face bounds'}</div>
-      <div class="methodology-item">• Vergence: ${methodology.vergenceMethod || 'IPD change (preferred) / face-width fallback'}</div>
+      <div class="methodology-item">• Distance: ${friendlyDistanceMethod}</div>
+      <div class="methodology-item">• Gaze Estimation: ${gazeMethod.replace(/-/g, ' ')}</div>
+      <div class="methodology-item">• Vergence: ${friendlyVergenceMethod}</div>
       <div class="methodology-item">• Temporal Smoothing: EMA + median filter + flicker rejection</div>
       <div class="methodology-item">• Quality Gating: Per-module confidence with selective repeat</div>
+      <div class="methodology-item">• Capability Mode: ${capabilityMode} ${capabilityMode === 'Full' ? '(sensor-based)' : '(camera estimates)'}</div>
+    </div>
+  </div>
+  ` : ''}
+
+  ${includeRepeatAttempts && hasRepeats ? `
+  <div class="section">
+    <h2 class="section-title">Quality Review</h2>
+    <div class="methodology-box">
+      <div class="methodology-title">Module Repeat Attempts</div>
+      ${Object.entries(result.repeatAttempts || {}).map(([module, count]) => 
+        `<div class="methodology-item">• ${module}: ${count} repeat${count > 1 ? 's' : ''}</div>`
+      ).join('\n      ')}
+      <div style="margin-top: 8px; font-size: 9pt; color: #6B7280;">
+        User chose to repeat ${totalRepeats} module${totalRepeats > 1 ? 's' : ''} to improve data quality before proceeding.
+      </div>
     </div>
   </div>
   ` : ''}
 
   <div class="disclaimer-box">
-    <div class="disclaimer-title">⚠️ Important Medical Disclaimer</div>
+    <div class="disclaimer-title">⚠️ IMPORTANT MEDICAL DISCLAIMER</div>
     <div class="disclaimer-text">
-      <strong>This is a screening tool, not a diagnostic test.</strong><br><br>
+      <strong>This is a SCREENING TOOL, not a diagnostic test or clinical examination.</strong><br><br>
       
-      Vision Scan does NOT:<br>
-      • Diagnose eye diseases or medical conditions<br>
-      • Provide spectacle prescriptions (glasses or contact lenses)<br>
-      • Replace comprehensive eye examinations by licensed professionals<br><br>
+      Vision Scan does NOT and cannot:<br>
+      • Diagnose eye diseases, conditions, or medical problems<br>
+      • Provide or substitute for spectacle prescriptions (glasses or contact lenses)<br>
+      • Replace comprehensive eye examinations by licensed professionals<br>
+      • Detect all vision or eye health issues<br><br>
       
-      Results flag potential issues that may warrant professional examination by a licensed optometrist or ophthalmologist. 
-      Always consult a qualified eye care professional for clinical diagnosis, treatment, and prescription eyewear.
+      <strong>Results indicate potential issues that may warrant professional examination.</strong><br><br>
+      
+      Always consult a licensed optometrist or ophthalmologist for:<br>
+      • Clinical diagnosis and treatment<br>
+      • Prescription eyewear<br>
+      • Comprehensive eye health assessment<br>
+      • Any concerns about your vision or eye health
     </div>
   </div>
 
@@ -447,9 +482,10 @@ export async function generateVisionScanPDF(
     return { success: true }
   } catch (error) {
     console.error('Error generating PDF:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate PDF'
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to generate PDF'
+      error: errorMessage
     }
   }
 }
