@@ -16,6 +16,8 @@ export class MotilityTracker {
   private useSensorData: boolean
   private readonly HEAD_MOTION_THRESHOLD = 5 // degrees/sec
   private readonly HEAD_DISPLACEMENT_THRESHOLD = 50 // mm
+  private readonly FACE_CONFIDENCE_THRESHOLD = 0.5
+  private readonly MIN_FRAMES_PER_POSITION = 3
 
   constructor(useSensorData: boolean) {
     this.useSensorData = useSensorData
@@ -47,8 +49,20 @@ export class MotilityTracker {
     ]
   }
 
-  addFrame(frame: MotilityFrame): void {
-    // Check for excessive head motion
+  /**
+   * Add frame with quality gates:
+   * - Face confidence
+   * - Head motion limits
+   * - Head displacement limits
+   */
+  addFrame(frame: MotilityFrame, faceConfidence: number = 1.0): void {
+    // Gate 1: Face confidence
+    if (faceConfidence < this.FACE_CONFIDENCE_THRESHOLD) {
+      frame.rejected = true
+      frame.quality = Math.min(frame.quality, faceConfidence)
+    }
+
+    // Gate 2: Head motion limits
     const maxHeadMotion = Math.max(
       Math.abs(frame.headMotion.pitch),
       Math.abs(frame.headMotion.yaw),
@@ -73,19 +87,27 @@ export class MotilityTracker {
     > = {} as any
 
     let hasExcessiveHeadMotion = false
+    let insufficientDataPositions: GazePosition[] = []
 
     for (const position of Object.keys(this.positions) as GazePosition[]) {
       const frames = this.positions[position].filter((f) => !f.rejected)
+
+      // Check if we have minimum frames per position
+      if (frames.length < this.MIN_FRAMES_PER_POSITION) {
+        insufficientDataPositions.push(position)
+        motilityProfile[position] = { range: 0, smoothness: 0 }
+        continue
+      }
 
       if (frames.length === 0) {
         motilityProfile[position] = { range: 0, smoothness: 0 }
         continue
       }
 
-      // Check if any frames were rejected
+      // Check if any frames were rejected (stricter threshold: 25%)
       const totalFrames = this.positions[position].length
       const rejectedFrames = totalFrames - frames.length
-      if (rejectedFrames / totalFrames > 0.3) {
+      if (rejectedFrames / totalFrames > 0.25) {
         hasExcessiveHeadMotion = true
       }
 
@@ -116,9 +138,11 @@ export class MotilityTracker {
       }
     }
 
-    // Screening note
+    // Screening note with quality feedback
     let screeningNote: string
-    if (hasExcessiveHeadMotion) {
+    if (insufficientDataPositions.length > 0) {
+      screeningNote = `Insufficient data for ${insufficientDataPositions.length} position(s). Repeat with face visible throughout sequence.`
+    } else if (hasExcessiveHeadMotion) {
       screeningNote =
         'Excessive head motion detected. Results may be limited. Repeat with stable head position recommended.'
     } else {

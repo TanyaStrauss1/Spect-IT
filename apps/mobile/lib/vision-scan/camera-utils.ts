@@ -43,20 +43,60 @@ export async function hasCameraPermission(): Promise<boolean> {
 }
 
 /**
- * Estimate face distance from face bounds size
- * Assumes average face width of 140mm and typical smartphone camera FOV
+ * Estimate face distance using IPD or face width
+ * 
+ * Distance Estimation Methods (in priority order):
+ * 1. IPD (Inter-Pupillary Distance) - Most accurate when eye landmarks available
+ *    Assumption: Average adult IPD = 63mm (range 54-74mm)
+ * 2. Face width - Fallback when IPD unavailable
+ *    Assumption: Average adult face width = 140mm (range 120-160mm)
+ * 
+ * Returns: { distance: number (mm), method: 'ipd' | 'face-width' }
  */
-export function estimateFaceDistance(faceBounds: FaceBounds, imageWidth: number): number {
-  // Simplified estimation: larger face in frame = closer distance
-  // This is a rough approximation for degraded mode
-  const faceFractionOfImage = faceBounds.width / imageWidth
+export function estimateFaceDistance(
+  faceBounds: FaceBounds,
+  imageWidth: number,
+  leftEye?: EyePosition,
+  rightEye?: EyePosition
+): { distance: number; method: 'ipd' | 'face-width' } {
+  // Estimate focal length in pixels (typical smartphone front camera ~3-4mm actual focal length)
+  // For 640px width, ~35° horizontal FOV: focalLength ≈ width / (2 * tan(FOV/2))
+  const focalLengthPx = imageWidth / (2 * Math.tan((35 * Math.PI) / 180 / 2))
+
+  // Method 1: IPD-based (preferred when eye positions available)
+  if (leftEye && rightEye) {
+    const ipdPx = Math.sqrt(
+      Math.pow(rightEye.x - leftEye.x, 2) + 
+      Math.pow(rightEye.y - leftEye.y, 2)
+    )
+
+    // IPD validation: should be reasonable (20-150px for typical selfie distance)
+    if (ipdPx >= 20 && ipdPx <= 150) {
+      const averageIPD = 63 // mm
+      const distanceMm = (averageIPD * focalLengthPx) / ipdPx
+
+      return {
+        distance: Math.max(200, Math.min(1000, distanceMm)),
+        method: 'ipd'
+      }
+    }
+  }
+
+  // Method 2: Face width-based (fallback)
+  const faceWidthPx = faceBounds.width
+  const averageFaceWidth = 140 // mm
   
-  // Typical selfie distance is 400-600mm
-  // When face is ~40% of frame width, distance is ~400mm
-  // When face is ~20% of frame width, distance is ~800mm
-  const estimatedDistance = 400 / (faceFractionOfImage / 0.4)
-  
-  return Math.max(200, Math.min(1000, estimatedDistance))
+  if (faceWidthPx >= 50) {
+    const distanceMm = (averageFaceWidth * focalLengthPx) / faceWidthPx
+
+    return {
+      distance: Math.max(200, Math.min(1000, distanceMm)),
+      method: 'face-width'
+    }
+  }
+
+  // Fallback to safe default
+  return { distance: 500, method: 'face-width' }
 }
 
 /**

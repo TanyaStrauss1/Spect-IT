@@ -2,6 +2,14 @@
  * Camera Depth Estimation Fallback
  * Monocular depth estimation when LiDAR unavailable
  * Works on all devices with front-facing camera
+ * 
+ * Distance Estimation Methods:
+ * 1. IPD (Inter-Pupillary Distance) - Most accurate when eye landmarks available
+ *    Assumption: Average adult IPD = 63mm (range 54-74mm)
+ * 2. Face width - Fallback when IPD unavailable
+ *    Assumption: Average adult face width = 140mm (range 120-160mm)
+ * 
+ * Both use pinhole camera model: distance = (real_size * focal_length) / pixel_size
  */
 
 import { DepthReading } from '../lidar/lidar-detector'
@@ -13,6 +21,10 @@ export interface CameraDepthConfig {
   useMotionParallax: boolean
   /** Calibration distance in meters */
   calibrationDistance: number
+  /** Average adult IPD in mm (default 63) */
+  averageIPD: number
+  /** Average adult face width in mm (default 140) */
+  averageFaceWidth: number
 }
 
 export class CameraDepthEstimator {
@@ -27,6 +39,8 @@ export class CameraDepthEstimator {
       useFaceSize: true,
       useMotionParallax: true,
       calibrationDistance: 2.0, // Standard test distance
+      averageIPD: 63, // mm
+      averageFaceWidth: 140, // mm
       ...config
     }
   }
@@ -78,23 +92,56 @@ export class CameraDepthEstimator {
   }
 
   /**
-   * Estimate distance using face size
+   * Estimate distance using IPD (Inter-Pupillary Distance)
+   * Most accurate method when eye landmarks are available
+   * Returns null if eye positions unavailable
    */
-  estimateDistanceFromFace(): number {
-    if (!this.video || !this.config.useFaceSize) {
-      return this.config.calibrationDistance
+  estimateDistanceFromIPD(
+    leftEye: { x: number; y: number } | null,
+    rightEye: { x: number; y: number } | null,
+    focalLengthPx: number
+  ): { distance: number; method: 'ipd' } | null {
+    if (!leftEye || !rightEye) return null
+
+    // Calculate IPD in pixels
+    const ipdPx = Math.sqrt(
+      Math.pow(rightEye.x - leftEye.x, 2) + 
+      Math.pow(rightEye.y - leftEye.y, 2)
+    )
+
+    if (ipdPx < 10) return null // Too small, likely bad detection
+
+    // Pinhole camera model: distance = (real_IPD * focal_length) / pixel_IPD
+    // Convert to meters
+    const distanceM = (this.config.averageIPD * focalLengthPx) / (ipdPx * 1000)
+
+    return {
+      distance: Math.max(0.3, Math.min(2.0, distanceM)),
+      method: 'ipd'
+    }
+  }
+
+  /**
+   * Estimate distance using face width
+   * Fallback method when eye landmarks unavailable
+   */
+  estimateDistanceFromFace(
+    faceWidthPx: number,
+    focalLengthPx: number
+  ): { distance: number; method: 'face-width' } {
+    if (faceWidthPx < 20) {
+      // Face too small, use default
+      return { distance: this.config.calibrationDistance, method: 'face-width' }
     }
 
-    // Detect face and measure current size
-    // Simplified: would use face detection
-    const currentFaceSize = 150 // Placeholder - would detect actual size
+    // Pinhole camera model: distance = (real_width * focal_length) / pixel_width
+    // Convert to meters
+    const distanceM = (this.config.averageFaceWidth * focalLengthPx) / (faceWidthPx * 1000)
 
-    // Distance is inversely proportional to face size
-    // d = d0 * (s0 / s)
-    const distance = this.config.calibrationDistance * 
-                    (this.faceSizeBaseline / currentFaceSize)
-
-    return Math.max(0.3, Math.min(5.0, distance))
+    return {
+      distance: Math.max(0.3, Math.min(2.0, distanceM)),
+      method: 'face-width'
+    }
   }
 
   /**

@@ -127,19 +127,29 @@ export class QualityEngine {
     const totalFrames = alignment.frames.length
 
     let confidence = 0
+    const qualityIssues: string[] = []
+
     if (totalFrames === 0) {
       confidence = 0
+      qualityIssues.push('No alignment frames captured.')
     } else {
       const frameRatio = goodFrames / totalFrames
-      if (frameRatio > 0.8) confidence = 0.95
-      else if (frameRatio > 0.6) confidence = 0.75
-      else if (frameRatio > 0.4) confidence = 0.55
-      else confidence = 0.35
-    }
+      
+      // Stricter confidence scoring when face was intermittent
+      if (frameRatio < 0.5) {
+        qualityIssues.push('Face intermittently detected during alignment capture.')
+      }
+      
+      if (goodFrames < 12) {
+        qualityIssues.push(`Insufficient high-quality frames (${goodFrames}/12 minimum).`)
+      }
 
-    const qualityIssues: string[] = []
-    if (goodFrames < 10) {
-      qualityIssues.push('Insufficient high-quality alignment frames.')
+      // Tighter thresholds
+      if (frameRatio > 0.85 && goodFrames >= 15) confidence = 0.95
+      else if (frameRatio > 0.7 && goodFrames >= 12) confidence = 0.80
+      else if (frameRatio > 0.5 && goodFrames >= 10) confidence = 0.60
+      else if (frameRatio > 0.3) confidence = 0.40
+      else confidence = 0.25
     }
 
     return {
@@ -151,12 +161,25 @@ export class QualityEngine {
   }
 
   private assessMotility(motility: MotilityResult): ModuleConfidence {
-    let confidence = 0.8 // Default for prototype
-
     const qualityIssues: string[] = []
+    let confidence = 0.8
+
+    // Check for excessive head motion
     if (motility.excessiveHeadMotion) {
       confidence = 0.4
       qualityIssues.push('Excessive head motion reduced motility data quality.')
+    }
+
+    // Check for sufficient frames per position (stricter gate)
+    const positionKeys = Object.keys(motility.positions) as any[]
+    const insufficientPositions = positionKeys.filter(pos => {
+      const frames = motility.positions[pos].filter((f: any) => !f.rejected)
+      return frames.length < 3
+    })
+
+    if (insufficientPositions.length > 0) {
+      confidence = Math.min(confidence, 0.5)
+      qualityIssues.push(`Insufficient frames for ${insufficientPositions.length} position(s). Face should remain visible.`)
     }
 
     return {
@@ -175,22 +198,35 @@ export class QualityEngine {
       ...convergence.recedeFrames,
     ].filter((f) => f.quality > 0.6).length
 
+    const qualityIssues: string[] = []
     let confidence = 0
+
     if (totalFrames === 0) {
       confidence = 0
+      qualityIssues.push('No convergence frames captured.')
     } else {
       const frameRatio = goodFrames / totalFrames
-      if (frameRatio > 0.7 && convergence.nearPoint !== null) confidence = 0.85
-      else if (frameRatio > 0.5) confidence = 0.65
-      else confidence = 0.45
+      
+      // Stricter scoring when face was intermittent
+      if (frameRatio < 0.5) {
+        qualityIssues.push('Face intermittently detected during convergence test.')
+      }
+      
+      if (goodFrames < 15) {
+        qualityIssues.push(`Insufficient high-quality frames (${goodFrames}/15 minimum).`)
+      }
+
+      // Tighter thresholds with near point requirement
+      if (frameRatio > 0.75 && convergence.nearPoint !== null && goodFrames >= 20) confidence = 0.90
+      else if (frameRatio > 0.6 && convergence.nearPoint !== null && goodFrames >= 15) confidence = 0.75
+      else if (frameRatio > 0.5 && goodFrames >= 12) confidence = 0.60
+      else if (frameRatio > 0.3) confidence = 0.40
+      else confidence = 0.30
     }
 
-    const qualityIssues: string[] = []
     if (convergence.nearPoint === null) {
       qualityIssues.push('Unable to determine near point of convergence.')
-    }
-    if (goodFrames < 15) {
-      qualityIssues.push('Insufficient high-quality convergence frames.')
+      confidence = Math.min(confidence, 0.60)
     }
 
     return {

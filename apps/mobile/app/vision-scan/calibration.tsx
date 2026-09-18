@@ -76,11 +76,18 @@ export default function CalibrationScreen() {
     const rightGazeY = detectedFace.rightEye?.y || faceCenterY
 
     const headPose = computeHeadPose(detectedFace)
-    const faceDistance = estimateFaceDistance(detectedFace.bounds, screenWidth)
+    const faceDistanceResult = estimateFaceDistance(
+      detectedFace.bounds, 
+      screenWidth,
+      detectedFace.leftEye,
+      detectedFace.rightEye
+    )
 
-    // Compute quality based on face size and position stability
+    // Compute quality based on face size, stability, and head pose
     const faceSizeScore = Math.min(1, detectedFace.bounds.width / (screenWidth * 0.4))
-    const quality = faceSizeScore * 0.8 + 0.2
+    const headPoseScore = Math.max(0, 1 - (Math.abs(headPose.yaw) + Math.abs(headPose.roll)) / 60)
+    const methodScore = faceDistanceResult.method === 'ipd' ? 1.0 : 0.8
+    const quality = (faceSizeScore * 0.5 + headPoseScore * 0.3 + methodScore * 0.2)
 
     const sample: GazeCalibrationSample = {
       timestamp: Date.now(),
@@ -88,7 +95,7 @@ export default function CalibrationScreen() {
       leftEyeGaze: { x: leftGazeX, y: leftGazeY },
       rightEyeGaze: { x: rightGazeX, y: rightGazeY },
       headPose,
-      faceDistance,
+      faceDistance: faceDistanceResult.distance,
       quality,
     }
 
@@ -198,23 +205,39 @@ export default function CalibrationScreen() {
           )}
 
           {result.isValid ? (
-            <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+            <TouchableOpacity 
+              style={styles.continueButton} 
+              onPress={handleContinue}
+              accessibilityRole="button"
+              accessibilityLabel="Continue to alignment"
+              accessibilityHint="Calibration successful"
+            >
               <Text style={styles.continueButtonText}>Continue to Alignment</Text>
             </TouchableOpacity>
           ) : (
             <>
-              <View style={styles.errorCard}>
+              <View style={styles.errorCard} accessibilityRole="alert">
                 <Text style={styles.errorText}>
-                  Calibration quality below threshold. Please retry with stable head position and good lighting.
+                  {result.rejectionReason || 'Calibration quality below threshold. Please retry with stable head position and good lighting.'}
                 </Text>
               </View>
-              <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+              <TouchableOpacity 
+                style={styles.retryButton} 
+                onPress={handleRetry}
+                accessibilityRole="button"
+                accessibilityLabel="Retry calibration"
+              >
                 <Text style={styles.retryButtonText}>Retry Calibration</Text>
               </TouchableOpacity>
             </>
           )}
 
-          <TouchableOpacity style={styles.backButton} onPress={() => router.push('/vision-scan')}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.push('/vision-scan')}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel scan"
+          >
             <Text style={styles.backButtonText}>Cancel Scan</Text>
           </TouchableOpacity>
         </View>
@@ -246,13 +269,17 @@ export default function CalibrationScreen() {
             Point {currentPointIndex + 1} of {calibrationPoints.length}
           </Text>
           {!detectedFace && (
-            <View style={styles.coachingBanner}>
-              <Text style={styles.coachingText}>👤 Position your face in view</Text>
+            <View style={styles.coachingBanner} accessibilityRole="alert">
+              <Text style={styles.coachingText} accessibilityLabel="Position your face in view">
+                👤 Position your face in view
+              </Text>
             </View>
           )}
           {detectedFace && isCapturing && (
-            <View style={styles.capturingBanner}>
-              <Text style={styles.capturingText}>✓ Capturing...</Text>
+            <View style={styles.capturingBanner} accessibilityLiveRegion="polite">
+              <Text style={styles.capturingText} accessibilityLabel="Capturing calibration sample">
+                ✓ Capturing...
+              </Text>
             </View>
           )}
         </View>
@@ -276,7 +303,12 @@ export default function CalibrationScreen() {
         </View>
 
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+          <TouchableOpacity 
+            style={styles.cancelButton} 
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel calibration"
+          >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -318,29 +350,37 @@ const styles = StyleSheet.create({
   },
   coachingBanner: {
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 20,
     marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#FCD34D',
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+    minHeight: 40,
+    justifyContent: 'center',
   },
   coachingText: {
-    fontSize: 14,
-    color: '#92400E',
-    fontWeight: '600',
+    fontSize: 15,
+    color: '#78350F',
+    fontWeight: '700',
+    textAlign: 'center',
   },
   capturingBanner: {
     backgroundColor: '#D1FAE5',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 20,
     marginTop: 8,
+    borderWidth: 2,
+    borderColor: '#10B981',
+    minHeight: 40,
+    justifyContent: 'center',
   },
   capturingText: {
-    fontSize: 14,
-    color: '#065F46',
-    fontWeight: '600',
+    fontSize: 15,
+    color: '#064E3B',
+    fontWeight: '700',
+    textAlign: 'center',
   },
   calibrationArea: {
     flex: 1,
@@ -360,14 +400,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    backgroundColor: 'rgba(55, 65, 81, 0.8)',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    backgroundColor: 'rgba(55, 65, 81, 0.9)',
     borderRadius: 8,
+    minHeight: 48,
+    justifyContent: 'center',
   },
   cancelButtonText: {
-    color: '#9CA3AF',
+    color: '#D1D5DB',
     fontSize: 16,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
@@ -440,6 +483,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   continueButtonText: {
     color: 'white',
@@ -453,6 +498,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   retryButtonText: {
     color: 'white',
@@ -463,6 +510,8 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 16,
     alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
   },
   backButtonText: {
     color: '#9CA3AF',

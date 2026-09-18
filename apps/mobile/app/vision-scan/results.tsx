@@ -282,17 +282,37 @@ export default function ResultsScreen() {
             • Camera: Live front-facing camera feed{'\n'}
             • Face Detection: expo-face-detector (Google ML Vision){'\n'}
             • Gaze Estimation: Face/eye landmark positions{'\n'}
-            • Distance: Face size-based estimation{'\n'}
+            • Distance: {result.calibration.usedSensorData ? 'Sensor-based (TrueDepth/LiDAR)' : 'IPD/face-width estimation'}{'\n'}
             • Head Pose: Roll & yaw from face detector{'\n'}
             • Quality Gating: Per-module confidence with selective repeat
           </Text>
+          
+          {!result.calibration.usedSensorData && (
+            <View style={styles.methodNote}>
+              <Text style={styles.methodNoteText}>
+                💡 Distance estimation used: Eye landmark distance (IPD) when available, otherwise face width.
+                Assumption: Average adult IPD = 63mm, face width = 140mm.
+              </Text>
+            </View>
+          )}
         </View>
 
-        <TouchableOpacity style={styles.homeButton} onPress={handleReturnHome}>
+        <TouchableOpacity 
+          style={styles.homeButton} 
+          onPress={handleReturnHome}
+          accessibilityRole="button"
+          accessibilityLabel="Return to home"
+        >
           <Text style={styles.homeButtonText}>Return to Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.repeatButton} onPress={handleRepeatScan}>
+        <TouchableOpacity 
+          style={styles.repeatButton} 
+          onPress={handleRepeatScan}
+          accessibilityRole="button"
+          accessibilityLabel="Repeat vision scan"
+          accessibilityHint="Start a new vision scan session"
+        >
           <Text style={styles.repeatButtonText}>Repeat Vision Scan</Text>
         </TouchableOpacity>
       </View>
@@ -521,6 +541,19 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     lineHeight: 18,
   },
+  methodNote: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#DBEAFE',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6',
+  },
+  methodNoteText: {
+    fontSize: 12,
+    color: '#1E40AF',
+    lineHeight: 16,
+  },
   homeButton: {
     width: '100%',
     backgroundColor: '#4F46E5',
@@ -528,6 +561,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 12,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   homeButtonText: {
     color: 'white',
@@ -543,6 +578,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#4F46E5',
     marginBottom: 40,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   repeatButtonText: {
     color: '#4F46E5',
