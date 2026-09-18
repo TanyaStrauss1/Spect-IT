@@ -39,6 +39,13 @@ export default function HomeScreen() {
       
       <View style={styles.buttonContainer}>
         <TouchableOpacity
+          style={[styles.primaryButton, { backgroundColor: '#8B5CF6' }]}
+          onPress={() => router.push('/vision-scan')}
+        >
+          <Text style={styles.primaryButtonText}>👁️ Vision Scan (NEW)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.primaryButton}
           onPress={() => router.push('/test/acuity')}
         >

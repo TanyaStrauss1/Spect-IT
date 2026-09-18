@@ -156,3 +156,36 @@ export {
   type ColorDot,
 } from './rendering/pseudoisochromatic-plates'
 
+// Vision Scan (Prototype 1)
+export {
+  DeviceQualifier,
+  VisionScanCalibrator,
+  AlignmentTracker,
+  MotilityTracker,
+  ConvergenceTracker,
+  QualityEngine,
+  type DeviceCapability,
+  type QualityLevel,
+  type DeviceQualification,
+  type CalibrationPoint,
+  type GazeCalibrationSample,
+  type CalibrationResult,
+  type EyePosition,
+  type AlignmentFrame,
+  type AlignmentResult,
+  type GazePosition,
+  type MotilityFrame,
+  type MotilityResult,
+  type ConvergenceFrame,
+  type ConvergenceResult,
+  type ModuleName,
+  type ModuleConfidence,
+  type QualityAssessment,
+  type VisionScanResult,
+  type CapabilityMode,
+  type CapabilityMatrix,
+  type VisionScanSessionState,
+  type VisionScanSessionActions,
+  type VisionScanSession,
+} from './vision-scan'
+
