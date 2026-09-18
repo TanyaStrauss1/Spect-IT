@@ -194,11 +194,16 @@ export default function AlignmentScreen() {
   }
 
   const handleCameraError = () => {
+    setIsCapturing(false)
     setCameraError('camera-error')
   }
 
   const handleCameraRetry = () => {
     setCameraError(null)
+    // Resume from current frame count (don't restart)
+    if (!result) {
+      setIsCapturing(true)
+    }
   }
 
   const handleCameraCancel = () => {

@@ -121,10 +121,19 @@ export default function QualificationScreen() {
     runQualification()
   }
 
-  const handleCameraRetry = () => {
+  const handleCameraRetry = async () => {
     setCameraError(null)
-    setHasPermission(null)
-    setupCamera()
+    // Re-request camera permission
+    const granted = await requestCameraPermission()
+    if (granted) {
+      setHasPermission(true)
+      // Resume qualification automatically
+      setTimeout(() => {
+        runQualification()
+      }, 500)
+    } else {
+      setCameraError('permission-denied')
+    }
   }
 
   const handleCameraCancel = () => {

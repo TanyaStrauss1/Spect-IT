@@ -228,6 +228,7 @@ export default function ConvergenceScreen() {
 
   const handleCameraRetry = () => {
     setCameraError(null)
+    // Resume from current phase (don't restart)
   }
 
   const handleCameraCancel = () => {

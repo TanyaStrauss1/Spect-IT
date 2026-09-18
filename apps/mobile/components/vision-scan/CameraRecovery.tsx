@@ -61,6 +61,7 @@ export function CameraRecovery({ error, onRetry, onCancel }: CameraRecoveryProps
             onPress={onRetry}
             accessibilityRole="button"
             accessibilityLabel="Retry camera access"
+            accessibilityHint="Attempts to access the camera again"
           >
             <Text style={styles.retryButtonText}>🔄 Retry</Text>
           </TouchableOpacity>
@@ -71,6 +72,7 @@ export function CameraRecovery({ error, onRetry, onCancel }: CameraRecoveryProps
               onPress={handleOpenSettings}
               accessibilityRole="button"
               accessibilityLabel="Open device settings"
+              accessibilityHint="Opens your device settings to grant camera permission"
             >
               <Text style={styles.settingsButtonText}>⚙️ Open Settings</Text>
             </TouchableOpacity>
@@ -81,6 +83,7 @@ export function CameraRecovery({ error, onRetry, onCancel }: CameraRecoveryProps
             onPress={onCancel}
             accessibilityRole="button"
             accessibilityLabel="Cancel and go back"
+            accessibilityHint="Returns to the previous screen"
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>

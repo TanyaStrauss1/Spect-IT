@@ -171,11 +171,16 @@ export default function CalibrationScreen() {
   }
 
   const handleCameraError = () => {
+    setIsCapturing(false)
     setCameraError('camera-error')
   }
 
   const handleCameraRetry = () => {
     setCameraError(null)
+    // Resume from current point
+    if (!isComplete) {
+      setIsCapturing(true)
+    }
   }
 
   const handleCameraCancel = () => {

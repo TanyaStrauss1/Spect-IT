@@ -176,6 +176,7 @@ export default function MotilityScreen() {
 
   const handleCameraRetry = () => {
     setCameraError(null)
+    // Resume from current position (don't restart sequence)
   }
 
   const handleCameraCancel = () => {
