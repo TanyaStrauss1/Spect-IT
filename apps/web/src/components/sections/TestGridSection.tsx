@@ -71,6 +71,16 @@ const tests = [
     duration: '5-10 min',
     route: '/tests/prescription',
     available: true
+  },
+  {
+    id: 'vision-scan',
+    title: 'Vision Scan',
+    description: 'Camera-based screening for alignment, motility, and convergence — Mobile App only',
+    icon: '📱',
+    duration: '8-12 min',
+    route: null,
+    available: true,
+    mobileOnly: true
   }
 ]
 
@@ -97,14 +107,19 @@ export function TestGridSection() {
                   Coming Soon
                 </div>
               )}
+              {test.mobileOnly && (
+                <div className="absolute top-4 right-4 z-10 bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                  Mobile Only
+                </div>
+              )}
               <TestCard
                 title={test.title}
                 description={test.description}
                 icon={test.icon}
                 duration={test.duration}
-                disabled={!test.available}
+                disabled={!test.available || test.mobileOnly}
                 onStart={() => {
-                  if (test.available) {
+                  if (test.available && !test.mobileOnly && test.route) {
                     window.location.href = test.route
                   }
                 }}
