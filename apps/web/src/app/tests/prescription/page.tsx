@@ -183,14 +183,24 @@ export default function PrescriptionTestPage() {
           <div className="bg-white rounded-lg shadow-xl p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Refractive Screening (Pinhole Method)</h1>
             
-            <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
-              <h3 className="font-semibold text-red-900 mb-2 text-lg">⚠️ NOT A PRESCRIPTION</h3>
-              <p className="text-sm text-red-800">
-                <strong>This screening does NOT provide a prescription.</strong> It only detects whether refractive error 
-                (nearsightedness, farsightedness, astigmatism) may be present. Precise sphere, cylinder, and axis values 
-                require comprehensive refraction by an optometrist or ophthalmologist. <strong>Do NOT attempt to order 
-                glasses or contact lenses based on this screening.</strong>
-              </p>
+            <div className="mb-6 p-5 bg-red-100 border-4 border-red-500 rounded-lg shadow-lg">
+              <h3 className="font-bold text-red-900 mb-3 text-xl flex items-center gap-2">
+                🚫 THIS IS NOT A PRESCRIPTION
+              </h3>
+              <div className="space-y-2 text-sm text-red-900">
+                <p className="font-semibold">
+                  This screening does NOT provide sphere, cylinder, or axis values for ordering eyewear.
+                </p>
+                <p>
+                  It ONLY detects whether refractive error (nearsightedness, farsightedness, astigmatism) may be present using the pinhole method.
+                </p>
+                <p className="font-semibold">
+                  ❌ DO NOT order glasses or contact lenses based on this screening
+                </p>
+                <p className="font-semibold">
+                  ✅ DO schedule comprehensive refraction with an optometrist or ophthalmologist
+                </p>
+              </div>
             </div>
 
             <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
@@ -256,8 +266,11 @@ export default function PrescriptionTestPage() {
               <div className="text-6xl mb-4">{result.category === 'NO_ERROR' ? '✓' : '⚠️'}</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Screening Complete!</h2>
             </div>
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6 mb-6">
-              <p className="text-sm text-gray-600 mb-2">Classification</p>
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6 mb-6 border-2 border-purple-200">
+              <div className="inline-block bg-yellow-100 border-2 border-yellow-500 px-3 py-1 rounded-full text-xs font-bold text-yellow-900 mb-3">
+                SCREENING ONLY - NOT A PRESCRIPTION
+              </div>
+              <p className="text-sm text-gray-600 mb-2">Refractive Error Classification</p>
               <p className="text-2xl font-bold text-gray-900 mb-4">{result.category.replace('_', ' ')}</p>
               <p className="text-sm text-gray-700">{result.recommendation}</p>
             </div>
@@ -271,8 +284,15 @@ export default function PrescriptionTestPage() {
                 <p className="text-sm text-gray-700">Improvement: {leftEye.improvement.toFixed(2)} logMAR {leftEye.significantImprovement ? '✓' : ''}</p>
               </div>
             </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-red-800"><strong>THIS IS A SCREENING ONLY.</strong> {result.disclaimer}</p>
+            <div className="bg-red-100 border-4 border-red-500 rounded-lg p-5 mb-6 shadow-lg">
+              <h4 className="font-bold text-red-900 mb-2 text-lg">🚫 NOT A DISPENSABLE PRESCRIPTION</h4>
+              <p className="text-sm text-red-900 font-semibold mb-2">
+                This screening provides NO precise sphere, cylinder, or axis values.
+              </p>
+              <p className="text-sm text-red-800">{result.disclaimer}</p>
+              <p className="text-sm text-red-900 font-semibold mt-2">
+                Never attempt to order eyewear based on these screening results. Comprehensive refraction required.
+              </p>
             </div>
             <div className="flex gap-4">
               <button onClick={() => router.push('/dashboard')} className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">Dashboard</button>
