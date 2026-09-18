@@ -8,7 +8,7 @@ import { router } from 'expo-router'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { useAuth } from '../../lib/auth/auth-context'
 import { supabase } from '../../lib/supabase'
-import { TEST_TYPE_ID, type VisionScanResult } from '@spect-it/cv'
+import { TEST_TYPE_ID, TEST_TYPE_DISPLAY, type VisionScanResult } from '@spect-it/cv'
 
 export default function ResultsScreen() {
   const { buildFinalResult, resetSession } = useVisionScan()
@@ -26,60 +26,84 @@ export default function ResultsScreen() {
   }, [])
 
   const saveToSupabase = async (scanResult: VisionScanResult) => {
+    if (!user?.id) {
+      console.log('No authenticated user - skipping save')
+      return
+    }
+    
     setIsSaving(true)
     
     try {
+      const testResultData: any = {
+        user_id: user.id,
+        test_type: TEST_TYPE_ID.VISION_SCAN,
+        test_name: TEST_TYPE_DISPLAY[TEST_TYPE_ID.VISION_SCAN],
+        test_data: {
+          sessionId: scanResult.timestamp.toString(),
+          participantId: scanResult.participantId,
+          // Methodology and capability transparency
+          methodology: {
+            cameraType: 'front-facing',
+            faceDetection: 'expo-face-detector (Google ML Vision)',
+            gazeEstimation: 'face landmarks + eye positions (estimated)',
+            depthEstimation: 'face bounding box size (estimated)',
+            headPoseTracking: 'face detector roll/yaw',
+            qualityGating: 'per-module confidence with selective repeat',
+            capabilityMode: scanResult.deviceQualification.useSensorBasedMeasurements ? 'full' : 'degraded',
+            hasDepthSensor: scanResult.deviceQualification.capability.hasLiDAR || scanResult.deviceQualification.capability.hasTrueDepth,
+          },
+          deviceQualification: {
+            quality: scanResult.deviceQualification.overallQuality,
+            useSensorBasedMeasurements: scanResult.deviceQualification.useSensorBasedMeasurements,
+            scores: {
+              lighting: scanResult.deviceQualification.lightingScore,
+              distance: scanResult.deviceQualification.distanceScore,
+              stability: scanResult.deviceQualification.stabilityScore,
+            },
+          },
+          calibration: {
+            isValid: scanResult.calibration.isValid,
+            averageError: scanResult.calibration.averageError,
+            maxError: scanResult.calibration.maxError,
+            usedSensorData: scanResult.calibration.usedSensorData,
+            method: scanResult.calibration.usedSensorData ? 'sensor-based' : 'face-based estimate',
+          },
+          alignment: {
+            alignmentIndex: scanResult.alignment.alignmentIndex,
+            meanDeviation: scanResult.alignment.meanDeviation,
+            screeningNote: scanResult.alignment.screeningNote,
+            usedSensorData: scanResult.alignment.usedSensorData,
+          },
+          motility: {
+            excessiveHeadMotion: scanResult.motility.excessiveHeadMotion,
+            screeningNote: scanResult.motility.screeningNote,
+            usedSensorData: scanResult.motility.usedSensorData,
+          },
+          convergence: {
+            nearPoint: scanResult.convergence.nearPoint,
+            screeningNote: scanResult.convergence.screeningNote,
+            usedSensorData: scanResult.convergence.usedSensorData,
+          },
+          qualityAssessment: {
+            overallConfidence: scanResult.qualityAssessment.overallConfidence,
+            moduleCount: scanResult.qualityAssessment.modules.length,
+          },
+          screeningSummary: scanResult.screeningSummary,
+          recommendsProfessionalExam: scanResult.recommendsProfessionalExam,
+          repeatAttempts: scanResult.repeatAttempts,
+        },
+        test_date: new Date(scanResult.timestamp).toISOString(),
+        lidar_calibrated: scanResult.deviceQualification.capability.hasLiDAR || scanResult.deviceQualification.capability.hasTrueDepth,
+      }
+
+      // Add participant_id if present (matches acuity pattern)
+      if (scanResult.participantId) {
+        testResultData.participant_id = scanResult.participantId
+      }
+
       const { error } = await supabase
         .from('test_results')
-        .insert({
-          user_email: user?.email || null,
-          test_type: 'vision_scan',
-          test_name: 'Vision Scan - Prototype 1',
-          test_data: {
-            sessionId: scanResult.timestamp.toString(),
-            participantId: scanResult.participantId,
-            deviceQualification: {
-              quality: scanResult.deviceQualification.overallQuality,
-              useSensorBasedMeasurements: scanResult.deviceQualification.useSensorBasedMeasurements,
-              scores: {
-                lighting: scanResult.deviceQualification.lightingScore,
-                distance: scanResult.deviceQualification.distanceScore,
-                stability: scanResult.deviceQualification.stabilityScore,
-              },
-            },
-            calibration: {
-              isValid: scanResult.calibration.isValid,
-              averageError: scanResult.calibration.averageError,
-              maxError: scanResult.calibration.maxError,
-              usedSensorData: scanResult.calibration.usedSensorData,
-            },
-            alignment: {
-              alignmentIndex: scanResult.alignment.alignmentIndex,
-              meanDeviation: scanResult.alignment.meanDeviation,
-              screeningNote: scanResult.alignment.screeningNote,
-              usedSensorData: scanResult.alignment.usedSensorData,
-            },
-            motility: {
-              excessiveHeadMotion: scanResult.motility.excessiveHeadMotion,
-              screeningNote: scanResult.motility.screeningNote,
-              usedSensorData: scanResult.motility.usedSensorData,
-            },
-            convergence: {
-              nearPoint: scanResult.convergence.nearPoint,
-              screeningNote: scanResult.convergence.screeningNote,
-              usedSensorData: scanResult.convergence.usedSensorData,
-            },
-            qualityAssessment: {
-              overallConfidence: scanResult.qualityAssessment.overallConfidence,
-              moduleCount: scanResult.qualityAssessment.modules.length,
-            },
-            screeningSummary: scanResult.screeningSummary,
-            recommendsProfessionalExam: scanResult.recommendsProfessionalExam,
-            repeatAttempts: scanResult.repeatAttempts,
-          },
-          test_date: new Date(scanResult.timestamp).toISOString(),
-          lidar_calibrated: scanResult.deviceQualification.capability.hasLiDAR || scanResult.deviceQualification.capability.hasTrueDepth,
-        })
+        .insert(testResultData)
 
       if (error) {
         console.error('Error saving to Supabase:', error)
