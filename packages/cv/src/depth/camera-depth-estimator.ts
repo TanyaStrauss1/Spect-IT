@@ -161,22 +161,20 @@ export class CameraDepthEstimator {
 
   /**
    * Get current distance estimate
+   * 
+   * Note: This is a fallback method that returns calibration distance.
+   * For accurate distance estimation, use estimateDistanceFromIPD() or 
+   * estimateDistanceFromFace() with actual face landmark data.
    */
   async getDistance(): Promise<DepthReading> {
     let distance = this.config.calibrationDistance
     let confidence = 0.5
 
-    if (this.config.useFaceSize) {
-      const faceDistance = this.estimateDistanceFromFace()
-      distance = faceDistance
-      confidence = 0.6
-    }
-
     if (this.config.useMotionParallax) {
       const motionDistance = this.estimateDistanceFromMotion()
       // Average both estimates
       distance = (distance + motionDistance) / 2
-      confidence = 0.7
+      confidence = 0.6
     }
 
     return {
