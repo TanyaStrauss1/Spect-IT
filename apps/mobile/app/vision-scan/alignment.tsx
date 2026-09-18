@@ -19,6 +19,8 @@ import {
 } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
+import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
+import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -27,11 +29,13 @@ export default function AlignmentScreen() {
   const [tracker] = useState(() => new AlignmentTracker(deviceQualification?.useSensorBasedMeasurements || false))
   const [frameCount, setFrameCount] = useState(0)
   const [isCapturing, setIsCapturing] = useState(true)
+  const [isPaused, setIsPaused] = useState(false)
   const [result, setResult] = useState<AlignmentResult | null>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
   const targetFrames = 30
+  const faceLostTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Temporal smoothing state
   const [faceBoundsEMA, setFaceBoundsEMA] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
@@ -42,7 +46,7 @@ export default function AlignmentScreen() {
   const FRAME_BUFFER_SIZE = 8
 
   useEffect(() => {
-    if (isCapturing && frameCount < targetFrames && detectedFace) {
+    if (isCapturing && !isPaused && frameCount < targetFrames && detectedFace) {
       const interval = setInterval(() => {
         captureFrame()
       }, 100)
@@ -54,7 +58,7 @@ export default function AlignmentScreen() {
       setAlignment(alignmentResult)
       setIsCapturing(false)
     }
-  }, [isCapturing, frameCount, detectedFace])
+  }, [isCapturing, isPaused, frameCount, detectedFace])
 
   const handleFacesDetected = ({ faces }: { faces: any[] }) => {
     if (faces.length > 0) {
@@ -66,9 +70,63 @@ export default function AlignmentScreen() {
         rollAngle: face.rollAngle,
         yawAngle: face.yawAngle,
       })
+      
+      // Resume if was paused
+      if (isPaused) {
+        setIsPaused(false)
+      }
+      
+      // Clear any face-lost timeout
+      if (faceLostTimeoutRef.current) {
+        clearTimeout(faceLostTimeoutRef.current)
+        faceLostTimeoutRef.current = null
+      }
     } else {
       setDetectedFace(null)
+      
+      // Pause capture after 1 second of no face
+      if (!isPaused && !faceLostTimeoutRef.current) {
+        faceLostTimeoutRef.current = setTimeout(() => {
+          setIsPaused(true)
+        }, 1000)
+      }
     }
+  }
+  
+  const computeFaceHoldStatus = (): FaceHoldStatus => {
+    if (!detectedFace) return 'no-face'
+    
+    // Check distance
+    const faceWidth = detectedFace.bounds.width
+    if (faceWidth < screenWidth * 0.25) return 'too-far'
+    if (faceWidth > screenWidth * 0.6) return 'too-close'
+    
+    // Check centering
+    const faceCenterX = detectedFace.bounds.x + detectedFace.bounds.width / 2
+    const faceCenterY = detectedFace.bounds.y + detectedFace.bounds.height / 2
+    const screenCenterX = screenWidth / 2
+    const screenCenterY = screenHeight / 2
+    
+    const xOffset = Math.abs(faceCenterX - screenCenterX)
+    const yOffset = Math.abs(faceCenterY - screenCenterY)
+    
+    if (xOffset > screenWidth * 0.25 || yOffset > screenHeight * 0.25) {
+      return 'off-center'
+    }
+    
+    // Check head pose stability
+    if (headPoseEMA) {
+      if (Math.abs(headPoseEMA.yaw) > 20 || Math.abs(headPoseEMA.roll) > 20) {
+        return 'head-motion'
+      }
+    }
+    
+    // Excellent if large, centered, stable
+    if (faceWidth > screenWidth * 0.4 && xOffset < screenWidth * 0.1 && yOffset < screenHeight * 0.1) {
+      return 'excellent'
+    }
+    
+    return 'good'
   }
 
   const captureFrame = () => {
@@ -276,6 +334,8 @@ export default function AlignmentScreen() {
   }
 
   const progress = (frameCount / targetFrames) * 100
+  const faceHoldStatus = computeFaceHoldStatus()
+  const useSensorMode = deviceQualification?.useSensorBasedMeasurements || false
 
   return (
     <View style={styles.container}>
@@ -294,27 +354,23 @@ export default function AlignmentScreen() {
       />
 
       <View style={styles.overlay}>
-        <View style={styles.instructions}>
-          <Text style={styles.instructionText}>
-            Look at the center dot. Keep your head still.
-          </Text>
-          <Text style={styles.progressText}>
-            Capturing alignment... {frameCount}/{targetFrames}
-          </Text>
-          {!detectedFace && (
-            <Text style={styles.warningText}>⚠️ Face not detected</Text>
-          )}
-        </View>
+        <FaceHoldCoaching 
+          status={faceHoldStatus}
+          frameCount={frameCount}
+          targetFrames={targetFrames}
+          isPaused={isPaused}
+        />
 
         <View style={styles.fixationArea}>
+          <View style={styles.centerInstruction}>
+            <Text style={styles.centerInstructionText}>
+              Look at the red dot
+            </Text>
+          </View>
           <View style={styles.fixationDot} />
         </View>
 
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-        </View>
+        <DegradedModeBanner useSensorMode={useSensorMode} />
       </View>
     </View>
   )
@@ -330,32 +386,25 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  instructions: {
-    padding: 20,
-    alignItems: 'center',
-    backgroundColor: 'rgba(55, 65, 81, 0.95)',
-  },
-  instructionText: {
-    fontSize: 18,
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#F59E0B',
-    marginTop: 4,
+    justifyContent: 'center',
   },
   fixationArea: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  centerInstruction: {
+    position: 'absolute',
+    top: -60,
+  },
+  centerInstructionText: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   fixationDot: {
     width: 40,
@@ -364,19 +413,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     borderWidth: 3,
     borderColor: 'white',
-  },
-  progressBarContainer: {
-    padding: 20,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#374151',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4F46E5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   content: {
     flex: 1,
