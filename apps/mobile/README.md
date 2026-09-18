@@ -43,7 +43,7 @@ This app is part of a monorepo with workspace dependencies (`@spect-it/cv`). EAS
 
 ## Privacy Policy
 
-https://spect-it.com/privacy.html
+https://spect-it.com/privacy
 
 ## Important: Screening Disclaimer
 

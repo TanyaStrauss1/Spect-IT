@@ -110,7 +110,7 @@ Navigate to **Dashboard → Store presence → Main store listing**
   • Results stored locally and optionally synced to secure cloud
   • Camera used only for test calibration
   • Location access optional (for finding nearby practices)
-  • Full privacy policy: https://spect-it.com/privacy.html
+  • Full privacy policy: https://spect-it.com/privacy
   
   Spect-IT helps you monitor your vision health between professional check-ups.
   ```
@@ -133,7 +133,8 @@ Navigate to **Dashboard → Store presence → Main store listing**
 **Contact details:**
 - **Email**: support@spect-it.com (or your support email)
 - **Website**: https://spect-it.com
-- **Privacy policy**: https://spect-it.com/privacy.html (REQUIRED)
+- **Privacy policy**: https://spect-it.com/privacy (REQUIRED)
+- **Terms of service**: https://spect-it.com/terms
 
 ### 3. Content Rating
 Navigate to **Dashboard → Policy → App content → Content ratings**
@@ -172,7 +173,7 @@ Complete the **Health apps** declaration:
 - **Is this a health app?**: Yes
 - **Does it make medical claims?**: No (screening only, not diagnosis)
 - **Is it FDA approved or equivalent?**: No (not a medical device)
-- **Privacy policy provided**: Yes (https://spect-it.com/privacy.html)
+- **Privacy policy provided**: Yes (https://spect-it.com/privacy)
 
 ### 6. Target Audience & News Apps
 - **Target age**: 13+ or 18+ (health content)
@@ -292,7 +293,7 @@ Ensure `android.package` in `app.config.js` is `com.spectit.app`
 Increment `android.versionCode` in `app.config.js`
 
 ### Play Console rejects app
-- Verify privacy policy is accessible at https://spect-it.com/privacy.html
+- Verify privacy policy is accessible at https://spect-it.com/privacy
 - Complete all required sections in Data Safety
 - Ensure medical disclaimers are clear (screening not diagnosis)
 

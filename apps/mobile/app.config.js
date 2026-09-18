@@ -58,6 +58,6 @@ export default {
       }
     },
     privacy: "public",
-    privacyPolicyUrl: "https://spect-it.com/privacy.html"
+    privacyPolicyUrl: "https://spect-it.com/privacy"
   }
 };
