@@ -36,6 +36,67 @@ export interface DistanceMetadata {
 }
 
 /**
+ * Quality Guard - Pre-Test Environmental Requirements
+ * Ensures testing conditions meet minimum clinical screening standards
+ */
+export const ACUITY_QUALITY_GUARD = {
+  lighting: {
+    title: 'Lighting & Display Quality',
+    description: 'Adequate lighting without glare ensures accurate letter recognition and prevents eye strain.',
+    requirements: [
+      'Test in moderate ambient lighting (not too bright or dark)',
+      'Avoid direct sunlight or reflections on screen',
+      'Screen brightness set to 70%+ for clear contrast',
+      'Clean screen surface free of smudges or fingerprints',
+    ],
+    whyItMatters: 'Poor lighting or screen glare can cause false failures by obscuring letters, while overly dark conditions cause pupil dilation that may mask refractive errors.',
+  },
+  distance: {
+    title: 'Viewing Distance & Positioning',
+    description: 'Proper test distance is critical for accurate angular sizing and valid screening results.',
+    requirements: [
+      'Position yourself at the calibrated distance (typically 3-6 meters)',
+      'Sit or stand with eyes level with center of screen',
+      'Keep head still and upright during testing',
+      'Avoid leaning forward or backward',
+    ],
+    whyItMatters: 'Incorrect viewing distance changes the visual angle of letters, invalidating the test calibration and producing false results.',
+  },
+  correction: {
+    title: 'Vision Correction',
+    description: 'Test with your usual vision correction unless specifically instructed otherwise.',
+    requirements: [
+      'Wear prescription glasses or contact lenses if normally worn',
+      'Test represents your corrected vision',
+      'Remove glasses only if test specifically requires uncorrected vision',
+    ],
+    whyItMatters: 'Testing without correction when you normally wear glasses measures uncorrected vision, not your functional everyday vision.',
+  },
+  occlusion: {
+    title: 'Eye Occlusion & Cooperation',
+    description: 'Proper eye coverage ensures accurate per-eye measurements.',
+    requirements: [
+      'Cover the non-tested eye completely (use hand, tissue, or eye patch)',
+      'Do NOT press on the covered eye',
+      'Keep both eyes open under the occluder',
+      'No peeking or squinting',
+    ],
+    whyItMatters: 'Incomplete occlusion or pressing on the eye can affect results. Peeking invalidates the per-eye assessment.',
+  },
+} as const
+
+/**
+ * Quality Guard metadata for test results
+ * Records that pre-test quality gates were completed
+ */
+export interface QualityGuardMetadata {
+  preTestChecklistCompleted: boolean
+  checklistVersion: string
+  gatesCompleted: string[]
+  timestamp: number
+}
+
+/**
  * Sloan letters used in ETDRS charts
  */
 export const SLOAN_LETTERS = ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'] as const
@@ -100,6 +161,7 @@ export interface VisualAcuityResult {
   rightEye: EyeResult | null
   leftEye: EyeResult | null
   methodology: string
+  qualityGuard?: QualityGuardMetadata
 }
 
 /**

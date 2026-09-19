@@ -105,6 +105,15 @@ export interface HearingScreeningResult {
   // Metadata
   methodology: string
   note: string
+  
+  // Quality Guard
+  qualityGuard?: {
+    headphoneCheckCompleted: boolean
+    ambientNoiseConfirmed: boolean
+    calibrationCompleted: boolean
+    gatesCompleted: string[]
+    timestamp: number
+  }
 }
 
 /**
