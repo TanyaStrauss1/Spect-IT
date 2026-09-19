@@ -12,6 +12,7 @@ import type {
   DeviceQualification,
   CalibrationResult,
   AlignmentResult,
+  CoverUncoverResult,
   MotilityResult,
   ConvergenceResult,
   PupilExaminationResult,
@@ -40,6 +41,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     deviceQualification: null,
     calibration: null,
     alignment: null,
+    coverUncover: null,
     motility: null,
     convergence: null,
     pupilExamination: null,
@@ -62,6 +64,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       deviceQualification: null,
       calibration: null,
       alignment: null,
+      coverUncover: null,
       motility: null,
       convergence: null,
       pupilExamination: null,
@@ -86,6 +89,10 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
 
   const setAlignment = useCallback((result: AlignmentResult) => {
     setSession((prev) => ({ ...prev, alignment: result }))
+  }, [])
+
+  const setCoverUncover = useCallback((result: CoverUncoverResult) => {
+    setSession((prev) => ({ ...prev, coverUncover: result }))
   }, [])
 
   const setMotility = useCallback((result: MotilityResult) => {
@@ -140,6 +147,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       deviceQualification: null,
       calibration: null,
       alignment: null,
+      coverUncover: null,
       motility: null,
       convergence: null,
       pupilExamination: null,
@@ -206,6 +214,9 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     if (session.alignment.alignmentIndex < 70) {
       issues.push('alignment variation')
     }
+    if (session.coverUncover && session.coverUncover.asymmetryDetected) {
+      issues.push('cover-uncover asymmetry')
+    }
     if (session.motility.excessiveHeadMotion) {
       issues.push('limited motility data quality')
     }
@@ -240,6 +251,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       deviceQualification: session.deviceQualification,
       calibration: session.calibration,
       alignment: session.alignment,
+      coverUncover: session.coverUncover,
       motility: session.motility,
       convergence: session.convergence,
       pupilExamination: session.pupilExamination,
@@ -257,6 +269,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     setDeviceQualification,
     setCalibration,
     setAlignment,
+    setCoverUncover,
     setMotility,
     setConvergence,
     setPupilExamination,
