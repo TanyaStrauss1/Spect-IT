@@ -29,24 +29,24 @@ export const TestCard: React.FC<TestCardProps> = ({
   disabled = false
 }) => {
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-clinical-lg hover:border-cyan-200 transition-all hover:-translate-y-1 group">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="text-4xl">{icon}</div>
+          <div className="text-3xl opacity-80 group-hover:opacity-100 transition-opacity">{icon}</div>
           {completed && (
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+            <span className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full font-semibold border border-green-200">
               Completed
             </span>
           )}
         </div>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-slate-900 font-semibold">{title}</CardTitle>
+        <CardDescription className="text-slate-600">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <span>⏱️ {duration}</span>
+        <div className="flex items-center justify-between text-sm text-slate-500">
+          <span className="bg-slate-50 px-2 py-1 rounded-full text-xs font-medium border border-slate-200">{duration}</span>
           {score !== undefined && (
-            <span className="font-semibold text-[#667eea]">Score: {score}</span>
+            <span className="font-semibold text-cyan-600">Score: {score}</span>
           )}
         </div>
       </CardContent>
