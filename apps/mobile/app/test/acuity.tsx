@@ -1,26 +1,31 @@
 /**
  * Clinical Visual Acuity Test - Mobile
  * ETDRS/LogMAR methodology with Sloan optotypes
+ * Now with camera-estimated distance using IPD/face width
  */
 
 import { useState, useEffect } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native'
 import { router } from 'expo-router'
+import { Camera } from 'expo-camera'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { SloanOptotype } from '../../components/stimuli/SloanOptotype'
 import { CalibrationScreen } from '../../components/calibration/CalibrationScreen'
+import { CameraDistanceTracker, type DistanceEstimate } from '../../components/test/CameraDistanceTracker'
 import { 
   createVisualAcuityTest, 
   TEST_TYPE_ID,
   getScreeningDisclaimer,
+  getDistanceSourceDescription,
   type ETDRSLine, 
   type LineResponse, 
   type EyeResult,
   type Eye,
   type CalibrationData,
   type DistanceMetadata,
+  type DistanceSource,
   ScreenCalibrator 
 } from '@spect-it/cv'
 
@@ -41,6 +46,11 @@ export default function AcuityTestScreen() {
   const [userInput, setUserInput] = useState('')
   const [saving, setSaving] = useState(false)
   
+  // Camera distance estimation
+  const [useCameraDistance, setUseCameraDistance] = useState(false)
+  const [cameraPermission, setCameraPermission] = useState<boolean | null>(null)
+  const [latestDistanceEstimate, setLatestDistanceEstimate] = useState<DistanceEstimate | null>(null)
+  
   const test = createVisualAcuityTest({ startLogMAR: 0.5, stopOnMissedLine: false })
   const chartLines = test.getChartLines()
 
@@ -58,6 +68,14 @@ export default function AcuityTestScreen() {
       return
     }
     
+    // Check camera permission for distance estimation
+    Camera.getCameraPermissionsAsync().then(({ status }) => {
+      setCameraPermission(status === 'granted')
+      if (status === 'granted') {
+        setUseCameraDistance(true)
+      }
+    })
+    
     // Check for existing calibration
     const cal = new ScreenCalibrator()
     setCalibrator(cal)
@@ -68,6 +86,28 @@ export default function AcuityTestScreen() {
       setNeedsCalibration(false)
     }
   }, [user, authLoading, participants, activeParticipant])
+  
+  const handleDistanceUpdate = (estimate: DistanceEstimate) => {
+    setLatestDistanceEstimate(estimate)
+    
+    // Update calibration with camera-estimated distance
+    if (calibrator && useCameraDistance) {
+      const updatedCalibration: CalibrationData = {
+        ...calibrator.getDefaultCalibration(),
+        distanceCm: estimate.distanceCm,
+        method: 'manual', // Will be overridden by distanceSource
+      }
+      setCalibration(updatedCalibration)
+    }
+  }
+  
+  const requestCameraPermission = async () => {
+    const { status } = await Camera.requestCameraPermissionsAsync()
+    setCameraPermission(status === 'granted')
+    if (status === 'granted') {
+      setUseCameraDistance(true)
+    }
+  }
   
   const handleCalibrationComplete = (cal: CalibrationData) => {
     setCalibration(cal)
@@ -150,10 +190,19 @@ export default function AcuityTestScreen() {
   }
 
   const finishTest = async (rightEye: EyeResult, leftEye: EyeResult) => {
-    // Determine distance source from calibration
-    const distanceSource = calibration!.method === 'credit-card' || calibration!.method === 'ruler' 
-      ? 'card-calibration' 
-      : 'assumed-default'
+    // Determine distance source from calibration and camera estimation
+    let distanceSource: DistanceSource
+    
+    if (calibration!.method === 'credit-card' || calibration!.method === 'ruler') {
+      distanceSource = 'card-calibration'
+    } else if (useCameraDistance && latestDistanceEstimate) {
+      // Use camera-estimated distance with the appropriate method
+      distanceSource = latestDistanceEstimate.method === 'ipd' 
+        ? 'camera-estimated-ipd' 
+        : 'camera-estimated-face'
+    } else {
+      distanceSource = 'assumed-default'
+    }
     
     const result = test.createResult(calibration!, rightEye, leftEye, distanceSource)
     setDistanceMetadata(result.distanceMetadata)
@@ -220,14 +269,15 @@ export default function AcuityTestScreen() {
             distanceMetadata.isMedicalGrade ? styles.distanceInfoGood : styles.distanceInfoWarning
           ]}>
             <Text style={styles.distanceInfoEmoji}>
-              {distanceMetadata.isMedicalGrade ? '📏' : 'ℹ️'}
+              {distanceMetadata.isMedicalGrade ? '📏' : 
+               distanceMetadata.source === 'camera-estimated-ipd' || distanceMetadata.source === 'camera-estimated-face' ? '📷' : 'ℹ️'}
             </Text>
             <View style={styles.distanceInfoText}>
               <Text style={styles.distanceInfoTitle}>
                 Distance: {distanceMetadata.distanceCm}cm
               </Text>
               <Text style={styles.distanceInfoSubtitle}>
-                {distanceMetadata.source === 'card-calibration' ? 'Card-calibrated (clinical-grade)' : 'Assumed default (screening-grade)'} • 
+                {getDistanceSourceDescription(distanceMetadata.source)} • 
                 Confidence: {Math.round(distanceMetadata.confidence * 100)}%
               </Text>
             </View>
@@ -281,22 +331,58 @@ export default function AcuityTestScreen() {
   const strokeWidthPx = Math.round(letterSizePx / 5)
 
   // Determine distance source for display
-  const distanceSource = calibration?.method === 'credit-card' || calibration?.method === 'ruler'
-    ? 'card-calibration'
-    : 'assumed-default'
-  const isMedicalGrade = distanceSource === 'card-calibration'
+  let displayDistanceSource: string
+  let displayDistanceCm: number
+  let displayIsMedicalGrade: boolean
+  
+  if (calibration?.method === 'credit-card' || calibration?.method === 'ruler') {
+    displayDistanceSource = 'card-calibration'
+    displayDistanceCm = calibration.distanceCm
+    displayIsMedicalGrade = true
+  } else if (useCameraDistance && latestDistanceEstimate) {
+    displayDistanceSource = latestDistanceEstimate.method === 'ipd' ? 'camera-estimated-ipd' : 'camera-estimated-face'
+    displayDistanceCm = latestDistanceEstimate.distanceCm
+    displayIsMedicalGrade = false
+  } else {
+    displayDistanceSource = 'assumed-default'
+    displayDistanceCm = calibration?.distanceCm || 60
+    displayIsMedicalGrade = false
+  }
 
   return (
     <View style={styles.container}>
       {/* Distance Info Banner */}
-      <View style={[
-        styles.distanceBanner,
-        isMedicalGrade ? styles.distanceBannerGood : styles.distanceBannerWarning
-      ]}>
-        <Text style={styles.distanceBannerText}>
-          {isMedicalGrade ? '✓' : 'ℹ️'} Distance: {calibration?.distanceCm || 60}cm • 
-          {isMedicalGrade ? ' Card-calibrated (clinical-grade)' : ' Assumed default (screening-grade)'}
-        </Text>
+      <View style={styles.topRow}>
+        <View style={[
+          styles.distanceBanner,
+          displayIsMedicalGrade ? styles.distanceBannerGood : styles.distanceBannerWarning
+        ]}>
+          <Text style={styles.distanceBannerText}>
+            {displayIsMedicalGrade ? '✓' : 
+             displayDistanceSource === 'camera-estimated-ipd' || displayDistanceSource === 'camera-estimated-face' ? '📷' : 'ℹ️'} 
+            {' '}Distance: {displayDistanceCm}cm • 
+            {displayIsMedicalGrade ? ' Card-calibrated' : 
+             displayDistanceSource === 'camera-estimated-ipd' ? ' Camera (IPD)' :
+             displayDistanceSource === 'camera-estimated-face' ? ' Camera (Face)' : ' Assumed'}
+          </Text>
+        </View>
+        
+        {useCameraDistance && cameraPermission && (
+          <CameraDistanceTracker 
+            onDistanceUpdate={handleDistanceUpdate}
+            minSamples={10}
+            showOverlay={true}
+          />
+        )}
+        
+        {cameraPermission === false && (
+          <TouchableOpacity 
+            style={styles.cameraButton}
+            onPress={requestCameraPermission}
+          >
+            <Text style={styles.cameraButtonText}>📷 Enable Camera Distance</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.testCard}>
@@ -371,11 +457,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EEF2FF',
   },
-  distanceBanner: {
-    padding: 12,
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 20,
     marginTop: 20,
     marginBottom: 8,
+    gap: 12,
+  },
+  distanceBanner: {
+    flex: 1,
+    padding: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
@@ -390,10 +482,21 @@ const styles = StyleSheet.create({
     borderColor: '#FBBF24',
   },
   distanceBannerText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#374151',
     textAlign: 'center',
+  },
+  cameraButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  cameraButtonText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
   },
   scrollContent: {
     padding: 20,
