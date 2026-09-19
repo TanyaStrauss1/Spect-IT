@@ -89,25 +89,29 @@ const hearingTests = [
 
 export function TestGridSection() {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 bg-gradient-to-b from-white to-slate-50">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-cyan-50 px-4 py-2 rounded-full text-sm font-semibold mb-4 border border-cyan-200/50 text-cyan-900">
+            <span className="text-xs">●</span>
+            Screening Tests
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
             Comprehensive Screening Tests
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
             Vision and hearing screening tests for families and teachers
           </p>
         </div>
 
         {/* Eye Screening Section */}
-        <div className="max-w-6xl mx-auto mb-12">
-          <div className="mb-6">
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              👁️ Eye Screening
+        <div className="max-w-6xl mx-auto mb-16">
+          <div className="mb-8">
+            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight">
+              Eye Screening
             </h3>
-            <p className="text-gray-600">
+            <p className="text-slate-600">
               Comprehensive vision screening tests — results are screening only, not a diagnosis
             </p>
           </div>
@@ -142,12 +146,12 @@ export function TestGridSection() {
         </div>
 
         {/* Hearing Screening Section */}
-        <div className="max-w-6xl mx-auto mb-12">
-          <div className="mb-6">
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              🎧 Hearing Screening
+        <div className="max-w-6xl mx-auto mb-16">
+          <div className="mb-8">
+            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2 tracking-tight">
+              Hearing Screening
             </h3>
-            <p className="text-gray-600">
+            <p className="text-slate-600">
               Pure-tone hearing screening — results are screening only, not a diagnosis
             </p>
           </div>
@@ -177,26 +181,26 @@ export function TestGridSection() {
         </div>
 
         {/* Features */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-          <div className="text-center">
-            <div className="text-4xl mb-3">🔬</div>
-            <h4 className="font-semibold mb-2">Accurate Results</h4>
-            <p className="text-sm text-gray-600">Medical-grade testing algorithms</p>
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          <div className="text-center p-6 bg-white rounded-clinical-lg border border-slate-200 shadow-clinical">
+            <div className="text-2xl mb-3 opacity-80">●</div>
+            <h4 className="font-semibold mb-2 text-slate-900">Accurate Results</h4>
+            <p className="text-sm text-slate-600">Clinical testing algorithms</p>
           </div>
-          <div className="text-center">
-            <div className="text-4xl mb-3">📊</div>
-            <h4 className="font-semibold mb-2">Comprehensive</h4>
-            <p className="text-sm text-gray-600">Vision and hearing screening tests</p>
+          <div className="text-center p-6 bg-white rounded-clinical-lg border border-slate-200 shadow-clinical">
+            <div className="text-2xl mb-3 opacity-80">●</div>
+            <h4 className="font-semibold mb-2 text-slate-900">Comprehensive</h4>
+            <p className="text-sm text-slate-600">Vision and hearing screening</p>
           </div>
-          <div className="text-center">
-            <div className="text-4xl mb-3">📱</div>
-            <h4 className="font-semibold mb-2">Device Compatible</h4>
-            <p className="text-sm text-gray-600">Works on all devices</p>
+          <div className="text-center p-6 bg-white rounded-clinical-lg border border-slate-200 shadow-clinical">
+            <div className="text-2xl mb-3 opacity-80">●</div>
+            <h4 className="font-semibold mb-2 text-slate-900">Device Compatible</h4>
+            <p className="text-sm text-slate-600">Works on all devices</p>
           </div>
-          <div className="text-center">
-            <div className="text-4xl mb-3">🔒</div>
-            <h4 className="font-semibold mb-2">Secure & Private</h4>
-            <p className="text-sm text-gray-600">Your data is protected</p>
+          <div className="text-center p-6 bg-white rounded-clinical-lg border border-slate-200 shadow-clinical">
+            <div className="text-2xl mb-3 opacity-80">●</div>
+            <h4 className="font-semibold mb-2 text-slate-900">Secure & Private</h4>
+            <p className="text-sm text-slate-600">Your data is protected</p>
           </div>
         </div>
       </div>
