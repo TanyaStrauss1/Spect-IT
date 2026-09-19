@@ -9,12 +9,13 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { router } from 'expo-router'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
+import { ModuleStateCard } from '../../components/vision-scan/ModuleStateCard'
 import type { ModuleName } from '@spect-it/cv'
 
 const MAX_REPEAT_ATTEMPTS = 2
 
 export default function QualityReviewScreen() {
-  const { qualityAssessment, completeSession, repeatAttempts } = useVisionScan()
+  const { qualityAssessment, completeSession, repeatAttempts, examController, getModuleState } = useVisionScan()
   const [acknowledgedProceed, setAcknowledgedProceed] = useState(false)
 
   if (!qualityAssessment) {
@@ -144,7 +145,28 @@ export default function QualityReviewScreen() {
 
         <View style={styles.modulesCard}>
           <Text style={styles.modulesTitle}>Module Quality Details</Text>
-          {qualityAssessment.modules.map((module) => (
+          
+          {/* Show controller state if available */}
+          {examController && (
+            <>
+              {qualityAssessment.modules.map((module) => {
+                const moduleState = getModuleState(module.module as ModuleName)
+                if (moduleState) {
+                  return (
+                    <ModuleStateCard
+                      key={module.module}
+                      moduleState={moduleState}
+                      onRepeat={() => handleRepeatModule(module.module)}
+                    />
+                  )
+                }
+                return null
+              })}
+            </>
+          )}
+          
+          {/* Fallback to original rendering if no controller */}
+          {!examController && qualityAssessment.modules.map((module) => (
             <View key={module.module} style={styles.moduleRow}>
               <View style={styles.moduleHeader}>
                 <Text style={styles.moduleName}>
