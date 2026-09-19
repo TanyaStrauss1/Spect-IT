@@ -14,11 +14,13 @@ import { CalibrationScreen } from '../../components/calibration/CalibrationScree
 import { 
   createVisualAcuityTest, 
   TEST_TYPE_ID,
+  getScreeningDisclaimer,
   type ETDRSLine, 
   type LineResponse, 
   type EyeResult,
   type Eye,
   type CalibrationData,
+  type DistanceMetadata,
   ScreenCalibrator 
 } from '@spect-it/cv'
 
@@ -34,6 +36,7 @@ export default function AcuityTestScreen() {
   const [lineResponses, setLineResponses] = useState<LineResponse[]>([])
   const [rightEyeResult, setRightEyeResult] = useState<EyeResult | null>(null)
   const [leftEyeResult, setLeftEyeResult] = useState<EyeResult | null>(null)
+  const [distanceMetadata, setDistanceMetadata] = useState<DistanceMetadata | null>(null)
   const [completed, setCompleted] = useState(false)
   const [userInput, setUserInput] = useState('')
   const [saving, setSaving] = useState(false)
@@ -147,7 +150,13 @@ export default function AcuityTestScreen() {
   }
 
   const finishTest = async (rightEye: EyeResult, leftEye: EyeResult) => {
-    const result = test.createResult(calibration!, rightEye, leftEye)
+    // Determine distance source from calibration
+    const distanceSource = calibration!.method === 'credit-card' || calibration!.method === 'ruler' 
+      ? 'card-calibration' 
+      : 'assumed-default'
+    
+    const result = test.createResult(calibration!, rightEye, leftEye, distanceSource)
+    setDistanceMetadata(result.distanceMetadata)
     setCompleted(true)
 
     if (user) {
@@ -161,7 +170,8 @@ export default function AcuityTestScreen() {
             rightEye, 
             leftEye, 
             methodology: result.methodology,
-            calibration: calibration
+            calibration: calibration,
+            distanceMetadata: result.distanceMetadata,
           },
         }
 
@@ -194,7 +204,7 @@ export default function AcuityTestScreen() {
     )
   }
 
-  if (completed && rightEyeResult && leftEyeResult) {
+  if (completed && rightEyeResult && leftEyeResult && distanceMetadata) {
     return (
       <ScrollView style={styles.container}>
         <View style={styles.resultCard}>
@@ -203,6 +213,25 @@ export default function AcuityTestScreen() {
           <Text style={styles.resultSubtitle}>
             {saving ? 'Saving results...' : 'Results saved'}
           </Text>
+
+          {/* Distance Information */}
+          <View style={[
+            styles.distanceInfo,
+            distanceMetadata.isMedicalGrade ? styles.distanceInfoGood : styles.distanceInfoWarning
+          ]}>
+            <Text style={styles.distanceInfoEmoji}>
+              {distanceMetadata.isMedicalGrade ? '📏' : 'ℹ️'}
+            </Text>
+            <View style={styles.distanceInfoText}>
+              <Text style={styles.distanceInfoTitle}>
+                Distance: {distanceMetadata.distanceCm}cm
+              </Text>
+              <Text style={styles.distanceInfoSubtitle}>
+                {distanceMetadata.source === 'card-calibration' ? 'Card-calibrated (clinical-grade)' : 'Assumed default (screening-grade)'} • 
+                Confidence: {Math.round(distanceMetadata.confidence * 100)}%
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.resultMain}>
             <Text style={styles.resultLabel}>Right Eye (OD)</Text>
@@ -224,9 +253,7 @@ export default function AcuityTestScreen() {
 
           <View style={styles.disclaimer}>
             <Text style={styles.disclaimerText}>
-              <Text style={styles.disclaimerBold}>Screening Result:</Text> ETDRS/LogMAR methodology with 
-              Sloan optotypes and per-eye testing. This is a screening, not a medical diagnosis. 
-              Consult an eye care professional for comprehensive evaluation.
+              <Text style={styles.disclaimerBold}>Screening Result:</Text> {getScreeningDisclaimer(distanceMetadata)}
             </Text>
           </View>
 
@@ -253,8 +280,25 @@ export default function AcuityTestScreen() {
   const letterSizePx = calibrator?.calculateETDRSLetterSize(currentLine?.logMAR || 0.5) || 60
   const strokeWidthPx = Math.round(letterSizePx / 5)
 
+  // Determine distance source for display
+  const distanceSource = calibration?.method === 'credit-card' || calibration?.method === 'ruler'
+    ? 'card-calibration'
+    : 'assumed-default'
+  const isMedicalGrade = distanceSource === 'card-calibration'
+
   return (
     <View style={styles.container}>
+      {/* Distance Info Banner */}
+      <View style={[
+        styles.distanceBanner,
+        isMedicalGrade ? styles.distanceBannerGood : styles.distanceBannerWarning
+      ]}>
+        <Text style={styles.distanceBannerText}>
+          {isMedicalGrade ? '✓' : 'ℹ️'} Distance: {calibration?.distanceCm || 60}cm • 
+          {isMedicalGrade ? ' Card-calibrated (clinical-grade)' : ' Assumed default (screening-grade)'}
+        </Text>
+      </View>
+
       <View style={styles.testCard}>
         <View style={styles.header}>
           <View style={styles.badge}>
@@ -327,6 +371,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EEF2FF',
   },
+  distanceBanner: {
+    padding: 12,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  distanceBannerGood: {
+    backgroundColor: '#D1FAE5',
+    borderWidth: 1,
+    borderColor: '#34D399',
+  },
+  distanceBannerWarning: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FBBF24',
+  },
+  distanceBannerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
@@ -337,6 +405,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     margin: 20,
+    marginTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -433,6 +502,40 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     marginBottom: 20,
+  },
+  distanceInfo: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    width: '100%',
+    borderWidth: 1,
+  },
+  distanceInfoGood: {
+    backgroundColor: '#D1FAE5',
+    borderColor: '#34D399',
+  },
+  distanceInfoWarning: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FBBF24',
+  },
+  distanceInfoEmoji: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  distanceInfoText: {
+    flex: 1,
+  },
+  distanceInfoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  distanceInfoSubtitle: {
+    fontSize: 11,
+    color: '#6B7280',
+    lineHeight: 16,
   },
   resultEmoji: {
     fontSize: 64,

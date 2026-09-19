@@ -19,12 +19,14 @@ import {
   ETDRS_CHART,
   calculateSloanStrokeWidth,
   TEST_TYPE_ID,
+  getScreeningDisclaimer,
   type VisualAcuityTest,
   type ETDRSLine,
   type LetterResponse,
   type LineResponse,
   type EyeResult,
   type SloanLetter,
+  type DistanceMetadata,
 } from '@spect-it/cv'
 
 type Eye = 'right' | 'left'
@@ -44,6 +46,7 @@ export default function AcuityTestPage() {
   const [lineResponses, setLineResponses] = useState<LineResponse[]>([])
   const [rightEyeResult, setRightEyeResult] = useState<EyeResult | null>(null)
   const [leftEyeResult, setLeftEyeResult] = useState<EyeResult | null>(null)
+  const [distanceMetadata, setDistanceMetadata] = useState<DistanceMetadata | null>(null)
   const [isComplete, setIsComplete] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -80,6 +83,12 @@ export default function AcuityTestPage() {
 
   const currentLine = chartLines[currentLineIndex]
   const calibration = calibrator.getCalibration() || calibrator.getDefaultCalibration()
+  
+  // Determine distance source for display
+  const distanceSource = calibration.method === 'credit-card' || calibration.method === 'ruler'
+    ? 'card-calibration'
+    : 'assumed-default'
+  const isMedicalGrade = distanceSource === 'card-calibration'
   
   // Calculate stroke width for Sloan optotype rendering
   const strokeWidthPx = currentLine 
@@ -161,7 +170,15 @@ export default function AcuityTestPage() {
   }
 
   const finishTest = async (rightEye: EyeResult, leftEye: EyeResult) => {
-    const result = test.createResult(calibration, rightEye, leftEye)
+    // Determine distance source from calibration
+    // If calibrated via credit card, it's card-calibration
+    // Otherwise it's assumed-default
+    const distanceSource = calibration.method === 'credit-card' || calibration.method === 'ruler' 
+      ? 'card-calibration' 
+      : 'assumed-default'
+    
+    const result = test.createResult(calibration, rightEye, leftEye, distanceSource)
+    setDistanceMetadata(result.distanceMetadata)
     setIsComplete(true)
 
     // Mark test as complete in journey
@@ -179,6 +196,7 @@ export default function AcuityTestPage() {
             rightEye: rightEye,
             leftEye: leftEye,
             methodology: result.methodology,
+            distanceMetadata: result.distanceMetadata,
           },
         }
 
@@ -213,7 +231,7 @@ export default function AcuityTestPage() {
     )
   }
 
-  if (isComplete && rightEyeResult && leftEyeResult) {
+  if (isComplete && rightEyeResult && leftEyeResult && distanceMetadata) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
         <div className="container mx-auto max-w-3xl">
@@ -222,6 +240,29 @@ export default function AcuityTestPage() {
               <div className="text-6xl mb-4">✓</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Test Complete!</h2>
               <p className="text-gray-600">Your results have been {saving ? 'saving...' : 'saved'}</p>
+            </div>
+
+            {/* Distance Information */}
+            <div className={`rounded-lg p-4 mb-6 ${
+              distanceMetadata.isMedicalGrade 
+                ? 'bg-green-50 border border-green-200' 
+                : 'bg-yellow-50 border border-yellow-200'
+            }`}>
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">
+                  {distanceMetadata.isMedicalGrade ? '📏' : 'ℹ️'}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-1">
+                    Distance Method: {distanceMetadata.source === 'card-calibration' ? 'Card Calibration' : 'Assumed Default'}
+                  </p>
+                  <p className="text-xs text-gray-700">
+                    Viewing distance: {distanceMetadata.distanceCm}cm • 
+                    Confidence: {Math.round(distanceMetadata.confidence * 100)}% • 
+                    {distanceMetadata.isMedicalGrade ? 'Clinical-grade angular sizing' : 'Screening-grade angular sizing'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Results Grid */}
@@ -280,9 +321,7 @@ export default function AcuityTestPage() {
             {/* Disclaimer */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800">
-                <strong>Screening Result:</strong> This is a screening test, not a medical diagnosis. 
-                ETDRS methodology with letter-by-letter scoring. Please consult an eye care professional 
-                for a comprehensive eye examination and prescription.
+                <strong>Screening Result:</strong> {getScreeningDisclaimer(distanceMetadata)}
               </p>
             </div>
 
@@ -332,6 +371,23 @@ export default function AcuityTestPage() {
       />
 
       <div className="container mx-auto max-w-4xl">
+        {/* Distance Info Banner */}
+        <div className={`rounded-lg p-3 mb-4 shadow-md ${
+          isMedicalGrade 
+            ? 'bg-green-50 border border-green-300' 
+            : 'bg-yellow-50 border border-yellow-300'
+        }`}>
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <span className="font-semibold text-gray-900">
+              {isMedicalGrade ? '✓' : 'ℹ️'} Distance: {calibration.distanceCm}cm
+            </span>
+            <span className="text-gray-600">•</span>
+            <span className="text-gray-700">
+              {isMedicalGrade ? 'Card-calibrated (clinical-grade)' : 'Assumed default (screening-grade)'}
+            </span>
+          </div>
+        </div>
+
         {/* Test Interface */}
         {currentLine && (
           <div className="bg-white rounded-lg shadow-xl p-8">

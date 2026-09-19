@@ -46,6 +46,10 @@ export {
   SLOAN_LETTERS,
   ETDRS_CHART,
   shuffleLetters,
+  determineDistanceMetadata,
+  getConfidenceForSource,
+  getDistanceSourceDescription,
+  getScreeningDisclaimer,
   type SloanLetter,
   type ETDRSLine,
   type Eye as AcuityEye,
@@ -53,6 +57,8 @@ export {
   type LineResponse,
   type EyeResult,
   type VisualAcuityResult,
+  type DistanceSource,
+  type DistanceMetadata,
 } from './tests/visual-acuity'
 
 // Color vision test
