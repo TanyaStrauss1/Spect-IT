@@ -75,17 +75,18 @@ const methodology = [
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="py-20 bg-gray-50">
+    <section id="how-it-works" className="py-20 bg-slate-50">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <div className="inline-block bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+          <div className="inline-flex items-center gap-2 bg-cyan-50 px-4 py-2 rounded-full text-sm font-semibold mb-4 border border-cyan-200/50 text-cyan-900">
+            <span className="text-xs">●</span>
             How it works
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
             Clinical-grade screening in four steps
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
             From calibration to results — here's how Spect-IT delivers accurate, repeatable vision screening.
           </p>
         </div>
@@ -93,18 +94,18 @@ export function HowItWorksSection() {
         {/* Steps Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-16">
           {steps.map((step, index) => (
-            <Card key={index} className="h-full hover:shadow-xl transition-shadow border-2 border-gray-200 hover:border-indigo-300">
+            <Card key={index} className="h-full hover:shadow-clinical-lg hover:border-cyan-200 transition-all hover:-translate-y-1 group">
               <CardContent className="p-6">
-                <div className="text-5xl font-bold text-indigo-100 mb-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-50 to-teal-50 flex items-center justify-center text-cyan-700 font-bold mb-4 border border-cyan-200 group-hover:scale-105 transition-transform">
                   {step.number}
                 </div>
-                <div className="text-4xl mb-3">
+                <div className="text-3xl mb-3 opacity-80">
                   {step.icon}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">
                   {step.title}
                 </h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <p className="text-slate-600 text-sm leading-relaxed">
                   {step.description}
                 </p>
               </CardContent>
@@ -114,8 +115,8 @@ export function HowItWorksSection() {
 
         {/* Clinical Methodology Section */}
         <div className="max-w-7xl mx-auto mt-16">
-          <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl p-8 border-2 border-gray-300">
-            <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
+          <div className="bg-gradient-to-br from-slate-50 to-cyan-50/30 rounded-clinical-lg p-8 border border-slate-200">
+            <h3 className="text-2xl font-bold text-slate-900 text-center mb-8 tracking-tight">
               Clinical Methodology
             </h3>
             
@@ -123,11 +124,11 @@ export function HowItWorksSection() {
               {methodology.map((item, index) => (
                 <div 
                   key={index}
-                  className={`bg-white rounded-xl p-5 border-l-4 ${item.color} hover:shadow-lg transition-shadow`}
+                  className="bg-white rounded-clinical p-5 border-l-4 border-cyan-500 hover:shadow-clinical-lg transition-all hover:-translate-y-0.5"
                 >
-                  <div className="text-3xl mb-2">{item.icon}</div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h4>
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <div className="text-2xl mb-2 opacity-80">{item.icon}</div>
+                  <h4 className="text-base font-bold text-slate-900 mb-2">{item.title}</h4>
+                  <p className="text-sm text-slate-600 leading-relaxed">
                     {item.description}
                   </p>
                 </div>
@@ -135,7 +136,7 @@ export function HowItWorksSection() {
             </div>
 
             {/* Clinical Note */}
-            <div className="mt-8 bg-amber-50 border-l-4 border-amber-500 rounded-lg p-5">
+            <div className="mt-8 bg-amber-50 border-l-4 border-amber-500 rounded-clinical p-5">
               <p className="text-sm text-amber-900 leading-relaxed">
                 <strong>Clinical Note:</strong> Spect-IT uses screen-based testing with calibrated physical sizing and validated protocols. 
                 All results are <strong>screening estimates for informational use</strong> — not medical diagnoses, clinical assessments, 
@@ -147,12 +148,12 @@ export function HowItWorksSection() {
 
         {/* Bottom CTA */}
         <div className="text-center mt-12">
-          <p className="text-gray-600 mb-4">
+          <p className="text-slate-600 mb-4 font-medium">
             Ready to test your vision?
           </p>
           <a
             href="/tests"
-            className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-md"
+            className="inline-block bg-gradient-to-r from-cyan-600 to-teal-600 text-white px-8 py-3 rounded-clinical font-semibold hover:from-cyan-700 hover:to-teal-700 transition-all shadow-clinical hover:shadow-clinical-lg hover:-translate-y-0.5"
           >
             Start Your Screening →
           </a>

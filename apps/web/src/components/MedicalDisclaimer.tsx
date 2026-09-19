@@ -10,14 +10,14 @@ export function MedicalDisclaimer() {
     <section className="py-12 bg-amber-50 border-t-4 border-amber-500">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg p-8 shadow-xl border-2 border-amber-200">
+          <div className="bg-white rounded-clinical-lg p-8 shadow-clinical-lg border-2 border-amber-200">
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                ⚠️ Important Medical Information
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                <span className="opacity-80">⚠️</span> Important Medical Information
               </h3>
-              <p className="text-gray-600">Screening only — not a diagnosis or dispensable prescription</p>
+              <p className="text-slate-600 font-medium">Screening only — not a diagnosis or dispensable prescription</p>
             </div>
-            <div className="space-y-4 text-sm text-gray-700 leading-relaxed">
+            <div className="space-y-4 text-sm text-slate-700 leading-relaxed">
               <p>
                 <strong>This is a vision screening tool, not a medical diagnosis or dispensable prescription.</strong> Spect-IT provides 
                 screening estimates for informational purposes only. All results, including refractive screening estimates, are 
@@ -55,15 +55,15 @@ export function MedicalDisclaimer() {
                 </p>
               </div>
             </div>
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex flex-wrap gap-4 text-xs text-gray-600">
-                <a href="/privacy" className="hover:text-indigo-600 underline">
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <div className="flex flex-wrap gap-4 text-xs text-slate-600">
+                <a href="/privacy" className="hover:text-cyan-600 underline transition-colors">
                   Privacy Policy
                 </a>
-                <a href="/terms" className="hover:text-indigo-600 underline">
+                <a href="/terms" className="hover:text-cyan-600 underline transition-colors">
                   Terms of Service
                 </a>
-                <a href="/medical-disclaimer" className="hover:text-indigo-600 underline">
+                <a href="/medical-disclaimer" className="hover:text-cyan-600 underline transition-colors">
                   Full Medical Disclaimer
                 </a>
               </div>
