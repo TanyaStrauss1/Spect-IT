@@ -241,7 +241,7 @@ export default function ConvergenceScreen() {
   }
 
   const handleProceed = () => {
-    router.push('/vision-scan/quality-review')
+      router.push('/vision-scan/pupil-examination')
   }
 
   const handleCameraError = () => {

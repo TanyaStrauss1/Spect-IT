@@ -10,6 +10,7 @@ import type {
   AlignmentResult,
   MotilityResult,
   ConvergenceResult,
+  PupilExaminationResult,
   QualityAssessment,
   VisionScanResult,
 } from './types'
@@ -25,6 +26,7 @@ export type VisionScanSessionState = {
   alignment: AlignmentResult | null
   motility: MotilityResult | null
   convergence: ConvergenceResult | null
+  pupilExamination: PupilExaminationResult | null
   
   // Quality assessment
   qualityAssessment: QualityAssessment | null
@@ -34,6 +36,7 @@ export type VisionScanSessionState = {
     distanceMethod?: string
     gazeMethod?: string
     vergenceMethod?: string
+    pupilMethod?: string
   }
   
   // Repeat tracking
@@ -51,9 +54,10 @@ export type VisionScanSessionActions = {
   setAlignment: (result: AlignmentResult) => void
   setMotility: (result: MotilityResult) => void
   setConvergence: (result: ConvergenceResult) => void
+  setPupilExamination: (result: PupilExaminationResult) => void
   setQualityAssessment: (assessment: QualityAssessment) => void
   recordRepeatAttempt: (module: string) => void
-  updateMethodology: (methodologyUpdate: Partial<{ distanceMethod: string; gazeMethod: string; vergenceMethod: string }>) => void
+  updateMethodology: (methodologyUpdate: Partial<{ distanceMethod: string; gazeMethod: string; vergenceMethod: string; pupilMethod: string }>) => void
   completeSession: () => void
   resetSession: () => void
   buildFinalResult: () => VisionScanResult | null

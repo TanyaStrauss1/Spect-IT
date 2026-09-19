@@ -42,6 +42,7 @@ export default function VisionScanHome() {
             <Text style={styles.module}>✓ Resting Eye Alignment</Text>
             <Text style={styles.module}>✓ 9-Position Ocular Motility</Text>
             <Text style={styles.module}>✓ Dynamic Convergence Test</Text>
+            <Text style={styles.module}>✓ Pupil Examination (Diameter, Symmetry, Light Reflex)</Text>
           </View>
         </View>
 
@@ -57,7 +58,7 @@ export default function VisionScanHome() {
         <View style={styles.requirementsCard}>
           <Text style={styles.requirementsTitle}>Requirements</Text>
           <Text style={styles.requirement}>• Well-lit environment</Text>
-          <Text style={styles.requirement}>• 3-5 minutes uninterrupted</Text>
+          <Text style={styles.requirement}>• 5-7 minutes uninterrupted</Text>
           <Text style={styles.requirement}>• Hold device 40-60cm from face</Text>
           <Text style={styles.requirement}>• Keep head stable during tests</Text>
         </View>

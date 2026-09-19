@@ -172,6 +172,7 @@ export type ModuleName =
   | 'alignment'
   | 'motility'
   | 'convergence'
+  | 'pupil-examination'
 
 export type ModuleConfidence = {
   module: ModuleName
@@ -188,6 +189,43 @@ export type QualityAssessment = {
 }
 
 // ============================================================================
+// Pupil Examination
+// ============================================================================
+
+export type PupilMeasurement = {
+  timestamp: number
+  leftPupilDiameter: number | null // pixels (estimated from eye landmarks)
+  rightPupilDiameter: number | null // pixels (estimated from eye landmarks)
+  estimatedLeftPupilMM: number | null // millimeters (estimated)
+  estimatedRightPupilMM: number | null // millimeters (estimated)
+  asymmetryRatio: number | null // ratio of left/right diameters
+  lightingCondition: 'bright' | 'normal' | 'dim' // screen brightness state
+  faceDistance: number // mm
+  quality: number // 0-1
+}
+
+export type PupilReactionTest = {
+  timestamp: number
+  initialDiameter: { left: number | null; right: number | null } // pixels, baseline in normal light
+  brightResponseDiameter: { left: number | null; right: number | null } // pixels, after bright stimulus
+  dimResponseDiameter: { left: number | null; right: number | null } // pixels, after dim stimulus
+  constrictionPercent: { left: number | null; right: number | null } // % change from baseline to bright
+  dilationPercent: { left: number | null; right: number | null } // % change from baseline to dim
+}
+
+export type PupilExaminationResult = {
+  timestamp: number
+  measurements: PupilMeasurement[]
+  reactionTest: PupilReactionTest | null
+  meanDiameterMM: { left: number; right: number } // average across normal lighting measurements
+  asymmetryDetected: boolean // true if consistent asymmetry >20%
+  reactivityDetected: boolean // true if measurable response to brightness changes
+  screeningNote: string // e.g., "symmetric pupils with normal reactivity" or "professional assessment recommended"
+  usedSensorData: boolean
+  dataQuality: 'high' | 'moderate' | 'low' // based on measurement consistency
+}
+
+// ============================================================================
 // Complete Vision Scan Result
 // ============================================================================
 
@@ -199,6 +237,7 @@ export type VisionScanResult = {
   alignment: AlignmentResult
   motility: MotilityResult
   convergence: ConvergenceResult
+  pupilExamination: PupilExaminationResult | null
   qualityAssessment: QualityAssessment
   screeningSummary: string // Overall screening message - no diagnoses
   recommendsProfessionalExam: boolean
@@ -207,6 +246,7 @@ export type VisionScanResult = {
     distanceMethod?: string // e.g., 'sensor', 'ipd-first-with-face-width-fallback'
     gazeMethod?: string // e.g., 'eye-landmarks-relative-to-face-bounds'
     vergenceMethod?: string // e.g., 'ipd-change-with-face-width-fallback'
+    pupilMethod?: string // e.g., 'eye-landmark-estimation'
   }
 }
 
