@@ -209,7 +209,7 @@ export function TrendsChart({ results }: TrendsChartProps) {
                   {change.type === 'acuity' && (
                     <>
                       <strong>{change.eye === 'left' ? 'Left eye (OS)' : 'Right eye (OD)'}:</strong>
-                      {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change).toFixed(2)} logMAR{' '}
+                      {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change.change).toFixed(2)} logMAR{' '}
                       ({change.details}) from {change.dates[0]} to {change.dates[1]}.
                       {!change.improved && ' Consider a professional eye exam.'}
                     </>
@@ -217,7 +217,7 @@ export function TrendsChart({ results }: TrendsChartProps) {
                   {change.type === 'hearing' && (
                     <>
                       <strong>Hearing screening{change.eye ? ` (${change.eye === 'left' ? 'L' : 'R'} ear)` : ''}:</strong>
-                      {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change)} frequency{Math.abs(change) !== 1 ? 'ies' : ''}{' '}
+                      {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change.change)} frequency{Math.abs(change.change) !== 1 ? 'ies' : ''}{' '}
                       ({change.details}) from {change.dates[0]} to {change.dates[1]}.
                       {!change.improved && ' Consider a hearing evaluation.'} Screening only — not calibrated dB HL.
                     </>
