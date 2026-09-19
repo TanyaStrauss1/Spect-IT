@@ -8,7 +8,7 @@
 import { TestCard } from '../ui'
 import Link from 'next/link'
 
-const tests = [
+const eyeTests = [
   {
     id: 'acuity',
     title: 'Visual Acuity',
@@ -25,15 +25,6 @@ const tests = [
     icon: '🎨',
     duration: '2-3 min',
     route: '/tests/color-vision',
-    available: true
-  },
-  {
-    id: 'hearing',
-    title: 'Hearing Screening',
-    description: 'Basic pure-tone hearing screening at key frequencies with stereo testing',
-    icon: '🎧',
-    duration: '3-5 min',
-    route: '/tests/hearing',
     available: true
   },
   {
@@ -84,6 +75,18 @@ const tests = [
   }
 ]
 
+const hearingTests = [
+  {
+    id: 'hearing',
+    title: 'Hearing Screening',
+    description: 'Basic pure-tone hearing screening at key frequencies with stereo testing',
+    icon: '🎧',
+    duration: '3-5 min',
+    route: '/tests/hearing',
+    available: true
+  }
+]
+
 export function TestGridSection() {
   return (
     <section className="py-20 bg-white">
@@ -98,34 +101,79 @@ export function TestGridSection() {
           </p>
         </div>
 
-        {/* Test Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {tests.map((test) => (
-            <div key={test.id} className="relative">
-              {!test.available && (
-                <div className="absolute top-4 right-4 z-10 bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full">
-                  Coming Soon
-                </div>
-              )}
-              {test.mobileOnly && (
-                <div className="absolute top-4 right-4 z-10 bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
-                  Mobile Only
-                </div>
-              )}
-              <TestCard
-                title={test.title}
-                description={test.description}
-                icon={test.icon}
-                duration={test.duration}
-                disabled={!test.available || test.mobileOnly}
-                onStart={() => {
-                  if (test.available && !test.mobileOnly && test.route) {
-                    window.location.href = test.route
-                  }
-                }}
-              />
-            </div>
-          ))}
+        {/* Eye Screening Section */}
+        <div className="max-w-6xl mx-auto mb-12">
+          <div className="mb-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              👁️ Eye Screening
+            </h3>
+            <p className="text-gray-600">
+              Comprehensive vision screening tests — results are screening only, not a diagnosis
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {eyeTests.map((test) => (
+              <div key={test.id} className="relative">
+                {!test.available && (
+                  <div className="absolute top-4 right-4 z-10 bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full">
+                    Coming Soon
+                  </div>
+                )}
+                {test.mobileOnly && (
+                  <div className="absolute top-4 right-4 z-10 bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+                    Mobile Only
+                  </div>
+                )}
+                <TestCard
+                  title={test.title}
+                  description={test.description}
+                  icon={test.icon}
+                  duration={test.duration}
+                  disabled={!test.available || test.mobileOnly}
+                  onStart={() => {
+                    if (test.available && !test.mobileOnly && test.route) {
+                      window.location.href = test.route
+                    }
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Hearing Screening Section */}
+        <div className="max-w-6xl mx-auto mb-12">
+          <div className="mb-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              🎧 Hearing Screening
+            </h3>
+            <p className="text-gray-600">
+              Pure-tone hearing screening — results are screening only, not a diagnosis
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {hearingTests.map((test) => (
+              <div key={test.id} className="relative">
+                {!test.available && (
+                  <div className="absolute top-4 right-4 z-10 bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full">
+                    Coming Soon
+                  </div>
+                )}
+                <TestCard
+                  title={test.title}
+                  description={test.description}
+                  icon={test.icon}
+                  duration={test.duration}
+                  disabled={!test.available}
+                  onStart={() => {
+                    if (test.available && test.route) {
+                      window.location.href = test.route
+                    }
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Features */}

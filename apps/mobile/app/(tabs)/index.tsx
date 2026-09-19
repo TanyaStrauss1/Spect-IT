@@ -42,69 +42,81 @@ export default function HomeScreen() {
         <View style={styles.buttonContainer}>
           <VisionScanStatusCard />
 
+          {/* Eye Screening Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>👁️ Eye Screening</Text>
+            <Text style={styles.sectionSubtitle}>Vision screening tests — results are screening only, not a diagnosis</Text>
+            
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/test/acuity')}
+            >
+              <Text style={styles.primaryButtonText}>👁️ Visual Acuity Test</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.purpleButton}
+              onPress={() => router.push('/test/color-vision')}
+            >
+              <Text style={styles.purpleButtonText}>🎨 Color Vision Test</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/test/astigmatism')}
+            >
+              <Text style={styles.primaryButtonText}>🌀 Astigmatism Test</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/test/contrast')}
+            >
+              <Text style={styles.primaryButtonText}>🌓 Contrast Sensitivity</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/test/visual-field')}
+            >
+              <Text style={styles.primaryButtonText}>📍 Visual Field Test</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.push('/test/prescription')}
+            >
+              <Text style={styles.primaryButtonText}>🔬 Prescription Test</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Hearing Screening Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>🎧 Hearing Screening</Text>
+            <Text style={styles.sectionSubtitle}>Pure-tone hearing screening — results are screening only, not a diagnosis</Text>
+            
+            <TouchableOpacity
+              style={[styles.primaryButton, { backgroundColor: '#10B981' }]}
+              onPress={() => router.push('/test/hearing')}
+            >
+              <Text style={styles.primaryButtonText}>🎧 Hearing Test</Text>
+            </TouchableOpacity>
+          </View>
+        
           <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push('/test/acuity')}
+            style={styles.secondaryButton}
+            onPress={() => router.push('/dashboard')}
           >
-            <Text style={styles.primaryButtonText}>👁️ Visual Acuity Test</Text>
+            <Text style={styles.secondaryButtonText}>View Dashboard</Text>
           </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.purpleButton}
-          onPress={() => router.push('/test/color-vision')}
-        >
-          <Text style={styles.purpleButtonText}>🎨 Color Vision Test</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/test/astigmatism')}
-        >
-          <Text style={styles.primaryButtonText}>🌀 Astigmatism Test</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/test/contrast')}
-        >
-          <Text style={styles.primaryButtonText}>🌓 Contrast Sensitivity</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/test/visual-field')}
-        >
-          <Text style={styles.primaryButtonText}>📍 Visual Field Test</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/test/prescription')}
-        >
-          <Text style={styles.primaryButtonText}>🔬 Prescription Test</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.primaryButton, { backgroundColor: '#10B981' }]}
-          onPress={() => router.push('/test/hearing')}
-        >
-          <Text style={styles.primaryButtonText}>🎧 Hearing Screening</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => router.push('/dashboard')}
-        >
-          <Text style={styles.secondaryButtonText}>View Dashboard</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.textButton}
-          onPress={signOut}
-        >
-          <Text style={styles.textButtonText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.textButton}
+            onPress={signOut}
+          >
+            <Text style={styles.textButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
     </ScrollView>
   )
 }
@@ -142,6 +154,28 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: '100%',
     gap: 12,
+  },
+  sectionContainer: {
+    width: '100%',
+    gap: 12,
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
+    lineHeight: 20,
   },
   primaryButton: {
     backgroundColor: '#4F46E5',
