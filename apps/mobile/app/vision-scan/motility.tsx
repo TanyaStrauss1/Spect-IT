@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native'
 import { router } from 'expo-router'
 import { Camera, CameraType } from 'expo-camera'
 import * as FaceDetector from 'expo-face-detector'
@@ -15,6 +15,7 @@ import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
 import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
 import { AdaptiveCoachingCard } from '../../components/vision-scan/AdaptiveCoachingCard'
+import { MotionGateAlert } from '../../components/vision-scan/MotionGateAlert'
 
 const { width: screenWidth } = Dimensions.get('window')
 
@@ -40,6 +41,7 @@ export default function MotilityScreen() {
   const [faceBoundsEMA, setFaceBoundsEMA] = useState<{ x: number; y: number; width: number } | null>(null)
   const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
   const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const [currentHeadMotion, setCurrentHeadMotion] = useState<{ pitch: number; yaw: number; roll: number } | null>(null)
   const BUFFER_SIZE = 5
 
   const currentPosition = sequence[currentIndex]
@@ -185,6 +187,9 @@ export default function MotilityScreen() {
       yaw: Math.abs(smoothedHeadPose.yaw) > 0.1 ? smoothedHeadPose.yaw * 10 : 0,
       roll: Math.abs(smoothedHeadPose.roll) > 0.1 ? smoothedHeadPose.roll * 10 : 0,
     }
+
+    // Update current head motion for gate alert
+    setCurrentHeadMotion(headMotion)
 
     const posCoord = getPositionCoord(currentPosition)
     
@@ -406,6 +411,18 @@ export default function MotilityScreen() {
           frameCount={currentIndex * framesPerPosition + frameCount}
           targetFrames={sequence.length * framesPerPosition}
           isPaused={isPaused}
+        />
+
+        <MotionGateAlert 
+          headMotion={currentHeadMotion || undefined}
+          headDisplacement={lastFacePosition && faceBoundsEMA 
+            ? Math.sqrt(
+                Math.pow((faceBoundsEMA.x + faceBoundsEMA.width / 2) - lastFacePosition.x, 2) +
+                Math.pow((faceBoundsEMA.y + faceBoundsEMA.width / 2) - lastFacePosition.y, 2)
+              )
+            : 0
+          }
+          isVisible={!isPaused}
         />
 
         <View style={styles.instructions}>

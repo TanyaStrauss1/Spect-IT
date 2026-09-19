@@ -228,11 +228,27 @@ export type ModuleName =
   | 'convergence'
   | 'pupil-examination'
 
+export type RejectionCategory = 
+  | 'ambient-light'
+  | 'motion'
+  | 'face-distance'
+  | 'face-detection'
+  | 'occlusion'
+  | 'low-confidence'
+  | 'insufficient-data'
+
+export type QualityIssue = {
+  category: RejectionCategory
+  message: string
+  actionable: string // What the user should do
+}
+
 export type ModuleConfidence = {
   module: ModuleName
   confidence: number // 0-1
   shouldRepeat: boolean
-  qualityIssues: string[]
+  qualityIssues: QualityIssue[]
+  rejectionReason?: RejectionCategory // Primary rejection reason if shouldRepeat
 }
 
 export type QualityAssessment = {
