@@ -307,6 +307,13 @@ export default function HearingTestPage() {
       passCriteria: PASS_REFER_CRITERIA.description,
       note: createScreeningNote(),
       timestamp: new Date().toISOString(),
+      qualityGuard: {
+        headphoneCheckCompleted: true,
+        ambientNoiseConfirmed: ambientNoiseOk,
+        calibrationCompleted: true,
+        gatesCompleted: ['headphone-check', 'ambient-noise', 'calibration'],
+        timestamp: Date.now(),
+      },
     }
 
     // Mark test as complete in journey
