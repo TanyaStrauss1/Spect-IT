@@ -110,27 +110,56 @@ export default function ClinicalSummaryScreen() {
     if (summary?.astigmatism) otherTests.push(`Astigmatism: ${summary.astigmatism.test_data?.overallAssessment || 'See report'}`)
     if (summary?.visualField) otherTests.push(`Visual Field: ${summary.visualField.test_data?.assessment || 'See report'}`)
     if (summary?.prescription) otherTests.push(`Refractive Screening: Needs-correction detection — NOT a prescription`)
-    if (summary?.hearing) otherTests.push(`Hearing Screening: ${summary.hearing.results?.overallStatus || summary.hearing.test_data?.overallStatus || 'See report'}`)
+    
+    if (summary?.hearing) {
+      const hearingStatus = summary.hearing.results?.overallStatus || summary.hearing.test_data?.overallStatus || 'See report'
+      const leftPass = summary.hearing.test_data?.leftEarPassCount
+      const rightPass = summary.hearing.test_data?.rightEarPassCount
+      const totalFreq = summary.hearing.test_data?.totalFrequencies
+      const scoreDetail = leftPass !== undefined && rightPass !== undefined ? ` (L: ${leftPass}/${totalFreq}, R: ${rightPass}/${totalFreq})` : ''
+      otherTests.push(`Hearing Screening: ${hearingStatus}${scoreDetail}`)
+      otherTests.push(`  ⚠️ Methodology: ASHA-based pure-tone screening (500, 1000, 2000, 4000 Hz). Uses relative device volumes, NOT calibrated dB HL.`)
+    }
+    
     if (summary?.visionScan) {
-      const visionScanStatus = summary.visionScan.test_data?.recommendsProfessionalExam ? 'Professional exam recommended' : 'No significant issues detected'
-      otherTests.push(`Vision Scan (Mobile): ${visionScanStatus} — ${summary.visionScan.test_data?.screeningSummary || 'Ocular function screening'}`)
+      const visionScanStatus = summary.visionScan.test_data?.recommendsProfessionalExam ? '⚠️ Professional exam recommended' : '✓ No significant issues detected'
+      const confidence = summary.visionScan.test_data?.qualityAssessment?.overallConfidence
+      const confidenceText = confidence !== undefined ? ` (Data quality: ${(confidence * 100).toFixed(0)}%)` : ''
+      const methodology = summary.visionScan.test_data?.methodology?.distanceMethod?.includes('sensor') ? 'Sensor-based' : 'Camera-based'
+      otherTests.push(`Vision Scan: ${visionScanStatus}${confidenceText}`)
+      otherTests.push(`  • ${summary.visionScan.test_data?.screeningSummary || 'Ocular function screening'}`)
+      otherTests.push(`  • Methodology: ${methodology} measurements (alignment, motility, convergence)`)
     }
     
     if (otherTests.length > 0) {
       text += `OTHER SCREENING TESTS\n\n`
-      otherTests.forEach(t => text += `• ${t}\n`)
+      otherTests.forEach(t => text += `${t}\n`)
       text += `\n`
     }
     
     text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
-    text += `IMPORTANT DISCLAIMER\n\n`
-    text += `These results are screening assessments for informational purposes only — NOT medical diagnoses, clinical assessments, or dispensable prescriptions.\n\n`
-    text += `Consult a licensed optometrist or ophthalmologist for:\n`
-    text += `• Comprehensive eye examinations\n`
-    text += `• Clinical diagnoses and treatment\n`
-    text += `• Prescription eyewear (glasses or contacts)\n`
-    text += `• Professional medical advice\n\n`
-    text += `Spect-IT is a screening tool, not a medical device.\n`
+    text += `WHEN TO SEEK PROFESSIONAL CARE\n\n`
+    
+    if (summary?.visionScan?.test_data?.recommendsProfessionalExam) {
+      text += `⚠️ RECOMMENDED: Vision Scan screening detected findings that warrant professional evaluation.\n\n`
+    }
+    
+    text += `• Annual comprehensive eye examinations (recommended for everyone)\n`
+    text += `• Vision changes, blurriness, or eye strain\n`
+    text += `• Reduced visual acuity (logMAR > 0.3)\n`
+    text += `• Need for glasses or contact lens prescription\n`
+    text += `• 🚨 URGENT: Sudden vision loss, flashes of light, eye pain, or injury\n\n`
+    
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
+    text += `SCREENING TOOL DISCLAIMER\n\n`
+    text += `These results are wellness screening assessments for informational purposes only — NOT medical diagnoses, clinical examinations, or dispensable prescriptions.\n\n`
+    text += `This screening does NOT replace professional eye care. It cannot diagnose eye diseases, provide prescriptions, or detect all vision/eye health issues.\n\n`
+    text += `Always consult a licensed optometrist or ophthalmologist for:\n`
+    text += `• Comprehensive eye health assessment and clinical diagnosis\n`
+    text += `• Treatment of eye diseases and conditions\n`
+    text += `• Prescription eyewear (glasses or contact lenses)\n`
+    text += `• Professional interpretation of screening findings\n\n`
+    text += `Spect-IT is a wellness screening tool, not a medical device.\n`
     
     try {
       await Share.share({
@@ -384,17 +413,31 @@ export default function ClinicalSummaryScreen() {
             <View style={styles.testCard}>
               <Text style={styles.testIcon}>🎧</Text>
               <View style={styles.testInfo}>
-                <Text style={styles.testName}>Hearing Screening</Text>
-                <Text style={styles.testResult}>
+                <Text style={styles.testName}>Hearing Screening (Pure-Tone)</Text>
+                <Text style={[styles.testResult, { 
+                  fontWeight: '600',
+                  color: (summary.hearing.results?.overallStatus || summary.hearing.test_data?.overallStatus) === 'PASS' ? '#059669' : '#DC2626'
+                }]}>
                   {summary.hearing.results?.overallStatus || summary.hearing.test_data?.overallStatus || 'See details'}
                   {summary.hearing.test_data?.leftEarPassCount !== undefined && 
                    summary.hearing.test_data?.rightEarPassCount !== undefined && (
                     ` (L: ${summary.hearing.test_data.leftEarPassCount}/${summary.hearing.test_data.totalFrequencies}, R: ${summary.hearing.test_data.rightEarPassCount}/${summary.hearing.test_data.totalFrequencies})`
                   )}
                 </Text>
-                <Text style={[styles.testResult, { fontSize: 11, color: '#DC2626', fontWeight: '600', marginTop: 2 }]}>
-                  ⚠️ Relative volumes only — NOT calibrated dB HL
-                </Text>
+                
+                {/* Methodology Note */}
+                <View style={{ marginTop: 8, padding: 8, backgroundColor: '#F9FAFB', borderRadius: 6 }}>
+                  <Text style={{ fontSize: 10, color: '#6B7280', fontWeight: '600', marginBottom: 4 }}>
+                    Methodology:
+                  </Text>
+                  <Text style={{ fontSize: 10, color: '#6B7280', lineHeight: 16 }}>
+                    ASHA-based pure-tone screening at 500, 1000, 2000, 4000 Hz. Uses pulsed tones with catch trials for reliability.
+                  </Text>
+                  <Text style={{ fontSize: 9, color: '#DC2626', marginTop: 6, fontWeight: '600' }}>
+                    ⚠️ Uses relative device volumes, NOT calibrated dB HL. Results indicate relative hearing sensitivity only.
+                  </Text>
+                </View>
+
                 <Text style={styles.testDate}>
                   Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
                 </Text>
@@ -428,7 +471,23 @@ export default function ClinicalSummaryScreen() {
                     • Convergence Near Point: {Math.round(summary.visionScan.test_data.convergence.nearPoint)}mm
                   </Text>
                 )}
-                <Text style={[styles.testDate, { marginTop: 4 }]}>
+                
+                {/* Data Quality Confidence */}
+                {summary.visionScan.test_data?.qualityAssessment?.overallConfidence !== undefined && (
+                  <View style={{ marginTop: 8, padding: 8, backgroundColor: '#EEF2FF', borderRadius: 6 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#4F46E5', marginBottom: 4 }}>
+                      Data Quality Confidence: {(summary.visionScan.test_data.qualityAssessment.overallConfidence * 100).toFixed(0)}%
+                    </Text>
+                    {summary.visionScan.test_data.methodology && (
+                      <Text style={{ fontSize: 10, color: '#6B7280', marginTop: 4 }}>
+                        Methodology: {summary.visionScan.test_data.methodology.distanceMethod?.includes('sensor') ? 'Sensor-based' : 'Camera-based'} measurements
+                      </Text>
+                    )}
+                  </View>
+                )}
+
+                <Text style={[styles.testDate, { marginTop: 8 }]}>
+
                   Tested {new Date(summary.visionScan.created_at).toLocaleDateString()}
                 </Text>
                 <Text style={[styles.testDate, { fontSize: 10, marginTop: 2, fontStyle: 'italic' }]}>
@@ -454,40 +513,94 @@ export default function ClinicalSummaryScreen() {
         </View>
       )}
 
+      {/* Change from Baseline Placeholder */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📊 Change from Baseline</Text>
+        
+        <View style={[styles.testCard, { backgroundColor: '#FFFBEB', borderColor: '#FCD34D', borderStyle: 'dashed', borderWidth: 2 }]}>
+          <Text style={styles.testIcon}>📈</Text>
+          <View style={styles.testInfo}>
+            <Text style={[styles.testName, { color: '#B45309' }]}>Longitudinal Comparison (Coming Soon)</Text>
+            <Text style={[styles.testResult, { color: '#92400E', marginTop: 8 }]}>
+              <Text style={{ fontWeight: '600' }}>Placeholder for future feature:</Text> When available, this section will display changes from your baseline screening.
+            </Text>
+            <View style={{ marginTop: 12 }}>
+              <Text style={[styles.testResult, { color: '#92400E', fontSize: 11, marginBottom: 4 }]}>
+                • Visual acuity trends over time
+              </Text>
+              <Text style={[styles.testResult, { color: '#92400E', fontSize: 11, marginBottom: 4 }]}>
+                • Vision Scan metrics comparison (alignment, convergence)
+              </Text>
+              <Text style={[styles.testResult, { color: '#92400E', fontSize: 11, marginBottom: 4 }]}>
+                • Hearing screening consistency across sessions
+              </Text>
+              <Text style={[styles.testResult, { color: '#92400E', fontSize: 11, marginBottom: 4 }]}>
+                • Visual indicators for significant changes
+              </Text>
+            </View>
+            <Text style={[styles.testDate, { marginTop: 12, fontStyle: 'italic', color: '#92400E' }]}>
+              This section will be populated automatically once you complete additional screening sessions.
+            </Text>
+          </View>
+        </View>
+      </View>
+
       {/* When to See an Optometrist */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>👁️ Professional Eye Care</Text>
+        <Text style={styles.sectionTitle}>⚕️ When to Seek Professional Eye Care</Text>
         
+        {summary?.visionScan?.test_data?.recommendsProfessionalExam && (
+          <View style={[styles.guidanceCard, { backgroundColor: '#FEF2F2', borderWidth: 2, borderColor: '#DC2626', marginBottom: 12 }]}>
+            <Text style={[styles.guidanceIcon, { color: '#DC2626', fontSize: 24 }]}>⚠️</Text>
+            <View style={styles.guidanceContent}>
+              <Text style={[styles.guidanceTitle, { color: '#DC2626', fontSize: 15 }]}>Professional Examination Recommended</Text>
+              <Text style={[styles.guidanceText, { color: '#7F1D1D', fontWeight: '500' }]}>
+                Your Vision Scan screening detected findings that warrant professional evaluation. Schedule an appointment with a licensed optometrist or ophthalmologist for a comprehensive examination. Share this screening profile with your eye care provider.
+              </Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.guidanceCard}>
           <Text style={styles.guidanceIcon}>✓</Text>
           <View style={styles.guidanceContent}>
-            <Text style={styles.guidanceTitle}>Annual comprehensive eye exams</Text>
-            <Text style={styles.guidanceText}>Recommended for everyone, even with good screening results. Screening does not replace professional care.</Text>
+            <Text style={styles.guidanceTitle}>Annual Comprehensive Eye Examinations</Text>
+            <Text style={styles.guidanceText}>
+              Recommended for everyone, regardless of screening results. Professional exams detect conditions this screening cannot identify (glaucoma, cataracts, retinal disease, refractive error requiring correction).
+            </Text>
           </View>
         </View>
 
         <View style={styles.guidanceCard}>
-          <Text style={styles.guidanceIcon}>!</Text>
+          <Text style={styles.guidanceIcon}>📋</Text>
           <View style={styles.guidanceContent}>
-            <Text style={styles.guidanceTitle}>Vision changes</Text>
-            <Text style={styles.guidanceText}>If you notice blurriness, difficulty reading, or eye strain.</Text>
+            <Text style={styles.guidanceTitle}>Vision Changes or Symptoms</Text>
+            <Text style={styles.guidanceText}>
+              See a professional if you notice: blurriness, difficulty reading, eye strain, headaches, double vision, alignment concerns, or any symptoms not addressed by this screening.
+            </Text>
           </View>
         </View>
 
         <View style={styles.guidanceCard}>
-          <Text style={styles.guidanceIcon}>!</Text>
+          <Text style={styles.guidanceIcon}>👓</Text>
           <View style={styles.guidanceContent}>
-            <Text style={styles.guidanceTitle}>Reduced acuity</Text>
-            <Text style={styles.guidanceText}>If your screening shows reduced vision (logMAR &gt; 0.3).</Text>
+            <Text style={styles.guidanceTitle}>Reduced Visual Acuity</Text>
+            <Text style={styles.guidanceText}>
+              If your screening shows reduced vision (logMAR &gt; 0.3 or Snellen worse than 20/40), or if you need glasses or contact lens prescription.
+            </Text>
           </View>
         </View>
 
-        <View style={[styles.guidanceCard, { backgroundColor: '#FEF2F2' }]}>
+        <View style={[styles.guidanceCard, { backgroundColor: '#FEF2F2', borderLeftWidth: 4, borderLeftColor: '#DC2626' }]}>
           <Text style={[styles.guidanceIcon, { color: '#DC2626' }]}>🚨</Text>
           <View style={styles.guidanceContent}>
-            <Text style={styles.guidanceTitle}>Urgent signs</Text>
-            <Text style={styles.guidanceText}>
-              Flashes of light, sudden vision loss, distortion, or eye pain — see an eye care professional immediately.
+            <Text style={[styles.guidanceTitle, { color: '#DC2626' }]}>URGENT: Seek Immediate Care If</Text>
+            <Text style={[styles.guidanceText, { color: '#7F1D1D', fontWeight: '500' }]}>
+              • Sudden vision loss or significant vision change{'\n'}
+              • Flashes of light or new floaters{'\n'}
+              • Eye pain, redness, or discharge{'\n'}
+              • Curtain or shadow across vision{'\n'}
+              • Recent eye injury or trauma
             </Text>
           </View>
         </View>
