@@ -54,11 +54,17 @@ export default function QualityReviewScreen() {
       case 'alignment':
         router.push('/vision-scan/alignment')
         break
+      case 'cover-uncover':
+        router.push('/vision-scan/cover-uncover')
+        break
       case 'motility':
         router.push('/vision-scan/motility')
         break
       case 'convergence':
         router.push('/vision-scan/convergence')
+        break
+      case 'pupil-examination':
+        router.push('/vision-scan/pupil-examination')
         break
     }
   }

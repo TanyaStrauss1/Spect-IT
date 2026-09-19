@@ -380,6 +380,35 @@ function generatePDFHTML(
         <div class="module-note">${result.convergence.screeningNote}</div>
       </div>
 
+      ${result.coverUncover ? `
+      <div class="module-card">
+        <div class="module-header">
+          <span class="module-name">Cover-Uncover Test</span>
+          <span class="module-status" style="color: ${result.coverUncover.asymmetryDetected ? '#F59E0B' : '#10B981'};">
+            ${result.coverUncover.asymmetryDetected ? 'Asymmetry' : 'Symmetric'}
+          </span>
+        </div>
+        <div class="module-note">
+          Alignment: ${(100 - result.coverUncover.asymmetryScore).toFixed(0)}/100. ${result.coverUncover.screeningNote}
+        </div>
+      </div>
+      ` : ''}
+
+      ${result.pupilExamination ? `
+      <div class="module-card">
+        <div class="module-header">
+          <span class="module-name">Pupil Examination</span>
+          <span class="module-status" style="color: ${result.pupilExamination.asymmetryDetected || !result.pupilExamination.reactivityDetected ? '#F59E0B' : '#10B981'};">
+            ${result.pupilExamination.asymmetryDetected ? 'Asymmetric' : 'Symmetric'}
+          </span>
+        </div>
+        <div class="module-note">
+          L: ${result.pupilExamination.meanDiameterMM.left.toFixed(1)}mm / R: ${result.pupilExamination.meanDiameterMM.right.toFixed(1)}mm. 
+          ${result.pupilExamination.reactivityDetected ? 'Light reflex normal.' : 'Limited reactivity.'}
+        </div>
+      </div>
+      ` : ''}
+
       <div class="module-card">
         <div class="module-header">
           <span class="module-name">Measurement Mode</span>

@@ -40,6 +40,7 @@ export default function VisionScanHome() {
             <Text style={styles.module}>✓ Device & Environment Qualification</Text>
             <Text style={styles.module}>✓ Eye Tracking Calibration</Text>
             <Text style={styles.module}>✓ Resting Eye Alignment</Text>
+            <Text style={styles.module}>✓ Cover-Uncover Test (Occlusion Alignment)</Text>
             <Text style={styles.module}>✓ 9-Position Ocular Motility</Text>
             <Text style={styles.module}>✓ Dynamic Convergence Test</Text>
             <Text style={styles.module}>✓ Pupil Examination (Diameter, Symmetry, Light Reflex)</Text>

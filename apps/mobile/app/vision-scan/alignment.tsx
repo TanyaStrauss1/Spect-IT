@@ -349,7 +349,7 @@ export default function AlignmentScreen() {
           {/* Show continue/retry buttons based on decision */}
           {decision?.action === 'stop-success' && (
             <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-              <Text style={styles.continueButtonText}>Continue to Motility</Text>
+              <Text style={styles.continueButtonText}>Continue to Cover-Uncover</Text>
             </TouchableOpacity>
           )}
 
@@ -378,7 +378,7 @@ export default function AlignmentScreen() {
           {!decision && (
             <>
               <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-                <Text style={styles.continueButtonText}>Continue to Motility</Text>
+                <Text style={styles.continueButtonText}>Continue to Cover-Uncover</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
                 <Text style={styles.retryButtonText}>Repeat Alignment</Text>
