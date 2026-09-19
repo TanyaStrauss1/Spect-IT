@@ -466,15 +466,32 @@ export default function ClinicalSummaryPage() {
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">🎧</div>
                     <div className="flex-1">
-                      <div className="font-bold text-gray-900">Hearing Screening</div>
-                      <div className="text-sm text-teal-700 mt-1 font-semibold">
+                      <div className="font-bold text-gray-900">Hearing Screening (Pure-Tone)</div>
+                      <div className={`text-sm mt-1 font-semibold ${
+                        (summary.hearing.test_data?.overallStatus || 'REFER') === 'PASS' 
+                          ? 'text-green-700' 
+                          : 'text-red-700'
+                      }`}>
                         {summary.hearing.test_data?.overallStatus || 'REFER'}: 
                         {' '}L: {summary.hearing.test_data?.leftEarPassCount || 0}/{summary.hearing.test_data?.totalFrequencies || 4} • 
                         R: {summary.hearing.test_data?.rightEarPassCount || 0}/{summary.hearing.test_data?.totalFrequencies || 4}
                       </div>
-                      <div className="text-xs text-red-700 mt-1 font-semibold">
-                        ⚠️ Relative volumes only — NOT calibrated dB HL
+                      
+                      {/* Methodology Note */}
+                      <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
+                        <div className="text-xs font-semibold text-gray-700 mb-1">
+                          Methodology:
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          ASHA-based pure-tone screening at 500, 1000, 2000, 4000 Hz. Pulsed tones with catch trials.
+                        </div>
+                        <div className="text-xs text-red-700 mt-1 font-semibold">
+                          ⚠️ Uses relative device volumes, NOT calibrated dB HL. Results indicate relative hearing sensitivity only.
+                        </div>
                       </div>
+
+                      </div>
+                      
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
                       </div>
@@ -511,6 +528,21 @@ export default function ClinicalSummaryPage() {
                           • Convergence Near Point: {Math.round(summary.visionScan.test_data.convergence.nearPoint)}mm
                         </div>
                       )}
+                      
+                      {/* Data Quality Confidence */}
+                      {summary.visionScan.test_data?.qualityAssessment?.overallConfidence !== undefined && (
+                        <div className="mt-2 p-2 bg-indigo-50 rounded">
+                          <div className="text-xs font-semibold text-indigo-700">
+                            Data Quality Confidence: {(summary.visionScan.test_data.qualityAssessment.overallConfidence * 100).toFixed(0)}%
+                          </div>
+                          {summary.visionScan.test_data.methodology && (
+                            <div className="text-xs text-gray-600 mt-1">
+                              Methodology: {summary.visionScan.test_data.methodology.distanceMethod?.includes('sensor') ? 'Sensor-based' : 'Camera-based'} measurements
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="text-xs text-purple-700 mt-1 font-semibold">
                         Wellness screening via mobile camera (alignment, motility, convergence, pupil examination)
                       </div>
@@ -539,42 +571,106 @@ export default function ClinicalSummaryPage() {
           </div>
         )}
 
+        {/* Change from Baseline Placeholder */}
+        <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            📊 Change from Baseline
+          </h2>
+          
+          <div className="p-6 rounded-lg border-2 border-dashed border-yellow-400 bg-yellow-50">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl">📈</div>
+              <div className="flex-1">
+                <div className="font-bold text-amber-900 text-lg mb-2">Longitudinal Comparison (Coming Soon)</div>
+                <div className="text-sm text-amber-800 mb-4">
+                  <strong>Placeholder for future feature:</strong> When available, this section will display changes from your baseline screening.
+                </div>
+                <div className="space-y-2 text-sm text-amber-900">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600">•</span>
+                    <span>Visual acuity trends over time</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600">•</span>
+                    <span>Vision Scan metrics comparison (alignment, convergence)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600">•</span>
+                    <span>Hearing screening consistency across sessions</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600">•</span>
+                    <span>Visual indicators for significant changes</span>
+                  </div>
+                </div>
+                <div className="text-xs text-amber-700 mt-4 italic">
+                  This section will be populated automatically once you complete additional screening sessions.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* When to See an Optometrist */}
         <div className="bg-white rounded-lg shadow-xl p-8 mb-8 print:shadow-none">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            👁️ Professional Eye Care
+            ⚕️ When to Seek Professional Eye Care
           </h2>
           
           <div className="space-y-3">
+            {summary?.visionScan?.test_data?.recommendsProfessionalExam && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border-2 border-red-300">
+                <span className="text-red-600 text-2xl">⚠️</span>
+                <div>
+                  <div className="font-bold text-red-900 text-lg">Professional Examination Recommended</div>
+                  <div className="text-sm text-red-800 font-medium mt-1">
+                    Your Vision Scan screening detected findings that warrant professional evaluation. Schedule an appointment with a licensed optometrist or ophthalmologist for a comprehensive examination. Share this screening profile with your eye care provider.
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
               <span className="text-green-600 text-xl">✓</span>
               <div>
-                <div className="font-semibold text-gray-900">Annual comprehensive eye exams</div>
-                <div className="text-sm text-gray-600">Recommended for everyone, even with good screening results. Screening does not replace professional care.</div>
+                <div className="font-semibold text-gray-900">Annual Comprehensive Eye Examinations</div>
+                <div className="text-sm text-gray-600">
+                  Recommended for everyone, regardless of screening results. Professional exams detect conditions this screening cannot identify (glaucoma, cataracts, retinal disease, refractive error requiring correction).
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+              <span className="text-blue-600 text-xl">📋</span>
+              <div>
+                <div className="font-semibold text-gray-900">Vision Changes or Symptoms</div>
+                <div className="text-sm text-gray-600">
+                  See a professional if you notice: blurriness, difficulty reading, eye strain, headaches, double vision, alignment concerns, or any symptoms not addressed by this screening.
+                </div>
               </div>
             </div>
             
             <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
-              <span className="text-yellow-600 text-xl">!</span>
+              <span className="text-yellow-600 text-xl">👓</span>
               <div>
-                <div className="font-semibold text-gray-900">Vision changes</div>
-                <div className="text-sm text-gray-600">If you notice blurriness, difficulty reading, or eye strain.</div>
+                <div className="font-semibold text-gray-900">Reduced Visual Acuity or Need for Prescription</div>
+                <div className="text-sm text-gray-600">
+                  If your screening shows reduced vision (logMAR &gt; 0.3 or Snellen worse than 20/40), or if you need glasses or contact lens prescription.
+                </div>
               </div>
             </div>
             
-            <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg">
-              <span className="text-yellow-600 text-xl">!</span>
-              <div>
-                <div className="font-semibold text-gray-900">Reduced acuity</div>
-                <div className="text-sm text-gray-600">If your screening shows reduced vision (logMAR &gt; 0.3).</div>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border-l-4 border-red-600">
               <span className="text-red-600 text-xl">🚨</span>
               <div>
-                <div className="font-semibold text-gray-900">Urgent signs</div>
-                <div className="text-sm text-gray-600">Flashes of light, sudden vision loss, distortion, or eye pain — see an eye care professional immediately.</div>
+                <div className="font-bold text-red-900">URGENT: Seek Immediate Care If</div>
+                <div className="text-sm text-red-800 font-medium mt-1">
+                  • Sudden vision loss or significant vision change<br/>
+                  • Flashes of light or new floaters<br/>
+                  • Eye pain, redness, or discharge<br/>
+                  • Curtain or shadow across vision<br/>
+                  • Recent eye injury or trauma
+                </div>
               </div>
             </div>
           </div>

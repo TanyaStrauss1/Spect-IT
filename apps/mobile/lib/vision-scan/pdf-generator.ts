@@ -301,9 +301,22 @@ function generatePDFHTML(
     <div class="summary-box">
       <div class="summary-text">${result.screeningSummary}</div>
       <div class="confidence-row">
-        <span class="confidence-label">Data Quality:</span>
+        <span class="confidence-label">Overall Data Quality Confidence:</span>
         <span class="confidence-value">${(result.qualityAssessment.overallConfidence * 100).toFixed(0)}%</span>
       </div>
+      ${result.qualityAssessment.modules.length > 0 ? `
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #E5E7EB;">
+        <div style="font-size: 10pt; font-weight: 600; color: #6B7280; margin-bottom: 8px;">Per-Module Confidence Scores:</div>
+        ${result.qualityAssessment.modules.map(m => `
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 9pt;">
+            <span style="color: #4B5563;">${m.module.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+            <span style="font-weight: 600; color: ${m.confidence >= 0.8 ? '#10B981' : m.confidence >= 0.65 ? '#3B82F6' : '#F59E0B'};">
+              ${(m.confidence * 100).toFixed(0)}%
+            </span>
+          </div>
+        `).join('')}
+      </div>
+      ` : ''}
     </div>
   </div>
 
@@ -415,23 +428,91 @@ function generatePDFHTML(
   </div>
   ` : ''}
 
+  ${includeMethodology ? `
+  <div class="section">
+    <h2 class="section-title">Change from Baseline</h2>
+    <div class="methodology-box" style="background: #FFFBEB; border: 2px dashed #F59E0B;">
+      <div class="methodology-title" style="color: #B45309;">📊 Longitudinal Comparison (Coming Soon)</div>
+      <div style="font-size: 10pt; color: #92400E; margin-top: 8px; line-height: 1.6;">
+        <strong>Placeholder for future feature:</strong> When available, this section will display changes from your baseline screening, including:
+      </div>
+      <div class="methodology-item" style="color: #92400E;">• Alignment index trend (current vs. previous sessions)</div>
+      <div class="methodology-item" style="color: #92400E;">• Convergence near-point change over time</div>
+      <div class="methodology-item" style="color: #92400E;">• Data quality consistency across sessions</div>
+      <div class="methodology-item" style="color: #92400E;">• Visual indicators for significant changes</div>
+      <div style="font-size: 9pt; color: #92400E; margin-top: 8px; font-style: italic;">
+        This section will be populated automatically once you complete additional screening sessions.
+      </div>
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <h2 class="section-title">When to Seek Professional Eye Care</h2>
+    <div class="summary-box" style="background: #EEF2FF; border-left-color: #4F46E5;">
+      <div style="font-size: 11pt; font-weight: 600; color: #3730A3; margin-bottom: 12px;">
+        ⚕️ Recommended Professional Follow-Up Actions
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <div style="font-weight: 600; color: #1F2937; margin-bottom: 4px;">✓ Annual Comprehensive Eye Examination</div>
+        <div style="font-size: 10pt; color: #4B5563; line-height: 1.5; margin-left: 16px;">
+          Recommended for everyone, regardless of screening results. Professional exams detect conditions this screening cannot identify (glaucoma, cataracts, retinal disease, refractive error requiring correction).
+        </div>
+      </div>
+
+      ${result.recommendsProfessionalExam ? `
+      <div style="margin-bottom: 16px; padding: 12px; background: #FEF2F2; border-radius: 6px; border: 2px solid #DC2626;">
+        <div style="font-weight: 700; color: #DC2626; margin-bottom: 4px;">⚠️ PROFESSIONAL EXAMINATION RECOMMENDED</div>
+        <div style="font-size: 10pt; color: #7F1D1D; line-height: 1.5; margin-left: 16px;">
+          This screening detected findings that warrant professional evaluation. Schedule an appointment with a licensed optometrist or ophthalmologist for a comprehensive examination. Bring this report to your appointment.
+        </div>
+      </div>
+      ` : ''}
+
+      <div style="margin-bottom: 16px;">
+        <div style="font-weight: 600; color: #1F2937; margin-bottom: 4px;">📋 Additional Situations Requiring Professional Care:</div>
+        <div style="font-size: 10pt; color: #4B5563; line-height: 1.5; margin-left: 16px;">
+          • Any changes in vision clarity, focus, or comfort<br>
+          • Eye strain, headaches, or difficulty reading<br>
+          • Double vision or alignment concerns<br>
+          • Any symptoms not addressed by this screening<br>
+          • Need for glasses or contact lens prescription
+        </div>
+      </div>
+
+      <div style="padding: 12px; background: #FEF2F2; border-radius: 6px; border-left: 4px solid #DC2626;">
+        <div style="font-weight: 700; color: #DC2626; margin-bottom: 4px;">🚨 URGENT: Seek Immediate Care If:</div>
+        <div style="font-size: 10pt; color: #7F1D1D; line-height: 1.5; margin-left: 16px;">
+          • Sudden vision loss or significant vision change<br>
+          • Flashes of light or new floaters<br>
+          • Eye pain, redness, or discharge<br>
+          • Curtain or shadow across vision<br>
+          • Recent eye injury or trauma
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="disclaimer-box">
-    <div class="disclaimer-title">⚠️ IMPORTANT MEDICAL DISCLAIMER</div>
+    <div class="disclaimer-title">⚠️ SCREENING TOOL ONLY — NOT A CLINICAL EXAMINATION</div>
     <div class="disclaimer-text">
-      <strong>This is a SCREENING TOOL, not a diagnostic test or clinical examination.</strong><br><br>
+      <strong>This is a wellness SCREENING TOOL for informational purposes, not a diagnostic test or clinical examination.</strong><br><br>
       
       Vision Scan does NOT and cannot:<br>
       • Diagnose eye diseases, conditions, or medical problems<br>
       • Provide or substitute for spectacle prescriptions (glasses or contact lenses)<br>
       • Replace comprehensive eye examinations by licensed professionals<br>
-      • Detect all vision or eye health issues<br><br>
+      • Detect all vision or eye health issues (including glaucoma, cataracts, retinal disease)<br>
+      • Measure visual acuity, refractive error, or intraocular pressure<br><br>
       
-      <strong>Results indicate potential issues that may warrant professional examination.</strong><br><br>
+      <strong>This screening assesses basic ocular function only.</strong> Results indicate potential areas that may benefit from professional examination — they are NOT diagnoses or prescriptions.<br><br>
       
       Always consult a licensed optometrist or ophthalmologist for:<br>
-      • Clinical diagnosis and treatment<br>
-      • Prescription eyewear<br>
-      • Comprehensive eye health assessment<br>
+      • Comprehensive eye health assessment and clinical diagnosis<br>
+      • Treatment of eye diseases and conditions<br>
+      • Prescription eyewear (glasses or contact lenses)<br>
+      • Professional interpretation of screening findings<br>
       • Any concerns about your vision or eye health
     </div>
   </div>
