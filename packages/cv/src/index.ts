@@ -45,6 +45,7 @@ export {
   createVisualAcuityTest,
   SLOAN_LETTERS,
   ETDRS_CHART,
+  ACUITY_QUALITY_GUARD,
   shuffleLetters,
   determineDistanceMetadata,
   getConfidenceForSource,
@@ -59,6 +60,7 @@ export {
   type VisualAcuityResult,
   type DistanceSource,
   type DistanceMetadata,
+  type QualityGuardMetadata,
 } from './tests/visual-acuity'
 
 // Color vision test

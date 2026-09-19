@@ -25,7 +25,7 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     icon: '📏',
     duration: '3-5 min',
     why: 'Baseline measurement of distance vision — the foundation for all other tests',
-    requires: ['distance', 'lighting', 'glasses'],
+    requires: ['distance', 'lighting', 'screen', 'glasses', 'occlusion'],
     category: 'essential',
     route: '/tests/acuity'
   },
@@ -102,13 +102,13 @@ export const CHECKLIST_ITEMS: Record<string, ChecklistItem> = {
   distance: {
     id: 'distance',
     text: 'Position yourself at the recommended distance from your screen',
-    detail: 'Most tests require 3-6 meters. Follow the on-screen guidance.',
+    detail: 'Follow on-screen guidance for proper test distance (typically 3-6 meters). Keep head level and still.',
     icon: '📏'
   },
   lighting: {
     id: 'lighting',
-    text: 'Ensure moderate room lighting without glare on the display',
-    detail: 'Avoid bright sunlight or darkness. Your screen should be clearly visible.',
+    text: 'Ensure adequate lighting without glare or screen reflections',
+    detail: 'Test in moderate ambient lighting. Avoid direct sunlight on screen. Screen brightness 70%+.',
     icon: '💡'
   },
   glasses: {
@@ -125,9 +125,15 @@ export const CHECKLIST_ITEMS: Record<string, ChecklistItem> = {
   },
   occlusion: {
     id: 'occlusion',
-    text: 'You will need to cover one eye during this test',
-    detail: 'Use your hand, a tissue, or an eye patch. Do not press on the closed eye.',
+    text: 'Cover the non-tested eye completely without pressing',
+    detail: 'Use your hand, tissue, or eye patch. Do NOT press on the covered eye. Keep both eyes open under occluder.',
     icon: '👁️'
+  },
+  screen: {
+    id: 'screen',
+    text: 'Clean screen and set brightness to 70%+',
+    detail: 'Ensure screen is free of smudges or fingerprints for clear letter visibility.',
+    icon: '📱'
   },
   'completed-acuity': {
     id: 'completed-acuity',
