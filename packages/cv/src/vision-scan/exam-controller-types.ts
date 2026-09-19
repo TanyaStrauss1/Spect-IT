@@ -173,4 +173,22 @@ export const DEFAULT_STOPPING_RULES: Record<ModuleName, StoppingRuleConfig> = {
     maxAttempts: 3,
     maxDurationPerAttempt: 60000,
   },
+  'cover-uncover': {
+    module: 'cover-uncover',
+    minConfidence: 0.60,
+    targetConfidence: 0.80,
+    minSamples: 12, // minimum high-quality frames
+    targetSamples: 24,
+    maxAttempts: 3,
+    maxDurationPerAttempt: 60000,
+  },
+  'pupil-examination': {
+    module: 'pupil-examination',
+    minConfidence: 0.60,
+    targetConfidence: 0.80,
+    minSamples: 12, // minimum high-quality frames
+    targetSamples: 30,
+    maxAttempts: 3,
+    maxDurationPerAttempt: 60000,
+  },
 }
