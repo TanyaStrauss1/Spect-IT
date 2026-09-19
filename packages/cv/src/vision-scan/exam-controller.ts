@@ -112,6 +112,24 @@ export class ExamController {
         maxAttempts: 3,
         maxDurationPerAttempt: 60000,
       },
+      'cover-uncover': {
+        module: 'cover-uncover',
+        minConfidence: 0.60,
+        targetConfidence: 0.80,
+        minSamples: 12,
+        targetSamples: 24,
+        maxAttempts: 3,
+        maxDurationPerAttempt: 60000,
+      },
+      'pupil-examination': {
+        module: 'pupil-examination',
+        minConfidence: 0.60,
+        targetConfidence: 0.80,
+        minSamples: 12,
+        targetSamples: 30,
+        maxAttempts: 3,
+        maxDurationPerAttempt: 60000,
+      },
     }
   }
 
@@ -120,8 +138,10 @@ export class ExamController {
       'device-qualification',
       'calibration',
       'alignment',
+      'cover-uncover',
       'motility',
       'convergence',
+      'pupil-examination',
     ]
 
     for (const module of modules) {
