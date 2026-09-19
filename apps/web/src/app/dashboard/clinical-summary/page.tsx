@@ -489,8 +489,6 @@ export default function ClinicalSummaryPage() {
                           ⚠️ Uses relative device volumes, NOT calibrated dB HL. Results indicate relative hearing sensitivity only.
                         </div>
                       </div>
-
-                      </div>
                       
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
