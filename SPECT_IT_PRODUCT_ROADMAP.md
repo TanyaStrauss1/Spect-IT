@@ -21,6 +21,97 @@ We believe in **screening honesty**: every result is clearly framed as a screeni
 
 ---
 
+## Hardware Tiers
+
+Spect-IT's capabilities scale across four hardware tiers, each unlocking progressively advanced measurement modalities while maintaining our core commitment to quality and clinical honesty.
+
+### Spect-IT Standard — Modern Smartphones
+
+**Platform**: Contemporary smartphones with standard cameras  
+**Capabilities**:
+- Visual acuity testing (distance, near, contrast)
+- Color vision screening
+- Symptom assessment and health history
+- Basic screening pathways and referral logic
+- Wellness profile integration
+
+**Clinical Value**: Accessible baseline vision screening for broad populations
+
+### Spect-IT Depth — TrueDepth Devices
+
+**Platform**: Devices with TrueDepth camera system (iPhone X and later, select iPads)  
+**Capabilities**:
+- Exact working distance measurement
+- Precise eye position tracking
+- Real-time gaze analysis
+- High-precision facial geometry capture
+- Pupillary distance (PD) measurement
+- Binocular alignment and convergence screening
+
+**Clinical Value**: Enhanced measurement precision and binocular function assessment
+
+### Spect-IT Precision — iPhone 18 Pro+ (Planning)
+
+**Platform**: iPhone 18 Pro and Pro Max (reference development device)  
+**Capabilities**:
+- Controlled aperture and exposure via developer API (f/1.48–f/4)
+- High-resolution anterior segment imaging
+- Advanced depth and gaze integration
+- On-device AI quality control (dual 16-core Neural Engine)
+- Continuous real-time frame validation
+- Photorefraction *research mode only* (not clinical use)
+- Dual ambient light sensors for illumination gating
+
+**Clinical Value**: Research-grade measurement consistency and quality assurance
+
+**Important Notes**:
+- TrueDepth remains primary measurement modality
+- LiDAR not positioned for refractive measurement (appropriate limits respected)
+- Front camera: 18MP (incremental, not transformative upgrade)
+- Variable aperture enables measurement standardization, not new optical capabilities
+
+### Spect-IT Clinical — Phone + Optical Attachment (Patent-Gated)
+
+**Platform**: Smartphone + proprietary optical attachment  
+**Capabilities**:
+- Objective optical path with controlled stimulus presentation
+- Adaptive subjective refinement workflows
+- Professional-grade refractive measurement
+- **Patent clearance required** — planning phase only
+
+**Clinical Value**: Optometry-grade precision in portable form factor
+
+**Status**: All implementation details deferred pending intellectual property clearance
+
+---
+
+## iPhone 18 Pro Notes (Planning)
+
+The iPhone 18 Pro represents a **reference development platform** for validating measurement algorithms and quality control frameworks. Key technical considerations:
+
+**Hardware Specifications**:
+- **Variable aperture**: f/1.48–f/4 with developer API control
+- **Primary benefit**: Measurement consistency across lighting conditions, not novel optical capabilities
+- **TrueDepth**: Remains the primary depth and gaze sensing modality
+- **Neural Engine**: Dual 16-core chips enable continuous on-device frame quality assessment
+- **Ambient light sensors**: Dual sensors support illumination-aware measurement gating
+- **Front camera**: 18MP (modest upgrade; not a paradigm shift)
+
+**Development Philosophy**:
+- Use variable aperture for **standardization**, not as a refractive measurement tool
+- Do not overclaim LiDAR capabilities for refraction (appropriate scope boundaries)
+- TrueDepth + computational photography = measurement quality, not optical diagnosis
+- On-device AI for real-time Quality Guard, not clinical decision-making
+
+**Strategic Role**:
+- Validation platform for algorithms that scale across hardware tiers
+- Proof-of-concept for advanced Quality Guard features
+- Research testbed for future measurement modalities
+
+**Deployment Timeline**: Planning phase; no production commitments
+
+---
+
 ## Phase 0: Now / In Production
 
 ### Deployed Capabilities
