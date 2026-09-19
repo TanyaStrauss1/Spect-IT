@@ -24,7 +24,7 @@ interface TrendDataPoint {
 }
 
 export function TrendsSection({ results }: TrendsSectionProps) {
-  const { acuityTrends, contrastTrends, meaningfulChanges } = useMemo(() => {
+  const { acuityTrends, contrastTrends, hearingTrends, visionScanTrends, meaningfulChanges } = useMemo(() => {
     // Extract acuity results (match saved test_type strings)
     const acuityResults = results.filter(r => 
       r.test_type === 'Visual Acuity (Clinical)' || 
@@ -37,6 +37,13 @@ export function TrendsSection({ results }: TrendsSectionProps) {
       r.test_type === 'Contrast Sensitivity (Clinical)' || 
       r.test_type === 'Contrast Sensitivity' || 
       r.test_name === 'Contrast Sensitivity'
+    ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+    // Extract hearing screening results
+    const hearingResults = results.filter(r => 
+      r.test_type === 'hearing-screening' ||
+      r.test_type === 'Hearing Screening' ||
+      r.test_name === 'Hearing Screening'
     ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
 
     // Extract Vision Scan results (use canonical TEST_TYPE_ID)
@@ -77,6 +84,28 @@ export function TrendsSection({ results }: TrendsSectionProps) {
       }
     }).filter(d => d.contrastScore !== undefined)
 
+    // Build hearing screening trend data
+    const hearingTrends: Array<{
+      date: string
+      timestamp: number
+      leftEarPassCount: number
+      rightEarPassCount: number
+      totalFrequencies: number
+      overallStatus: string
+    }> = hearingResults.map(r => {
+      const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const timestamp = new Date(r.created_at).getTime()
+      
+      return {
+        date,
+        timestamp,
+        leftEarPassCount: r.test_data?.leftEarPassCount || r.results?.leftEarPassCount || 0,
+        rightEarPassCount: r.test_data?.rightEarPassCount || r.results?.rightEarPassCount || 0,
+        totalFrequencies: r.test_data?.totalFrequencies || r.results?.totalFrequencies || 4,
+        overallStatus: r.test_data?.overallStatus || r.results?.overallStatus || 'REFER',
+      }
+    })
+
     // Build Vision Scan trend data (overall confidence and alignment index)
     const visionScanTrends: Array<{
       date: string
@@ -101,12 +130,15 @@ export function TrendsSection({ results }: TrendsSectionProps) {
 
     // Detect meaningful changes (≥0.1 logMAR)
     const meaningfulChanges: {
-      eye: 'left' | 'right'
-      change: number
+      type: 'acuity' | 'hearing' | 'vision-scan'
+      eye?: 'left' | 'right'
+      change: number | string
       improved: boolean
       dates: [string, string]
+      details?: string
     }[] = []
 
+    // Acuity changes (≥0.1 logMAR is clinically meaningful)
     if (acuityTrends.length >= 2) {
       const latest = acuityTrends[acuityTrends.length - 1]
       const previous = acuityTrends[acuityTrends.length - 2]
@@ -115,10 +147,12 @@ export function TrendsSection({ results }: TrendsSectionProps) {
         const change = latest.leftLogMAR - previous.leftLogMAR
         if (Math.abs(change) >= 0.1) {
           meaningfulChanges.push({
+            type: 'acuity',
             eye: 'left',
             change,
             improved: change < 0, // Lower logMAR = better vision
             dates: [previous.date, latest.date],
+            details: `${latest.leftSnellen || ''} from ${previous.leftSnellen || ''}`,
           })
         }
       }
@@ -127,24 +161,89 @@ export function TrendsSection({ results }: TrendsSectionProps) {
         const change = latest.rightLogMAR - previous.rightLogMAR
         if (Math.abs(change) >= 0.1) {
           meaningfulChanges.push({
+            type: 'acuity',
             eye: 'right',
             change,
             improved: change < 0,
             dates: [previous.date, latest.date],
+            details: `${latest.rightSnellen || ''} from ${previous.rightSnellen || ''}`,
           })
         }
       }
     }
 
-    return { acuityTrends, contrastTrends, visionScanTrends, meaningfulChanges }
+    // Hearing screening changes (any change in pass count)
+    if (hearingTrends.length >= 2) {
+      const latest = hearingTrends[hearingTrends.length - 1]
+      const previous = hearingTrends[hearingTrends.length - 2]
+
+      const leftChange = latest.leftEarPassCount - previous.leftEarPassCount
+      const rightChange = latest.rightEarPassCount - previous.rightEarPassCount
+
+      if (leftChange !== 0) {
+        meaningfulChanges.push({
+          type: 'hearing',
+          eye: 'left',
+          change: leftChange,
+          improved: leftChange > 0,
+          dates: [previous.date, latest.date],
+          details: `L: ${latest.leftEarPassCount}/${latest.totalFrequencies} from ${previous.leftEarPassCount}/${previous.totalFrequencies}`,
+        })
+      }
+
+      if (rightChange !== 0) {
+        meaningfulChanges.push({
+          type: 'hearing',
+          eye: 'right',
+          change: rightChange,
+          improved: rightChange > 0,
+          dates: [previous.date, latest.date],
+          details: `R: ${latest.rightEarPassCount}/${latest.totalFrequencies} from ${previous.rightEarPassCount}/${previous.totalFrequencies}`,
+        })
+      }
+    }
+
+    // Vision Scan changes (alignment index delta ≥5 points or recommendation change)
+    if (visionScanTrends.length >= 2) {
+      const latest = visionScanTrends[visionScanTrends.length - 1]
+      const previous = visionScanTrends[visionScanTrends.length - 2]
+
+      if (latest.alignmentIndex !== undefined && previous.alignmentIndex !== undefined) {
+        const alignmentChange = latest.alignmentIndex - previous.alignmentIndex
+        if (Math.abs(alignmentChange) >= 5) {
+          meaningfulChanges.push({
+            type: 'vision-scan',
+            change: alignmentChange,
+            improved: alignmentChange > 0,
+            dates: [previous.date, latest.date],
+            details: `Alignment: ${latest.alignmentIndex.toFixed(0)} from ${previous.alignmentIndex.toFixed(0)}`,
+          })
+        }
+      }
+
+      // Flag recommendation status change
+      if (latest.recommendsProfessionalExam !== previous.recommendsProfessionalExam) {
+        meaningfulChanges.push({
+          type: 'vision-scan',
+          change: latest.recommendsProfessionalExam ? 'now flagged' : 'cleared',
+          improved: !latest.recommendsProfessionalExam,
+          dates: [previous.date, latest.date],
+          details: latest.recommendsProfessionalExam 
+            ? 'Now recommends professional exam' 
+            : 'No longer recommends professional exam',
+        })
+      }
+    }
+
+    return { acuityTrends, contrastTrends, hearingTrends, visionScanTrends, meaningfulChanges }
   }, [results])
 
-  if (acuityTrends.length === 0 && contrastTrends.length === 0 && visionScanTrends.length === 0) {
+  if (acuityTrends.length === 0 && contrastTrends.length === 0 && hearingTrends.length === 0 && visionScanTrends.length === 0) {
     return null
   }
 
   // Calculate timespan
-  const allTimestamps = [...acuityTrends, ...contrastTrends, ...visionScanTrends].map(t => t.timestamp)
+  const allTimestamps = [...acuityTrends, ...contrastTrends, ...hearingTrends, ...visionScanTrends].map(t => t.timestamp)
   const timespan = allTimestamps.length > 0 
     ? Math.floor((Math.max(...allTimestamps) - Math.min(...allTimestamps)) / (1000 * 60 * 60 * 24))
     : 0
@@ -156,6 +255,8 @@ export function TrendsSection({ results }: TrendsSectionProps) {
       {/* Meaningful Changes Alert */}
       {meaningfulChanges.length > 0 && (
         <View style={styles.alertsContainer}>
+          <Text style={styles.alertsHeader}>📊 Screening Changes Detected</Text>
+          <Text style={styles.alertsSubheader}>Comparison with prior screening — not a diagnosis</Text>
           {meaningfulChanges.map((change, idx) => (
             <View
               key={idx}
@@ -174,10 +275,33 @@ export function TrendsSection({ results }: TrendsSectionProps) {
                 styles.alertText,
                 change.improved ? styles.alertTextImprovement : styles.alertTextChange
               ]}>
-                {change.eye === 'left' ? 'Left eye (OS)' : 'Right eye (OD)'}: 
-                {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change).toFixed(2)} logMAR
-                {' '}from {change.dates[0]} to {change.dates[1]}.
-                {!change.improved && ' Consider an eye exam.'}
+                {change.type === 'acuity' && (
+                  <>
+                    <Text style={{ fontWeight: '600' }}>
+                      {change.eye === 'left' ? 'Left eye (OS)' : 'Right eye (OD)'}:
+                    </Text>
+                    {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change as number).toFixed(2)} logMAR{' '}
+                    ({change.details}) from {change.dates[0]} to {change.dates[1]}.
+                    {!change.improved && ' Consider a professional eye exam.'}
+                  </>
+                )}
+                {change.type === 'hearing' && (
+                  <>
+                    <Text style={{ fontWeight: '600' }}>
+                      Hearing screening{change.eye ? ` (${change.eye === 'left' ? 'L' : 'R'} ear)` : ''}:
+                    </Text>
+                    {' '}{change.improved ? 'Improved' : 'Declined'} by {Math.abs(change as number)} frequency{Math.abs(change as number) !== 1 ? 'ies' : ''}{' '}
+                    ({change.details}) from {change.dates[0]} to {change.dates[1]}.
+                    {!change.improved && ' Consider a hearing evaluation.'} Screening only — not calibrated dB HL.
+                  </>
+                )}
+                {change.type === 'vision-scan' && (
+                  <>
+                    <Text style={{ fontWeight: '600' }}>Vision Scan (mobile camera):</Text>
+                    {' '}{change.details} from {change.dates[0]} to {change.dates[1]}.
+                    {!change.improved && ' Consider a comprehensive eye exam.'} Screening only — not a clinical assessment.
+                  </>
+                )}
               </Text>
             </View>
           ))}
@@ -232,6 +356,59 @@ export function TrendsSection({ results }: TrendsSectionProps) {
                 <Text style={styles.contrastScore}>{trend.contrastScore?.toFixed(1)}%</Text>
               </View>
               <View style={[styles.visualBar, { width: `${trend.contrastScore}%`, backgroundColor: '#3b82f6' }]} />
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Hearing Screening Trends */}
+      {hearingTrends.length >= 1 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Hearing Screening</Text>
+          <Text style={styles.sectionSubtitle}>Wellness screening only — NOT calibrated dB HL. Pass count for 4 test frequencies.</Text>
+          
+          {hearingTrends.slice(-5).reverse().map((trend, idx) => (
+            <View key={idx} style={styles.trendItem}>
+              <View style={styles.trendHeader}>
+                <Text style={styles.trendDate}>{trend.date}</Text>
+                <View style={[styles.badge, { 
+                  backgroundColor: trend.overallStatus === 'PASS' ? '#D1FAE5' : '#FEF3C7' 
+                }]}>
+                  <Text style={[styles.badgeText, { 
+                    color: trend.overallStatus === 'PASS' ? '#065F46' : '#92400E' 
+                  }]}>
+                    {trend.overallStatus}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.hearingMetrics}>
+                <View style={styles.metricRow}>
+                  <Text style={styles.metricLabel}>Left Ear (L)</Text>
+                  <Text style={styles.metricValue}>
+                    {trend.leftEarPassCount}/{trend.totalFrequencies}
+                  </Text>
+                  <View style={[
+                    styles.visualBar, 
+                    { 
+                      width: `${(trend.leftEarPassCount / trend.totalFrequencies) * 100}%`, 
+                      backgroundColor: '#14B8A6' 
+                    }
+                  ]} />
+                </View>
+                <View style={styles.metricRow}>
+                  <Text style={styles.metricLabel}>Right Ear (R)</Text>
+                  <Text style={styles.metricValue}>
+                    {trend.rightEarPassCount}/{trend.totalFrequencies}
+                  </Text>
+                  <View style={[
+                    styles.visualBar, 
+                    { 
+                      width: `${(trend.rightEarPassCount / trend.totalFrequencies) * 100}%`, 
+                      backgroundColor: '#0D9488' 
+                    }
+                  ]} />
+                </View>
+              </View>
             </View>
           ))}
         </View>
@@ -303,6 +480,12 @@ export function TrendsSection({ results }: TrendsSectionProps) {
             <Text style={[styles.statValue, { color: '#1D4ED8' }]}>{contrastTrends.length}</Text>
           </View>
         )}
+        {hearingTrends.length > 0 && (
+          <View style={[styles.statCard, { backgroundColor: '#F0FDFA', borderColor: '#14B8A6' }]}>
+            <Text style={[styles.statLabel, { color: '#0F766E' }]}>HEARING SCREENS</Text>
+            <Text style={[styles.statValue, { color: '#0D9488' }]}>{hearingTrends.length}</Text>
+          </View>
+        )}
         {visionScanTrends.length > 0 && (
           <View style={[styles.statCard, { backgroundColor: '#FAF5FF', borderColor: '#8B5CF6' }]}>
             <Text style={[styles.statLabel, { color: '#7C3AED' }]}>VISION SCANS</Text>
@@ -339,6 +522,18 @@ const styles = StyleSheet.create({
   },
   alertsContainer: {
     marginBottom: 16,
+  },
+  alertsHeader: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  alertsSubheader: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 12,
+    fontStyle: 'italic',
   },
   alert: {
     padding: 12,
@@ -470,6 +665,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   visionScanMetrics: {
+    gap: 8,
+    marginTop: 8,
+  },
+  hearingMetrics: {
     gap: 8,
     marginTop: 8,
   },
