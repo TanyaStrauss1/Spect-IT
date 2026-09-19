@@ -279,49 +279,65 @@ export default function DashboardPage() {
                   👥 Manage Participants
                 </Link>
               )}
-              <Link
-                href="/tests/acuity"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
-              >
-                Visual Acuity
-              </Link>
-              <Link
-                href="/tests/color-vision"
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
-              >
-                Color Vision
-              </Link>
-              <Link
-                href="/tests/hearing"
-                className="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"
-              >
-                Hearing
-              </Link>
-              <Link
-                href="/tests/astigmatism"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
-              >
-                Astigmatism
-              </Link>
-              <Link
-                href="/tests/contrast"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
-              >
-                Contrast Sensitivity
-              </Link>
-              <Link
-                href="/tests/visual-field"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
-              >
-                Visual Field
-              </Link>
-              <Link
-                href="/tests/prescription"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
-              >
-                Prescription
-              </Link>
             </div>
+              </div>
+            </div>
+
+            {/* Eye Screening Quick Actions */}
+            <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">👁️ Eye Screening</h3>
+              <p className="text-sm text-gray-600 mb-4">Vision screening tests — results are screening only, not a diagnosis</p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/tests/acuity"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  Visual Acuity
+                </Link>
+                <Link
+                  href="/tests/color-vision"
+                  className="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors text-sm"
+                >
+                  Color Vision
+                </Link>
+                <Link
+                  href="/tests/astigmatism"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  Astigmatism
+                </Link>
+                <Link
+                  href="/tests/contrast"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  Contrast Sensitivity
+                </Link>
+                <Link
+                  href="/tests/visual-field"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  Visual Field
+                </Link>
+                <Link
+                  href="/tests/prescription"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  Prescription
+                </Link>
+              </div>
+            </div>
+
+            {/* Hearing Screening Quick Actions */}
+            <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">🎧 Hearing Screening</h3>
+              <p className="text-sm text-gray-600 mb-4">Pure-tone hearing screening — results are screening only, not a diagnosis</p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/tests/hearing"
+                  className="bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 transition-colors text-sm"
+                >
+                  Hearing Test
+                </Link>
               </div>
             </div>
 
