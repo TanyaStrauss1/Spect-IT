@@ -473,7 +473,7 @@ export default function ClinicalSummaryPage() {
                         R: {summary.hearing.test_data?.rightEarPassCount || 0}/{summary.hearing.test_data?.totalFrequencies || 4}
                       </div>
                       <div className="text-xs text-red-700 mt-1 font-semibold">
-                        Relative volumes only — NOT calibrated dB HL
+                        ⚠️ Relative volumes only — NOT calibrated dB HL
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
                         Tested {new Date(summary.hearing.created_at).toLocaleDateString()}
@@ -486,7 +486,7 @@ export default function ClinicalSummaryPage() {
               {summary.visionScan && (
                 <div className="p-4 rounded-lg border-2 border-purple-200 bg-purple-50 hover:border-purple-300 transition-colors">
                   <div className="flex items-start gap-3">
-                    <div className="text-3xl">👁️</div>
+                    <div className="text-3xl">📱</div>
                     <div className="flex-1">
                       <div className="font-bold text-gray-900">Vision Scan – Ocular Function Screening</div>
                       <div className={`text-sm mt-1 font-semibold ${
@@ -501,6 +501,16 @@ export default function ClinicalSummaryPage() {
                       <div className="text-xs text-gray-600 mt-1">
                         {summary.visionScan.test_data?.screeningSummary || 'Mobile camera wellness screening'}
                       </div>
+                      {summary.visionScan.test_data?.alignment?.alignmentIndex !== undefined && (
+                        <div className="text-xs text-gray-600 mt-1">
+                          • Alignment Index: {Math.round(summary.visionScan.test_data.alignment.alignmentIndex)}/100
+                        </div>
+                      )}
+                      {summary.visionScan.test_data?.convergence?.nearPoint !== undefined && (
+                        <div className="text-xs text-gray-600">
+                          • Convergence Near Point: {Math.round(summary.visionScan.test_data.convergence.nearPoint)}mm
+                        </div>
+                      )}
                       <div className="text-xs text-purple-700 mt-1 font-semibold">
                         Wellness screening via mobile camera (alignment, motility, convergence)
                       </div>
