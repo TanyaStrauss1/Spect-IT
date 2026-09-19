@@ -16,6 +16,7 @@ import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
 import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
+import { AdaptiveCoachingCard } from '../../components/vision-scan/AdaptiveCoachingCard'
 
 export default function ConvergenceScreen() {
   const {
@@ -26,12 +27,15 @@ export default function ConvergenceScreen() {
     setConvergence,
     setQualityAssessment,
     updateMethodology,
+    recordModuleCompletion,
+    getModuleState,
   } = useVisionScan()
   const [tracker] = useState(() => new ConvergenceTracker(deviceQualification?.useSensorBasedMeasurements || false))
   const [phase, setPhase] = useState<'approach' | 'recede' | 'complete'>('approach')
   const [distance, setDistance] = useState(600)
   const [frameCount, setFrameCount] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [decision, setDecision] = useState<any>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [initialFaceSize, setInitialFaceSize] = useState<number | null>(null)
   const [baselineIPD, setBaselineIPD] = useState<number | null>(null)
@@ -225,6 +229,10 @@ export default function ConvergenceScreen() {
       const convergenceResult = tracker.computeResult()
       setConvergence(convergenceResult)
       
+      // Record with ExamController and get stopping decision
+      const acquisitionDecision = recordModuleCompletion('convergence', convergenceResult)
+      setDecision(acquisitionDecision)
+      
       // Run quality assessment
       if (deviceQualification && calibration && alignment && motility) {
         const qualityEngine = new QualityEngine()
@@ -242,6 +250,17 @@ export default function ConvergenceScreen() {
 
   const handleProceed = () => {
       router.push('/vision-scan/pupil-examination')
+  }
+
+  const handleRetry = () => {
+    tracker.reset()
+    setPhase('approach')
+    setFrameCount(0)
+    setDistance(600)
+    setDecision(null)
+    setInitialFaceSize(null)
+    setBaselineIPD(null)
+    setBaselineFaceWidth(null)
   }
 
   const handleCameraError = () => {
@@ -282,21 +301,73 @@ export default function ConvergenceScreen() {
   }
 
   if (phase === 'complete') {
+    const moduleState = getModuleState('convergence')
+    
     return (
       <View style={styles.container}>
         <View style={styles.content}>
           <Text style={styles.icon}>✓</Text>
           <Text style={styles.title}>Convergence Complete</Text>
 
+          {/* Show adaptive coaching if decision requires it */}
+          {decision && decision.action !== 'stop-success' && (
+            <AdaptiveCoachingCard
+              decision={decision}
+              moduleState={moduleState}
+              onRetry={handleRetry}
+              onContinue={handleProceed}
+            />
+          )}
+
           <View style={styles.infoCard}>
+            {/* Show confidence if available */}
+            {moduleState && (
+              <View style={styles.confidenceRow}>
+                <Text style={styles.confidenceLabel}>Confidence</Text>
+                <Text style={styles.confidenceValue}>
+                  {(moduleState.confidence * 100).toFixed(0)}%
+                </Text>
+              </View>
+            )}
+            
             <Text style={styles.infoText}>
               All vision scan modules completed. Assessing data quality...
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.continueButton} onPress={handleProceed}>
-            <Text style={styles.continueButtonText}>Continue to Quality Review</Text>
-          </TouchableOpacity>
+          {/* Show continue/retry buttons based on decision */}
+          {decision?.action === 'stop-success' && (
+            <TouchableOpacity style={styles.continueButton} onPress={handleProceed}>
+              <Text style={styles.continueButtonText}>Continue to Quality Review</Text>
+            </TouchableOpacity>
+          )}
+
+          {decision?.action === 'retry' && (
+            <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryButtonText}>
+                Retry Convergence ({moduleState?.attemptNumber}/{moduleState?.maxAttempts})
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {decision?.action === 'stop-inconclusive' && (
+            <>
+              <TouchableOpacity style={styles.continueButton} onPress={handleProceed}>
+                <Text style={styles.continueButtonText}>Continue to Review</Text>
+              </TouchableOpacity>
+              <View style={styles.warningCard}>
+                <Text style={styles.warningText}>
+                  ⚠️ Quality below minimum threshold. Results may be less reliable.
+                </Text>
+              </View>
+            </>
+          )}
+
+          {!decision && (
+            <TouchableOpacity style={styles.continueButton} onPress={handleProceed}>
+              <Text style={styles.continueButtonText}>Continue to Quality Review</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     )
@@ -495,5 +566,50 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
+  },
+  confidenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#4B5563',
+  },
+  confidenceLabel: {
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  confidenceValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  retryButton: {
+    width: '100%',
+    backgroundColor: '#6B7280',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  warningCard: {
+    width: '100%',
+    backgroundColor: '#F59E0B',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+  },
+  warningText: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })

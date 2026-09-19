@@ -19,11 +19,12 @@ import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
 import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
+import { AdaptiveCoachingCard } from '../../components/vision-scan/AdaptiveCoachingCard'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function CalibrationScreen() {
-  const { deviceQualification, setCalibration, recordRepeatAttempt, updateMethodology } = useVisionScan()
+  const { deviceQualification, setCalibration, recordRepeatAttempt, updateMethodology, recordModuleCompletion, getModuleState } = useVisionScan()
   const [calibrator] = useState(() => new VisionScanCalibrator(deviceQualification?.useSensorBasedMeasurements || false))
   const [currentPointIndex, setCurrentPointIndex] = useState(0)
   const [calibrationPoints] = useState(VisionScanCalibrator.getCalibrationPoints())
@@ -31,6 +32,7 @@ export default function CalibrationScreen() {
   const [isComplete, setIsComplete] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [result, setResult] = useState<CalibrationResult | null>(null)
+  const [decision, setDecision] = useState<any>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
@@ -240,6 +242,10 @@ export default function CalibrationScreen() {
         setResult(calibrationResult)
         setCalibration(calibrationResult)
         setIsComplete(true)
+
+        // Record with ExamController and get stopping decision
+        const acquisitionDecision = recordModuleCompletion('calibration', calibrationResult)
+        setDecision(acquisitionDecision)
       }
     }, 500)
   }
@@ -256,6 +262,7 @@ export default function CalibrationScreen() {
     setCurrentPointIndex(0)
     setIsComplete(false)
     setResult(null)
+    setDecision(null)
   }
 
   const handleCameraError = () => {
@@ -286,6 +293,8 @@ export default function CalibrationScreen() {
   }
 
   if (isComplete && result) {
+    const moduleState = getModuleState('calibration')
+    
     return (
       <View style={styles.container}>
         <ProgressStepper currentStep="calibration" />
@@ -293,7 +302,27 @@ export default function CalibrationScreen() {
           <Text style={styles.icon}>{result.isValid ? '✓' : '⚠️'}</Text>
           <Text style={styles.title}>Calibration Complete</Text>
 
+          {/* Show adaptive coaching if decision requires it */}
+          {decision && decision.action !== 'stop-success' && (
+            <AdaptiveCoachingCard
+              decision={decision}
+              moduleState={moduleState}
+              onRetry={handleRetry}
+              onContinue={handleContinue}
+            />
+          )}
+
           <View style={styles.resultCard}>
+            {/* Show confidence if available */}
+            {moduleState && (
+              <View style={styles.confidenceRow}>
+                <Text style={styles.confidenceLabel}>Confidence</Text>
+                <Text style={styles.confidenceValue}>
+                  {(moduleState.confidence * 100).toFixed(0)}%
+                </Text>
+              </View>
+            )}
+            
             <View style={styles.resultRow}>
               <Text style={styles.resultLabel}>Average Error</Text>
               <Text style={styles.resultValue}>{result.averageError.toFixed(1)}px</Text>
@@ -334,7 +363,8 @@ export default function CalibrationScreen() {
             </View>
           )}
 
-          {result.isValid ? (
+          {/* Show continue/retry buttons based on decision */}
+          {decision?.action === 'stop-success' && result.isValid && (
             <TouchableOpacity 
               style={styles.continueButton} 
               onPress={handleContinue}
@@ -344,7 +374,51 @@ export default function CalibrationScreen() {
             >
               <Text style={styles.continueButtonText}>Continue to Alignment</Text>
             </TouchableOpacity>
-          ) : (
+          )}
+
+          {decision?.action === 'retry' && (
+            <TouchableOpacity 
+              style={styles.retryButton} 
+              onPress={handleRetry}
+              accessibilityRole="button"
+              accessibilityLabel="Retry calibration"
+            >
+              <Text style={styles.retryButtonText}>
+                Retry Calibration ({moduleState?.attemptNumber}/{moduleState?.maxAttempts})
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {decision?.action === 'stop-inconclusive' && (
+            <>
+              <TouchableOpacity 
+                style={styles.continueButton} 
+                onPress={handleContinue}
+              >
+                <Text style={styles.continueButtonText}>Continue Anyway</Text>
+              </TouchableOpacity>
+              <View style={styles.warningCard}>
+                <Text style={styles.warningText}>
+                  ⚠️ Quality below minimum threshold. Results may be less reliable.
+                </Text>
+              </View>
+            </>
+          )}
+
+          {/* Fallback for old logic if no decision */}
+          {!decision && result.isValid && (
+            <TouchableOpacity 
+              style={styles.continueButton} 
+              onPress={handleContinue}
+              accessibilityRole="button"
+              accessibilityLabel="Continue to alignment"
+              accessibilityHint="Calibration successful"
+            >
+              <Text style={styles.continueButtonText}>Continue to Alignment</Text>
+            </TouchableOpacity>
+          )}
+          
+          {!decision && !result.isValid && (
             <>
               <View style={styles.errorCard} accessibilityRole="alert">
                 <Text style={styles.errorText}>
@@ -630,5 +704,37 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#9CA3AF',
     fontSize: 16,
+  },
+  confidenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#4B5563',
+  },
+  confidenceLabel: {
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  confidenceValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  warningCard: {
+    width: '100%',
+    backgroundColor: '#F59E0B',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+  },
+  warningText: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })

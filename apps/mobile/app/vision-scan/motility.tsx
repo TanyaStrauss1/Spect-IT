@@ -14,16 +14,20 @@ import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
 import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
+import { AdaptiveCoachingCard } from '../../components/vision-scan/AdaptiveCoachingCard'
 
 const { width: screenWidth } = Dimensions.get('window')
 
 export default function MotilityScreen() {
-  const { deviceQualification, setMotility } = useVisionScan()
+  const { deviceQualification, setMotility, recordModuleCompletion, getModuleState } = useVisionScan()
   const [tracker] = useState(() => new MotilityTracker(deviceQualification?.useSensorBasedMeasurements || false))
   const [sequence] = useState(MotilityTracker.getGazeSequence())
   const [currentIndex, setCurrentIndex] = useState(0)
   const [frameCount, setFrameCount] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [result, setResult] = useState<any>(null)
+  const [decision, setDecision] = useState<any>(null)
+  const [isComplete, setIsComplete] = useState(false)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [lastFacePosition, setLastFacePosition] = useState<{ x: number; y: number } | null>(null)
   const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
@@ -213,9 +217,14 @@ export default function MotilityScreen() {
       if (currentIndex < sequence.length - 1) {
         setCurrentIndex(currentIndex + 1)
       } else {
-        const result = tracker.computeResult()
-        setMotility(result)
-        router.push('/vision-scan/convergence')
+        const motilityResult = tracker.computeResult()
+        setResult(motilityResult)
+        setMotility(motilityResult)
+        setIsComplete(true)
+
+        // Record with ExamController and get stopping decision
+        const acquisitionDecision = recordModuleCompletion('motility', motilityResult)
+        setDecision(acquisitionDecision)
       }
     }
   }
@@ -233,6 +242,19 @@ export default function MotilityScreen() {
     router.back()
   }
 
+  const handleContinue = () => {
+    router.push('/vision-scan/convergence')
+  }
+
+  const handleRetry = () => {
+    tracker.reset()
+    setCurrentIndex(0)
+    setFrameCount(0)
+    setIsComplete(false)
+    setResult(null)
+    setDecision(null)
+  }
+
   if (cameraError) {
     return (
       <CameraRecovery
@@ -240,6 +262,92 @@ export default function MotilityScreen() {
         onRetry={handleCameraRetry}
         onCancel={handleCameraCancel}
       />
+    )
+  }
+
+  if (isComplete && result) {
+    const moduleState = getModuleState('motility')
+    
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.icon}>👀</Text>
+          <Text style={styles.title}>Motility Complete</Text>
+
+          {/* Show adaptive coaching if decision requires it */}
+          {decision && decision.action !== 'stop-success' && (
+            <AdaptiveCoachingCard
+              decision={decision}
+              moduleState={moduleState}
+              onRetry={handleRetry}
+              onContinue={handleContinue}
+            />
+          )}
+
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>Eye Movement Tracking</Text>
+
+            {/* Show confidence if available */}
+            {moduleState && (
+              <View style={styles.confidenceRow}>
+                <Text style={styles.confidenceLabel}>Confidence</Text>
+                <Text style={styles.confidenceValue}>
+                  {(moduleState.confidence * 100).toFixed(0)}%
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.resultRow}>
+              <Text style={styles.resultLabel}>Positions tracked</Text>
+              <Text style={styles.resultValue}>{sequence.length}</Text>
+            </View>
+
+            {result.excessiveHeadMotion && (
+              <View style={styles.warningBadge}>
+                <Text style={styles.warningBadgeText}>⚠️ Head motion detected</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Show continue/retry buttons based on decision */}
+          {decision?.action === 'stop-success' && (
+            <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+              <Text style={styles.continueButtonText}>Continue to Convergence</Text>
+            </TouchableOpacity>
+          )}
+
+          {decision?.action === 'retry' && (
+            <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryButtonText}>
+                Retry Motility ({moduleState?.attemptNumber}/{moduleState?.maxAttempts})
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {decision?.action === 'stop-inconclusive' && (
+            <>
+              <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+                <Text style={styles.continueButtonText}>Continue Anyway</Text>
+              </TouchableOpacity>
+              <View style={styles.warningCard}>
+                <Text style={styles.warningText}>
+                  ⚠️ Quality below minimum threshold. Results may be less reliable.
+                </Text>
+              </View>
+            </>
+          )}
+
+          {!decision && (
+            <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+              <Text style={styles.continueButtonText}>Continue to Convergence</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={styles.backButton} onPress={() => router.push('/vision-scan')}>
+            <Text style={styles.backButtonText}>Cancel Scan</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     )
   }
 
@@ -395,5 +503,129 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     backgroundColor: '#10B981',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#1F2937',
+  },
+  icon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 24,
+  },
+  resultCard: {
+    width: '100%',
+    backgroundColor: '#374151',
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 16,
+  },
+  resultTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  confidenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#4B5563',
+  },
+  confidenceLabel: {
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  confidenceValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  resultRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  resultLabel: {
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  resultValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+  },
+  warningBadge: {
+    backgroundColor: '#F59E0B',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+  },
+  warningBadgeText: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  continueButton: {
+    width: '100%',
+    backgroundColor: '#4F46E5',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  continueButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  retryButton: {
+    width: '100%',
+    backgroundColor: '#6B7280',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  backButton: {
+    width: '100%',
+    padding: 16,
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: '#9CA3AF',
+    fontSize: 16,
+  },
+  warningCard: {
+    width: '100%',
+    backgroundColor: '#F59E0B',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+  },
+  warningText: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })

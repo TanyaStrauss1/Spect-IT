@@ -21,16 +21,18 @@ import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
 import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
+import { AdaptiveCoachingCard } from '../../components/vision-scan/AdaptiveCoachingCard'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function AlignmentScreen() {
-  const { deviceQualification, setAlignment, recordRepeatAttempt } = useVisionScan()
+  const { deviceQualification, setAlignment, recordRepeatAttempt, recordModuleCompletion, getModuleState } = useVisionScan()
   const [tracker] = useState(() => new AlignmentTracker(deviceQualification?.useSensorBasedMeasurements || false))
   const [frameCount, setFrameCount] = useState(0)
   const [isCapturing, setIsCapturing] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const [result, setResult] = useState<AlignmentResult | null>(null)
+  const [decision, setDecision] = useState<any>(null)
   const [detectedFace, setDetectedFace] = useState<DetectedFace | null>(null)
   const [cameraError, setCameraError] = useState<'camera-unavailable' | 'camera-error' | null>(null)
   const cameraRef = useRef<Camera>(null)
@@ -57,6 +59,10 @@ export default function AlignmentScreen() {
       setResult(alignmentResult)
       setAlignment(alignmentResult)
       setIsCapturing(false)
+
+      // Record with ExamController and get stopping decision
+      const acquisitionDecision = recordModuleCompletion('alignment', alignmentResult)
+      setDecision(acquisitionDecision)
     }
   }, [isCapturing, isPaused, frameCount, detectedFace])
 
@@ -249,6 +255,7 @@ export default function AlignmentScreen() {
     setFrameCount(0)
     setIsCapturing(true)
     setResult(null)
+    setDecision(null)
   }
 
   const handleCameraError = () => {
@@ -279,17 +286,39 @@ export default function AlignmentScreen() {
   }
 
   if (!isCapturing && result) {
+    const moduleState = getModuleState('alignment')
+    
     return (
       <View style={styles.container}>
         <View style={styles.content}>
           <Text style={styles.icon}>👁️</Text>
           <Text style={styles.title}>Alignment Complete</Text>
 
+          {/* Show adaptive coaching if decision requires it */}
+          {decision && decision.action !== 'stop-success' && (
+            <AdaptiveCoachingCard
+              decision={decision}
+              moduleState={moduleState}
+              onRetry={handleRetry}
+              onContinue={handleContinue}
+            />
+          )}
+
           <View style={styles.resultCard}>
             <View style={styles.alignmentScore}>
               <Text style={styles.scoreNumber}>{result.alignmentIndex.toFixed(0)}</Text>
               <Text style={styles.scoreLabel}>Alignment Index</Text>
             </View>
+
+            {/* Show confidence if available */}
+            {moduleState && (
+              <View style={styles.confidenceRow}>
+                <Text style={styles.confidenceLabel}>Confidence</Text>
+                <Text style={styles.confidenceValue}>
+                  {(moduleState.confidence * 100).toFixed(0)}%
+                </Text>
+              </View>
+            )}
 
             <View style={styles.deviationRow}>
               <View style={styles.deviationCol}>
@@ -317,13 +346,45 @@ export default function AlignmentScreen() {
             <Text style={styles.noteText}>{result.screeningNote}</Text>
           </View>
 
-          <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-            <Text style={styles.continueButtonText}>Continue to Motility</Text>
-          </TouchableOpacity>
+          {/* Show continue/retry buttons based on decision */}
+          {decision?.action === 'stop-success' && (
+            <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+              <Text style={styles.continueButtonText}>Continue to Motility</Text>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryButtonText}>Repeat Alignment</Text>
-          </TouchableOpacity>
+          {decision?.action === 'retry' && (
+            <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryButtonText}>
+                Retry Alignment ({moduleState?.attemptNumber}/{moduleState?.maxAttempts})
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {decision?.action === 'stop-inconclusive' && (
+            <>
+              <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+                <Text style={styles.continueButtonText}>Continue Anyway</Text>
+              </TouchableOpacity>
+              <View style={styles.warningCard}>
+                <Text style={styles.warningText}>
+                  ⚠️ Quality below minimum threshold. Results may be less reliable.
+                </Text>
+              </View>
+            </>
+          )}
+
+          {/* Default buttons if no decision */}
+          {!decision && (
+            <>
+              <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+                <Text style={styles.continueButtonText}>Continue to Motility</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+                <Text style={styles.retryButtonText}>Repeat Alignment</Text>
+              </TouchableOpacity>
+            </>
+          )}
 
           <TouchableOpacity style={styles.backButton} onPress={() => router.push('/vision-scan')}>
             <Text style={styles.backButtonText}>Cancel Scan</Text>
@@ -535,5 +596,37 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#9CA3AF',
     fontSize: 16,
+  },
+  confidenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#4B5563',
+  },
+  confidenceLabel: {
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  confidenceValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  warningCard: {
+    width: '100%',
+    backgroundColor: '#F59E0B',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+  },
+  warningText: {
+    fontSize: 14,
+    color: 'white',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 })
