@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { useParticipants } from '@/lib/participants/participant-context'
 import { supabase } from '@/lib/supabase'
 import CalibrationModal, { useCalibration } from '@/components/CalibrationModal'
+import { PreTestChecklist } from '@/components/journey/PreTestChecklist'
 import SloanOptotype from '@/components/SloanOptotype'
 import { useJourney } from '@/lib/journey/useJourney'
 import {
@@ -27,6 +28,7 @@ import {
   type EyeResult,
   type SloanLetter,
   type DistanceMetadata,
+  type QualityGuardMetadata,
 } from '@spect-it/cv'
 
 type Eye = 'right' | 'left'
@@ -39,6 +41,9 @@ export default function AcuityTestPage() {
   const { markTestComplete } = useJourney()
   
   const [test] = useState(() => createVisualAcuityTest({ startLogMAR: 0.5 }))
+  const [showChecklist, setShowChecklist] = useState(true)
+  const [checklistCompleted, setChecklistCompleted] = useState(false)
+  const [qualityGuardTimestamp, setQualityGuardTimestamp] = useState<number>(0)
   const [currentEye, setCurrentEye] = useState<Eye>('right')
   const [currentLineIndex, setCurrentLineIndex] = useState(0)
   const [currentLetterIndex, setCurrentLetterIndex] = useState(0)
@@ -69,17 +74,23 @@ export default function AcuityTestPage() {
   }, [user, authLoading, router, participants, activeParticipant])
 
   const startTest = () => {
-    const handleReady = () => {
-      // Test is ready to begin after calibration
-    }
-    ensureCalibration(handleReady)
+    setShowChecklist(true)
+  }
+
+  const handleChecklistComplete = () => {
+    setShowChecklist(false)
+    setChecklistCompleted(true)
+    setQualityGuardTimestamp(Date.now())
+    ensureCalibration(() => {
+      // Calibration complete, ready to test
+    })
   }
 
   useEffect(() => {
-    if (!authLoading && user && !isModalOpen) {
-      startTest()
+    if (!authLoading && user && !isModalOpen && !showChecklist) {
+      // Test is ready after checklist and calibration
     }
-  }, [user, authLoading])
+  }, [user, authLoading, isModalOpen, showChecklist])
 
   const currentLine = chartLines[currentLineIndex]
   const calibration = calibrator.getCalibration() || calibrator.getDefaultCalibration()
@@ -179,6 +190,18 @@ export default function AcuityTestPage() {
     
     const result = test.createResult(calibration, rightEye, leftEye, distanceSource)
     setDistanceMetadata(result.distanceMetadata)
+    
+    // Add Quality Guard metadata
+    if (checklistCompleted) {
+      const qualityGuard: QualityGuardMetadata = {
+        preTestChecklistCompleted: true,
+        checklistVersion: '1.0',
+        gatesCompleted: ['lighting', 'distance', 'screen', 'glasses', 'occlusion'],
+        timestamp: qualityGuardTimestamp,
+      }
+      result.qualityGuard = qualityGuard
+    }
+    
     setIsComplete(true)
 
     // Mark test as complete in journey
@@ -363,6 +386,13 @@ export default function AcuityTestPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <PreTestChecklist
+        testId="visual-acuity"
+        isOpen={showChecklist}
+        onClose={() => router.push('/tests')}
+        onProceed={handleChecklistComplete}
+      />
+      
       <CalibrationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
