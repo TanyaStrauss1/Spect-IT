@@ -12,6 +12,7 @@ import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { requestCameraPermission, type DetectedFace, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
+import { AmbientLightGate } from '../../components/vision-scan/AmbientLightGate'
 
 export default function QualificationScreen() {
   const { setDeviceQualification } = useVisionScan()
@@ -196,6 +197,12 @@ export default function QualificationScreen() {
                   ✓ Face Detected
                 </Text>
               </View>
+            )}
+            {qualification && (
+              <AmbientLightGate 
+                lightingScore={qualification.lightingScore} 
+                isVisible={true}
+              />
             )}
           </View>
         </View>
