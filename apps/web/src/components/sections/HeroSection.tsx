@@ -18,32 +18,36 @@ export function HeroSection() {
 
   return (
     <>
-      <section className="relative bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 text-white overflow-hidden">
+      <section className="relative bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900 overflow-hidden">
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 opacity-[0.015]">
           <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)',
             backgroundSize: '40px 40px'
           }} />
         </div>
 
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/30 via-transparent to-transparent" />
+
         <div className="relative container mx-auto px-4 py-20 md:py-32">
           <div className="max-w-4xl mx-auto text-center">
             {/* Badge */}
-            <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-6 border border-white/30">
-              🏥 Clinical-Grade Vision Screening
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-50 to-teal-50 px-4 py-2 rounded-full text-sm font-semibold mb-6 border border-cyan-200/50 text-cyan-900 shadow-sm">
+              <span className="text-xs">●</span>
+              Clinical-Grade Vision Screening
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-slate-900">
               Precision eye care,{' '}
-              <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-cyan-600 to-teal-500 bg-clip-text text-transparent">
                 refined
               </span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
               Clinical-grade vision screening from home. Ten tests — acuity, colour, astigmatism, 
               contrast and more — with results you can share with an optometrist. Screening only, not a diagnosis.
             </p>
@@ -53,12 +57,12 @@ export function HeroSection() {
               <Button 
                 size="lg" 
                 onClick={() => setShowJourneyModal(true)}
-                className="bg-white text-indigo-700 hover:bg-gray-100 px-8 py-4 text-lg"
+                className="bg-gradient-to-r from-cyan-600 to-teal-600 text-white hover:from-cyan-700 hover:to-teal-700 px-8 py-4 text-lg shadow-clinical"
               >
                 Start Guided Journey
               </Button>
               <Link href="/tests">
-                <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/10 px-8 py-4 text-lg">
+                <Button size="lg" variant="outline" className="border-2 border-slate-300 text-slate-700 hover:bg-slate-50 px-8 py-4 text-lg">
                   Browse Tests
                 </Button>
               </Link>
@@ -69,37 +73,34 @@ export function HeroSection() {
               <div className="mb-8">
                 <button
                   onClick={() => setShowJourneyModal(true)}
-                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm hover:bg-white/20 transition-colors border border-white/30"
+                  className="inline-flex items-center gap-2 bg-cyan-50 px-4 py-2 rounded-full text-sm hover:bg-cyan-100 transition-colors border border-cyan-200 text-cyan-900 shadow-sm"
                 >
-                  🎯 Journey Progress: {progress.completed}/{progress.total} Complete
+                  <span className="text-xs">●</span>
+                  Journey Progress: {progress.completed}/{progress.total} Complete
                 </button>
               </div>
             )}
 
           {/* Trust Indicators */}
-          <div className="flex flex-wrap justify-center gap-8 text-sm text-blue-200">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">◆</span>
+          <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-600">
+            <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+              <span className="text-sm text-cyan-600">✓</span>
               <span>Clinically inspired</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">◆</span>
+            <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+              <span className="text-sm text-cyan-600">✓</span>
               <span>10 comprehensive tests</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">◆</span>
+            <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+              <span className="text-sm text-cyan-600">✓</span>
               <span>Share results with optometrist</span>
             </div>
           </div>
           </div>
         </div>
 
-        {/* Bottom Wave */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="white"/>
-          </svg>
-        </div>
+        {/* Bottom gradient separator */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       </section>
 
       {/* Journey Modal */}
