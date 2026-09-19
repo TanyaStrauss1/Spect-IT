@@ -112,6 +112,10 @@ export function TrendsSection({ results }: TrendsSectionProps) {
       timestamp: number
       overallConfidence?: number
       alignmentIndex?: number
+      coverUncoverScore?: number
+      coverUncoverAsymmetry?: boolean
+      pupilAsymmetry?: boolean
+      pupilReactivity?: boolean
       recommendsProfessionalExam?: boolean
     }> = visionScanResults.map(r => {
       const date = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -124,6 +128,12 @@ export function TrendsSection({ results }: TrendsSectionProps) {
           ? r.test_data.qualityAssessment.overallConfidence * 100 
           : undefined,
         alignmentIndex: r.test_data?.alignment?.alignmentIndex,
+        coverUncoverScore: r.test_data?.coverUncover?.asymmetryScore !== undefined 
+          ? 100 - r.test_data.coverUncover.asymmetryScore
+          : undefined,
+        coverUncoverAsymmetry: r.test_data?.coverUncover?.asymmetryDetected,
+        pupilAsymmetry: r.test_data?.pupilExamination?.asymmetryDetected,
+        pupilReactivity: r.test_data?.pupilExamination?.reactivityDetected,
         recommendsProfessionalExam: r.test_data?.recommendsProfessionalExam || false,
       }
     }).filter(d => d.overallConfidence !== undefined || d.alignmentIndex !== undefined)
@@ -219,6 +229,34 @@ export function TrendsSection({ results }: TrendsSectionProps) {
             details: `Alignment: ${latest.alignmentIndex.toFixed(0)} from ${previous.alignmentIndex.toFixed(0)}`,
           })
         }
+      }
+
+      // Cover-uncover score change ≥10 points
+      if (latest.coverUncoverScore !== undefined && previous.coverUncoverScore !== undefined) {
+        const coverUncoverChange = latest.coverUncoverScore - previous.coverUncoverScore
+        if (Math.abs(coverUncoverChange) >= 10) {
+          meaningfulChanges.push({
+            type: 'vision-scan',
+            change: coverUncoverChange,
+            improved: coverUncoverChange > 0,
+            dates: [previous.date, latest.date],
+            details: `Cover-Uncover: ${latest.coverUncoverScore.toFixed(0)} from ${previous.coverUncoverScore.toFixed(0)}`,
+          })
+        }
+      }
+
+      // Pupil asymmetry status change
+      if (latest.pupilAsymmetry !== undefined && previous.pupilAsymmetry !== undefined && 
+          latest.pupilAsymmetry !== previous.pupilAsymmetry) {
+        meaningfulChanges.push({
+          type: 'vision-scan',
+          change: latest.pupilAsymmetry ? 'asymmetry detected' : 'asymmetry cleared',
+          improved: !latest.pupilAsymmetry,
+          dates: [previous.date, latest.date],
+          details: latest.pupilAsymmetry 
+            ? 'Pupil asymmetry now detected' 
+            : 'Pupil asymmetry no longer present',
+        })
       }
 
       // Flag recommendation status change
@@ -448,6 +486,23 @@ export function TrendsSection({ results }: TrendsSectionProps) {
                     <Text style={styles.metricLabel}>Alignment Index</Text>
                     <Text style={styles.metricValue}>{trend.alignmentIndex.toFixed(0)}</Text>
                     <View style={[styles.visualBar, { width: `${trend.alignmentIndex}%`, backgroundColor: '#A855F7' }]} />
+                  </View>
+                )}
+                {trend.coverUncoverScore !== undefined && (
+                  <View style={styles.metricRow}>
+                    <Text style={styles.metricLabel}>Cover-Uncover {trend.coverUncoverAsymmetry ? '⚠️' : '✓'}</Text>
+                    <Text style={styles.metricValue}>{trend.coverUncoverScore.toFixed(0)}</Text>
+                    <View style={[styles.visualBar, { width: `${trend.coverUncoverScore}%`, backgroundColor: '#C084FC' }]} />
+                  </View>
+                )}
+                {(trend.pupilAsymmetry !== undefined || trend.pupilReactivity !== undefined) && (
+                  <View style={styles.metricRow}>
+                    <Text style={styles.metricLabel}>
+                      Pupil {trend.pupilAsymmetry ? '⚠️ Asymm' : trend.pupilReactivity ? '✓ Normal' : '⚠️ Limited'}
+                    </Text>
+                    <Text style={styles.metricValue}>
+                      {!trend.pupilAsymmetry && trend.pupilReactivity ? 'Pass' : 'Flag'}
+                    </Text>
                   </View>
                 )}
               </View>
