@@ -22,6 +22,7 @@ import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 import { FaceHoldCoaching, type FaceHoldStatus } from '../../components/vision-scan/FaceHoldCoaching'
 import { DegradedModeBanner } from '../../components/vision-scan/DegradedModeBanner'
 import { AdaptiveCoachingCard } from '../../components/vision-scan/AdaptiveCoachingCard'
+import { MotionGateAlert } from '../../components/vision-scan/MotionGateAlert'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -45,6 +46,7 @@ export default function AlignmentScreen() {
   const [headPoseEMA, setHeadPoseEMA] = useState<{ pitch: number; yaw: number; roll: number } | null>(null)
   const [faceDetectionHistory, setFaceDetectionHistory] = useState<boolean[]>([])
   const [timestampHistory, setTimestampHistory] = useState<number[]>([])
+  const [lastFaceCenter, setLastFaceCenter] = useState<{ x: number; y: number } | null>(null)
   const FRAME_BUFFER_SIZE = 8
 
   useEffect(() => {
@@ -186,6 +188,15 @@ export default function AlignmentScreen() {
       roll: applyEMA(rawHeadPose.roll, headPoseEMA?.roll ?? null, 0.3),
     }
     setHeadPoseEMA(smoothedHeadPose)
+
+    // Track face center for displacement calculation
+    const currentFaceCenter = {
+      x: smoothedBounds.x + smoothedBounds.width / 2,
+      y: smoothedBounds.y + smoothedBounds.height / 2,
+    }
+    if (!lastFaceCenter) {
+      setLastFaceCenter(currentFaceCenter)
+    }
 
     const targetX = screenWidth / 2
     const targetY = screenHeight / 2
@@ -420,6 +431,18 @@ export default function AlignmentScreen() {
           frameCount={frameCount}
           targetFrames={targetFrames}
           isPaused={isPaused}
+        />
+
+        <MotionGateAlert 
+          headMotion={headPoseEMA || undefined}
+          headDisplacement={lastFaceCenter && faceBoundsEMA 
+            ? Math.sqrt(
+                Math.pow((faceBoundsEMA.x + faceBoundsEMA.width / 2) - lastFaceCenter.x, 2) +
+                Math.pow((faceBoundsEMA.y + faceBoundsEMA.height / 2) - lastFaceCenter.y, 2)
+              )
+            : 0
+          }
+          isVisible={!isPaused && isCapturing}
         />
 
         <View style={styles.fixationArea}>

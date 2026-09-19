@@ -1,6 +1,6 @@
 /**
  * Quality Review & Selective Repeat Screen
- * P3: Clearer module issues, one-tap re-run, skip with acknowledgment
+ * P3: Clearer module issues with categorized rejection reasons, one-tap re-run, skip with acknowledgment
  * P3.5: Cap repeat attempts (max 2 per module), auto-return after repeat
  */
 
@@ -10,9 +10,48 @@ import { router } from 'expo-router'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { ModuleStateCard } from '../../components/vision-scan/ModuleStateCard'
-import type { ModuleName } from '@spect-it/cv'
+import type { ModuleName, RejectionCategory } from '@spect-it/cv'
 
 const MAX_REPEAT_ATTEMPTS = 2
+
+const getCategoryIcon = (category: RejectionCategory): string => {
+  const icons: Record<RejectionCategory, string> = {
+    'ambient-light': '💡',
+    'motion': '🎯',
+    'face-distance': '↔️',
+    'face-detection': '👤',
+    'occlusion': '🚫',
+    'low-confidence': '⚠️',
+    'insufficient-data': '📊',
+  }
+  return icons[category] || '•'
+}
+
+const getCategoryColor = (category: RejectionCategory): string => {
+  const colors: Record<RejectionCategory, string> = {
+    'ambient-light': '#F59E0B',
+    'motion': '#EF4444',
+    'face-distance': '#F59E0B',
+    'face-detection': '#F59E0B',
+    'occlusion': '#EF4444',
+    'low-confidence': '#6B7280',
+    'insufficient-data': '#6B7280',
+  }
+  return colors[category] || '#6B7280'
+}
+
+const getCategoryLabel = (category: RejectionCategory): string => {
+  const labels: Record<RejectionCategory, string> = {
+    'ambient-light': 'Lighting Issue',
+    'motion': 'Motion Detected',
+    'face-distance': 'Distance Issue',
+    'face-detection': 'Face Visibility',
+    'occlusion': 'Obstruction',
+    'low-confidence': 'Low Confidence',
+    'insufficient-data': 'Insufficient Data',
+  }
+  return labels[category] || 'Quality Issue'
+}
 
 export default function QualityReviewScreen() {
   const { qualityAssessment, completeSession, repeatAttempts, examController, getModuleState } = useVisionScan()
@@ -184,12 +223,36 @@ export default function QualityReviewScreen() {
                 </View>
               </View>
 
+              {module.shouldRepeat && module.rejectionReason && (
+                <View style={[styles.rejectionBanner, { borderColor: getCategoryColor(module.rejectionReason) }]}>
+                  <Text style={styles.rejectionIcon}>{getCategoryIcon(module.rejectionReason)}</Text>
+                  <Text style={[styles.rejectionText, { color: getCategoryColor(module.rejectionReason) }]}>
+                    Primary issue: {getCategoryLabel(module.rejectionReason)}
+                  </Text>
+                </View>
+              )}
+
               {module.qualityIssues.length > 0 && (
                 <View style={styles.issuesList}>
                   {module.qualityIssues.map((issue, idx) => (
-                    <Text key={idx} style={styles.issue} accessibilityRole="text">
-                      • {issue}
-                    </Text>
+                    <View key={idx} style={styles.issueCard}>
+                      <View style={styles.issueHeader}>
+                        <Text style={styles.categoryIcon}>{getCategoryIcon(issue.category)}</Text>
+                        <Text 
+                          style={[styles.categoryLabel, { color: getCategoryColor(issue.category) }]}
+                        >
+                          {getCategoryLabel(issue.category)}
+                        </Text>
+                      </View>
+                      <Text style={styles.issueMessage} accessibilityRole="text">
+                        {issue.message}
+                      </Text>
+                      {issue.actionable && (
+                        <Text style={styles.issueActionable}>
+                          ▸ {issue.actionable}
+                        </Text>
+                      )}
+                    </View>
                   ))}
                 </View>
               )}
@@ -345,6 +408,25 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
+  rejectionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+  },
+  rejectionIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  rejectionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
   moduleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -369,6 +451,42 @@ const styles = StyleSheet.create({
   },
   issuesList: {
     marginBottom: 12,
+    gap: 8,
+  },
+  issueCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#6B7280',
+  },
+  issueHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  categoryIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  categoryLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  issueMessage: {
+    fontSize: 14,
+    color: '#1F2937',
+    lineHeight: 20,
+    marginBottom: 6,
+  },
+  issueActionable: {
+    fontSize: 13,
+    color: '#4F46E5',
+    lineHeight: 18,
+    fontWeight: '500',
+    paddingLeft: 8,
   },
   issue: {
     fontSize: 13,
