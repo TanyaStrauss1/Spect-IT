@@ -6,9 +6,11 @@
 
 export * from './types'
 export * from './session-types'
+export * from './exam-controller-types'
 export { DeviceQualifier } from './device-qualifier'
 export { VisionScanCalibrator } from './calibrator'
 export { AlignmentTracker } from './alignment-tracker'
 export { MotilityTracker } from './motility-tracker'
 export { ConvergenceTracker } from './convergence-tracker'
 export { QualityEngine } from './quality-engine'
+export { ExamController } from './exam-controller'

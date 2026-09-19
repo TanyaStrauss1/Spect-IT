@@ -2,9 +2,10 @@
  * Vision Scan Session Context
  * 
  * Manages session state through the entire vision scan flow.
+ * Integrated with ExamController for closed-loop adaptive acquisition.
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
 import type {
   VisionScanSession,
   VisionScanSessionState,
@@ -15,9 +16,20 @@ import type {
   ConvergenceResult,
   QualityAssessment,
   VisionScanResult,
+  ModuleName,
+  AcquisitionDecision,
+  ModuleMeasurementState,
 } from '@spect-it/cv'
+import { ExamController } from '@spect-it/cv'
 
-const VisionScanContext = createContext<VisionScanSession | null>(null)
+const VisionScanContext = createContext<VisionScanSession & {
+  examController: ExamController | null
+  getModuleState: (module: ModuleName) => ModuleMeasurementState | undefined
+  recordModuleCompletion: (
+    module: ModuleName,
+    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult
+  ) => AcquisitionDecision
+} | null>(null)
 
 export function VisionScanProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<VisionScanSessionState>({
@@ -36,9 +48,13 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     completedAt: null,
   })
 
+  const examControllerRef = useRef<ExamController | null>(null)
+
   const startSession = useCallback((participantId: string | null) => {
+    const sessionId = `vs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    
     setSession({
-      sessionId: `vs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sessionId,
       participantId,
       startedAt: Date.now(),
       deviceQualification: null,
@@ -52,6 +68,9 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       isComplete: false,
       completedAt: null,
     })
+
+    // Initialize ExamController for closed-loop control
+    examControllerRef.current = new ExamController(sessionId, participantId)
   }, [])
 
   const setDeviceQualification = useCallback((result: DeviceQualification) => {
@@ -122,6 +141,43 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       isComplete: false,
       completedAt: null,
     })
+    examControllerRef.current = null
+  }, [])
+
+  const getModuleState = useCallback((module: ModuleName): ModuleMeasurementState | undefined => {
+    return examControllerRef.current?.getModuleState(module)
+  }, [])
+
+  const recordModuleCompletion = useCallback((
+    module: ModuleName,
+    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult
+  ): AcquisitionDecision => {
+    if (!examControllerRef.current) {
+      return {
+        action: 'stop-inconclusive',
+        reason: 'ExamController not initialized',
+      }
+    }
+
+    // Start module if not already started
+    examControllerRef.current.startModule(module)
+
+    // Record the result and get stopping decision
+    const decision = examControllerRef.current.recordModuleResult(module, result)
+
+    // Update methodology if controller has it
+    const controllerState = examControllerRef.current.getSessionState()
+    if (controllerState.methodology) {
+      setSession(prev => ({
+        ...prev,
+        methodology: {
+          ...prev.methodology,
+          ...controllerState.methodology,
+        },
+      }))
+    }
+
+    return decision
   }, [])
 
   const buildFinalResult = useCallback((): VisionScanResult | null => {
@@ -178,7 +234,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     }
   }, [session])
 
-  const value: VisionScanSession = {
+  const value = {
     ...session,
     startSession,
     setDeviceQualification,
@@ -192,6 +248,9 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     completeSession,
     resetSession,
     buildFinalResult,
+    examController: examControllerRef.current,
+    getModuleState,
+    recordModuleCompletion,
   }
 
   return (
@@ -201,7 +260,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
   )
 }
 
-export function useVisionScan(): VisionScanSession {
+export function useVisionScan() {
   const context = useContext(VisionScanContext)
   if (!context) {
     throw new Error('useVisionScan must be used within VisionScanProvider')
