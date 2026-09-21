@@ -72,6 +72,10 @@ cp apps/mobile/.env.example apps/mobile/.env
 # - NEXT_PUBLIC_SUPABASE_ANON_KEY (from Supabase project API settings)
 # - EXPO_PUBLIC_SUPABASE_URL (same URL for mobile)
 # - EXPO_PUBLIC_SUPABASE_ANON_KEY (same key for mobile)
+# 
+# Optional: Google Places API for "Find Care Nearby" feature
+# - GOOGLE_PLACES_API_KEY (from Google Cloud Console - enables provider search)
+#   If not set, feature gracefully falls back to Google Maps deep links
 ```
 
 3. **Run Supabase migrations:**
@@ -127,6 +131,7 @@ The web app will be available at `http://localhost:3000`
 - Six clinical vision screening tests (acuity, contrast, color, astigmatism, visual field, refractive)
 - User dashboard with longitudinal trends
 - Clinical summary with PDF export
+- **"Find Care Nearby"** — Google Places API-backed clinician handoff (optometrists/opticians)
 - Screen calibration
 - Guided test journey
 

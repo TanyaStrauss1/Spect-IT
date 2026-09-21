@@ -48,9 +48,19 @@ Create `.env.local`:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Optional: Google Places API for "Find Care Nearby" feature
+GOOGLE_PLACES_API_KEY=your-google-places-api-key
 ```
 
-Get these from your Supabase project settings → API.
+Get Supabase credentials from your Supabase project settings → API.
+
+**Google Places API (Optional):**
+- Required for the "Find Care Nearby" clinician handoff feature
+- Get your API key from [Google Cloud Console](https://console.cloud.google.com/)
+- Enable "Places API (New)" or "Places API" for your project
+- Restrict the API key to your domain for security
+- If not configured, the feature gracefully falls back to Google Maps deep links
 
 ## Deployment
 
@@ -67,6 +77,7 @@ This app is deployed to Vercel. The live production site is at **spect-it.com**.
 2. **Environment Variables (Settings → Environment Variables):**
    - `NEXT_PUBLIC_SUPABASE_URL` → Your Supabase project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Your Supabase anon key
+   - `GOOGLE_PLACES_API_KEY` → (Optional) Google Places API key for "Find Care Nearby" feature
 
 3. **Build Settings (auto-detected from package.json):**
    - Build Command: `npm run build` (runs Next.js build)
