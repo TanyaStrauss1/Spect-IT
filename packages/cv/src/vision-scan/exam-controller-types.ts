@@ -146,6 +146,15 @@ export const DEFAULT_STOPPING_RULES: Record<ModuleName, StoppingRuleConfig> = {
     maxAttempts: 3,
     maxDurationPerAttempt: 60000, // 1 minute
   },
+  'fixation-capture': {
+    module: 'fixation-capture',
+    minConfidence: 0.60,
+    targetConfidence: 0.80,
+    minSamples: 50, // minimum good frames
+    targetSamples: 70,
+    maxAttempts: 3,
+    maxDurationPerAttempt: 5000,
+  },
   'alignment': {
     module: 'alignment',
     minConfidence: 0.60,
