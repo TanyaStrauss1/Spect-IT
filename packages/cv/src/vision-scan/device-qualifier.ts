@@ -4,9 +4,13 @@
  * Assesses device capabilities and environment quality.
  * Determines whether to use sensor-based measurements (full mode)
  * or estimation-based measurements (degraded mode).
+ * 
+ * Includes hard device check gate that must pass before capture.
  */
 
-import type { DeviceCapability, DeviceQualification, QualityLevel } from './types'
+import type { DeviceCapability, DeviceQualification, QualityLevel, DeviceCheckRecord } from './types'
+import { detectDeviceTier, getDeviceTierInfo } from './device-tier'
+import { performDeviceCheck, type PermissionStatus, type StorageInfo } from './device-checker'
 
 export class DeviceQualifier {
   /**
@@ -28,11 +32,24 @@ export class DeviceQualifier {
   }
 
   /**
+   * Perform hard device check (must pass before capture)
+   */
+  static async performDeviceCheck(
+    capability: DeviceCapability,
+    permissions: PermissionStatus,
+    storage: StorageInfo,
+    calibrationRecordExists: boolean
+  ): Promise<DeviceCheckRecord> {
+    return performDeviceCheck(capability, permissions, storage, calibrationRecordExists)
+  }
+
+  /**
    * Qualify device and environment for vision scan
    */
   static async qualify(
     capability: DeviceCapability,
-    videoFrame?: ImageData
+    videoFrame?: ImageData,
+    deviceCheckRecord?: DeviceCheckRecord
   ): Promise<DeviceQualification> {
     const lightingScore = videoFrame ? this.assessLighting(videoFrame) : 50
     const distanceScore = videoFrame ? this.assessDistance(videoFrame) : 50
@@ -46,12 +63,22 @@ export class DeviceQualifier {
     else if (overallScore >= 50) overallQuality = 'acceptable'
     else overallQuality = 'poor'
 
+    // Determine device tier
+    const deviceTier = detectDeviceTier(capability)
+
     // Determine if we can use sensor-based measurements
     const useSensorBasedMeasurements =
       (capability.hasTrueDepth || capability.hasLiDAR) &&
       overallQuality !== 'poor'
 
     const warnings: string[] = []
+    
+    // Add device check warnings if check failed
+    if (deviceCheckRecord && !deviceCheckRecord.passed) {
+      warnings.push('⚠️ Device check failed - some features may be unavailable')
+      warnings.push(...deviceCheckRecord.failReasons)
+    }
+    
     if (!capability.hasTrueDepth && !capability.hasLiDAR) {
       warnings.push(
         'No depth sensor detected. Using estimated measurements (degraded mode).'
@@ -80,6 +107,8 @@ export class DeviceQualifier {
       overallQuality,
       useSensorBasedMeasurements,
       warnings,
+      deviceCheckRecord,
+      deviceTier,
     }
   }
 

@@ -86,6 +86,10 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
   const setCalibration = useCallback((result: CalibrationResult) => {
     setSession((prev) => ({ ...prev, calibration: result }))
   }, [])
+  
+  const getCalibration = useCallback((): CalibrationResult | null => {
+    return session.calibration
+  }, [session.calibration])
 
   const setAlignment = useCallback((result: AlignmentResult) => {
     setSession((prev) => ({ ...prev, alignment: result }))
@@ -244,12 +248,20 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     } else {
       screeningSummary = 'Screening completed with moderate data quality. Consider professional examination if symptoms present.'
     }
+    
+    // Import device tier utilities
+    const { getDeviceTierInfo } = require('@spect-it/cv')
+    const deviceTier = session.deviceQualification.deviceTier
+    const deviceTierInfo = getDeviceTierInfo(deviceTier)
 
     return {
       timestamp: Date.now(),
       participantId: session.participantId,
       deviceQualification: session.deviceQualification,
+      deviceTier,
+      deviceTierInfo,
       calibration: session.calibration,
+      fixationCapture: null, // TODO: implement fixation capture
       alignment: session.alignment,
       coverUncover: session.coverUncover,
       motility: session.motility,
@@ -268,6 +280,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     startSession,
     setDeviceQualification,
     setCalibration,
+    getCalibration,
     setAlignment,
     setCoverUncover,
     setMotility,

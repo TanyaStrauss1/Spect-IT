@@ -29,6 +29,52 @@ export type DeviceCapability = {
   screenWidth: number
   screenHeight: number
   screenPPI: number
+  deviceModel?: string
+  osVersion?: string
+}
+
+export type DeviceCheckRecord = {
+  timestamp: number
+  deviceId: string
+  passed: boolean
+  failReasons: string[]
+  sensorChecks: {
+    camera: boolean
+    trueDepth: boolean
+    lidar: boolean
+    gyroscope: boolean
+    accelerometer: boolean
+  }
+  permissionChecks: {
+    camera: boolean
+    motion: boolean
+  }
+  storageCheck: {
+    available: boolean
+    availableMB: number
+  }
+  calibrationRecordExists: boolean
+  deviceTier: DeviceTier
+}
+
+export type DeviceTier = 'standard' | 'depth' | 'precision' | 'clinical-placeholder'
+
+export type DeviceTierInfo = {
+  tier: DeviceTier
+  name: string
+  description: string
+  capabilities: {
+    depthSensor: boolean
+    variableAperture: boolean
+    lidar: boolean
+    precisionTracking: boolean
+  }
+  measurementAccuracy: {
+    alignment: 'low' | 'medium' | 'high' | 'clinical'
+    motility: 'low' | 'medium' | 'high' | 'clinical'
+    convergence: 'low' | 'medium' | 'high' | 'clinical'
+    pupil: 'low' | 'medium' | 'high' | 'clinical'
+  }
 }
 
 export type QualityLevel = 'excellent' | 'good' | 'acceptable' | 'poor'
@@ -42,6 +88,57 @@ export type DeviceQualification = {
   overallQuality: QualityLevel
   useSensorBasedMeasurements: boolean // true = full mode, false = degraded/estimate mode
   warnings: string[]
+  deviceCheckRecord?: DeviceCheckRecord
+  deviceTier: DeviceTier
+}
+
+// ============================================================================
+// Fixation Capture Session
+// ============================================================================
+
+export type FixationCaptureFrame = {
+  timestamp: number
+  videoFrame: {
+    width: number
+    height: number
+    quality: number
+  } | null
+  faceGeometry: {
+    leftEye: EyePosition | null
+    rightEye: EyePosition | null
+    depth: number | null // mm, from TrueDepth/LiDAR if available
+  } | null
+  inertialData: {
+    pitch: number // degrees/sec
+    yaw: number // degrees/sec
+    roll: number // degrees/sec
+    acceleration: { x: number; y: number; z: number } | null
+  } | null
+  displayState: {
+    brightness: number // 0-1
+    targetPosition: { x: number; y: number } | null
+    stimulusType: string
+  }
+  qualityFeatures: {
+    faceDetected: boolean
+    eyesOpen: boolean
+    headMotionScore: number // 0-1
+    lightingScore: number // 0-1
+    occlusionScore: number // 0-1
+  }
+}
+
+export type FixationCaptureSession = {
+  timestamp: number
+  durationMs: number
+  frames: FixationCaptureFrame[]
+  summary: {
+    totalFrames: number
+    goodFrames: number
+    averageQuality: number
+    usedSensorData: boolean
+  }
+  screeningNote: string
 }
 
 // ============================================================================
@@ -222,6 +319,7 @@ export type CoverUncoverResult = {
 export type ModuleName =
   | 'device-qualification'
   | 'calibration'
+  | 'fixation-capture'
   | 'alignment'
   | 'cover-uncover'
   | 'motility'
@@ -303,7 +401,10 @@ export type VisionScanResult = {
   timestamp: number
   participantId: string | null
   deviceQualification: DeviceQualification
+  deviceTier: DeviceTier
+  deviceTierInfo: DeviceTierInfo
   calibration: CalibrationResult
+  fixationCapture: FixationCaptureSession | null
   alignment: AlignmentResult
   coverUncover: CoverUncoverResult | null // Optional, may be skipped in some scans
   motility: MotilityResult
