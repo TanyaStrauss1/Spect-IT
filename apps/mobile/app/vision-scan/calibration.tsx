@@ -252,7 +252,7 @@ export default function CalibrationScreen() {
 
   const handleContinue = () => {
     if (result?.isValid) {
-      router.push('/vision-scan/alignment')
+      router.push('/vision-scan/fixation-capture')
     }
   }
 
@@ -372,7 +372,7 @@ export default function CalibrationScreen() {
               accessibilityLabel="Continue to alignment"
               accessibilityHint="Calibration successful"
             >
-              <Text style={styles.continueButtonText}>Continue to Alignment</Text>
+              <Text style={styles.continueButtonText}>Continue to Fixation Capture</Text>
             </TouchableOpacity>
           )}
 
@@ -414,7 +414,7 @@ export default function CalibrationScreen() {
               accessibilityLabel="Continue to alignment"
               accessibilityHint="Calibration successful"
             >
-              <Text style={styles.continueButtonText}>Continue to Alignment</Text>
+              <Text style={styles.continueButtonText}>Continue to Fixation Capture</Text>
             </TouchableOpacity>
           )}
           

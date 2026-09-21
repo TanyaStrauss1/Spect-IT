@@ -90,6 +90,9 @@ export default function QualityReviewScreen() {
       case 'calibration':
         router.push('/vision-scan/calibration')
         break
+      case 'fixation-capture':
+        router.push('/vision-scan/fixation-capture')
+        break
       case 'alignment':
         router.push('/vision-scan/alignment')
         break
@@ -144,6 +147,7 @@ export default function QualityReviewScreen() {
     const names: Record<string, string> = {
       'device-qualification': 'Device Qualification',
       'calibration': 'Eye Calibration',
+      'fixation-capture': 'Fixation Capture',
       'alignment': 'Resting Alignment',
       'motility': 'Ocular Motility',
       'convergence': 'Convergence Test',

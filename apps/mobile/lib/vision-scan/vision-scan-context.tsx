@@ -11,6 +11,7 @@ import type {
   VisionScanSessionState,
   DeviceQualification,
   CalibrationResult,
+  FixationCaptureSession,
   AlignmentResult,
   CoverUncoverResult,
   MotilityResult,
@@ -40,6 +41,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     startedAt: 0,
     deviceQualification: null,
     calibration: null,
+    fixationCapture: null,
     alignment: null,
     coverUncover: null,
     motility: null,
@@ -63,6 +65,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       startedAt: Date.now(),
       deviceQualification: null,
       calibration: null,
+      fixationCapture: null,
       alignment: null,
       coverUncover: null,
       motility: null,
@@ -90,6 +93,10 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
   const getCalibration = useCallback((): CalibrationResult | null => {
     return session.calibration
   }, [session.calibration])
+
+  const setFixationCapture = useCallback((result: FixationCaptureSession) => {
+    setSession((prev) => ({ ...prev, fixationCapture: result }))
+  }, [])
 
   const setAlignment = useCallback((result: AlignmentResult) => {
     setSession((prev) => ({ ...prev, alignment: result }))
@@ -150,6 +157,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       startedAt: 0,
       deviceQualification: null,
       calibration: null,
+      fixationCapture: null,
       alignment: null,
       coverUncover: null,
       motility: null,
@@ -261,7 +269,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
       deviceTier,
       deviceTierInfo,
       calibration: session.calibration,
-      fixationCapture: null, // TODO: implement fixation capture
+      fixationCapture: session.fixationCapture,
       alignment: session.alignment,
       coverUncover: session.coverUncover,
       motility: session.motility,
@@ -281,6 +289,7 @@ export function VisionScanProvider({ children }: { children: React.ReactNode }) 
     setDeviceQualification,
     setCalibration,
     getCalibration,
+    setFixationCapture,
     setAlignment,
     setCoverUncover,
     setMotility,
