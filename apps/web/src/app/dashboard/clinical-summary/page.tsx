@@ -13,6 +13,7 @@ import { generateClinicalSummary, type TestResult, type ClinicalSummary } from '
 import { useParticipants } from '@/lib/participants/participant-context'
 import { Button } from '@/components/ui'
 import Link from 'next/link'
+import { FindCareNearby } from '@/components/FindCareNearby'
 
 export default function ClinicalSummaryPage() {
   const [results, setResults] = useState<TestResult[]>([])
@@ -673,6 +674,16 @@ export default function ClinicalSummaryPage() {
             </div>
           </div>
         </div>
+
+        {/* Find Care Nearby - shown when referral is recommended */}
+        <FindCareNearby 
+          show={
+            summary?.visionScan?.test_data?.recommendsProfessionalExam || 
+            (summary?.leftEye?.logMAR !== undefined && summary.leftEye.logMAR > 0.3) ||
+            (summary?.rightEye?.logMAR !== undefined && summary.rightEye.logMAR > 0.3) ||
+            (summary?.bothEyes?.logMAR !== undefined && summary.bothEyes.logMAR > 0.3)
+          }
+        />
 
         {/* Actions */}
         <div className="flex gap-4 print:hidden">

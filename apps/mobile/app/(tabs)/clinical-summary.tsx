@@ -11,6 +11,7 @@ import { useParticipants } from '../../lib/participants/participant-context'
 import { supabase } from '../../lib/supabase'
 import { generateClinicalSummary, type TestResult, type ClinicalSummary } from '../../lib/results/clinical-summary'
 import { TrendsSection } from '../../components/TrendsSection'
+import { FindCareNearby } from '../../components/FindCareNearby'
 
 export default function ClinicalSummaryScreen() {
   const [results, setResults] = useState<TestResult[]>([])
@@ -605,6 +606,16 @@ export default function ClinicalSummaryScreen() {
           </View>
         </View>
       </View>
+
+      {/* Find Care Nearby - shown when referral is recommended */}
+      <FindCareNearby 
+        show={
+          summary?.visionScan?.test_data?.recommendsProfessionalExam || 
+          (summary?.leftEye?.logMAR !== undefined && summary.leftEye.logMAR > 0.3) ||
+          (summary?.rightEye?.logMAR !== undefined && summary.rightEye.logMAR > 0.3) ||
+          (summary?.bothEyes?.logMAR !== undefined && summary.bothEyes.logMAR > 0.3)
+        }
+      />
 
       {/* Actions */}
       <View style={styles.actions}>
