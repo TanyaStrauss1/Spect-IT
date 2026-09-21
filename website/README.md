@@ -1,4 +1,19 @@
-# 🌐 Spect-IT Website Implementation Files
+# ⚠️ DEPRECATED: Legacy Static Site
+
+**Status:** This directory contains the **legacy static HTML/CSS/JS** implementation.
+
+**🚨 IMPORTANT NOTICE 🚨**
+- This code is **SUPERSEDED** by `apps/web/` (Next.js 15)
+- **DO NOT** deploy this to production (spect-it.com)
+- **DO NOT** add new features here
+- **DO NOT** use as reference for current development
+- **Retained for historical reference only**
+
+**Current Production:** See `/apps/web/` for the active Next.js application.
+
+---
+
+# 🌐 Spect-IT Website Implementation Files (Legacy)
 
 ## 📋 Files Included
 

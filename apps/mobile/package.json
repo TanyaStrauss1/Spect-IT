@@ -17,6 +17,7 @@
     "expo-av": "~13.10.5",
     "expo-camera": "~14.0.0",
     "expo-face-detector": "~12.0.0",
+    "expo-file-system": "~16.0.0",
     "expo-print": "~12.8.1",
     "expo-router": "~3.4.0",
     "expo-sharing": "~11.10.0",
