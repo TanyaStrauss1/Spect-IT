@@ -7,21 +7,34 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } fr
 import { router } from 'expo-router'
 import { Camera, CameraType } from 'expo-camera'
 import * as FaceDetector from 'expo-face-detector'
-import { DeviceQualifier, type DeviceQualification, type CapabilityMatrix } from '@spect-it/cv'
+import { 
+  DeviceQualifier, 
+  type DeviceQualification, 
+  type CapabilityMatrix,
+  type DeviceCheckRecord,
+  type PermissionStatus,
+  type StorageInfo,
+  getDeviceCheckRetryInstructions,
+  canRetryDeviceCheck,
+  formatDeviceCheckSummary,
+  getDeviceTierInfo,
+} from '@spect-it/cv'
 import { useVisionScan } from '../../lib/vision-scan/vision-scan-context'
 import { requestCameraPermission, type DetectedFace, detectFaceFlicker } from '../../lib/vision-scan/camera-utils'
 import { ProgressStepper } from '../../components/vision-scan/ProgressStepper'
 import { CameraRecovery } from '../../components/vision-scan/CameraRecovery'
 import { AmbientLightGate } from '../../components/vision-scan/AmbientLightGate'
+import * as FileSystem from 'expo-file-system'
 
 export default function QualificationScreen() {
-  const { setDeviceQualification } = useVisionScan()
+  const { setDeviceQualification, getCalibration } = useVisionScan()
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [cameraError, setCameraError] = useState<'permission-denied' | 'camera-unavailable' | 'camera-error' | null>(null)
   const [isQualifying, setIsQualifying] = useState(false)
   const [qualification, setQualification] = useState<DeviceQualification | null>(null)
   const [capabilityMatrix, setCapabilityMatrix] = useState<CapabilityMatrix | null>(null)
   const [faceDetected, setFaceDetected] = useState(false)
+  const [deviceCheck, setDeviceCheck] = useState<DeviceCheckRecord | null>(null)
   const cameraRef = useRef<Camera>(null)
 
   // Temporal smoothing state for face flicker detection
@@ -72,16 +85,66 @@ export default function QualificationScreen() {
 
     const capability = await DeviceQualifier.assessCapabilities()
     
+    // Perform device check
+    const permissions: PermissionStatus = {
+      camera: hasPermission || false,
+      motion: true, // Assume motion granted for now
+    }
+    
+    // Check storage
+    let storage: StorageInfo = {
+      available: true,
+      availableMB: 100,
+    }
+    
+    try {
+      const diskInfo = await FileSystem.getFreeDiskStorageAsync()
+      const availableMB = diskInfo / (1024 * 1024)
+      storage = {
+        available: true,
+        availableMB,
+      }
+    } catch (err) {
+      console.log('Could not check storage:', err)
+    }
+    
+    // Check if calibration record exists
+    const calibration = getCalibration()
+    const calibrationRecordExists = calibration !== null && calibration.isValid
+    
+    // Perform device check
+    const checkRecord = await DeviceQualifier.performDeviceCheck(
+      capability,
+      permissions,
+      storage,
+      calibrationRecordExists
+    )
+    setDeviceCheck(checkRecord)
+    
+    // If device check failed, show error
+    if (!checkRecord.passed) {
+      setIsQualifying(false)
+      Alert.alert(
+        'Device Check Failed',
+        formatDeviceCheckSummary(checkRecord),
+        [{ text: 'OK' }]
+      )
+      return
+    }
+    
     // Give time for face detection to stabilize
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    const result = await DeviceQualifier.qualify(capability)
+    const result = await DeviceQualifier.qualify(capability, undefined, checkRecord)
 
     // Adjust scores based on face detection
     if (!faceDetected) {
       result.distanceScore = Math.min(result.distanceScore, 40)
       result.warnings.push('Face not detected. Ensure your face is visible in the camera.')
     }
+    
+    // Get device tier info
+    const tierInfo = getDeviceTierInfo(result.deviceTier)
 
     const matrix: CapabilityMatrix = {
       mode: result.useSensorBasedMeasurements ? 'full' : 'degraded',
@@ -257,13 +320,25 @@ export default function QualificationScreen() {
 
         <View style={styles.capabilityCard}>
           <Text style={styles.capabilityTitle}>
-            Measurement Mode: {capabilityMatrix.mode === 'full' ? 'Full' : 'Degraded'}
+            Device Tier: {qualification.deviceTier.charAt(0).toUpperCase() + qualification.deviceTier.slice(1)}
+          </Text>
+          <Text style={styles.capabilityNote}>
+            Measurement Mode: {capabilityMatrix.mode === 'full' ? 'Full (sensor-based)' : 'Degraded (camera-only)'}
           </Text>
           <Text style={styles.capabilityNote}>
             {capabilityMatrix.mode === 'full'
               ? 'Using sensor-based measurements for highest accuracy.'
               : 'Using camera + face detection with estimated measurements. No TrueDepth/LiDAR detected.'}
           </Text>
+          
+          {deviceCheck && (
+            <View style={styles.deviceCheckInfo}>
+              <Text style={styles.deviceCheckTitle}>Device Check:</Text>
+              <Text style={[styles.deviceCheckText, { color: deviceCheck.passed ? '#10B981' : '#EF4444' }]}>
+                {formatDeviceCheckSummary(deviceCheck)}
+              </Text>
+            </View>
+          )}
           
           <View style={styles.featureList}>
             <Text style={styles.featureTitle}>Live Camera Status:</Text>
@@ -511,6 +586,23 @@ const styles = StyleSheet.create({
   feature: {
     fontSize: 14,
     color: '#4B5563',
+  },
+  deviceCheckInfo: {
+    marginTop: 12,
+    marginBottom: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deviceCheckTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  deviceCheckText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   warningsCard: {
     width: '100%',

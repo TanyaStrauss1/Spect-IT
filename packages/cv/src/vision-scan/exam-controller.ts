@@ -21,6 +21,7 @@ import type {
   AlignmentResult,
   MotilityResult,
   ConvergenceResult,
+  FixationCaptureSession,
 } from './types'
 import type {
   MeasurementStatus,
@@ -85,6 +86,15 @@ export class ExamController {
         maxAttempts: 3,
         maxDurationPerAttempt: 60000,
       },
+      'fixation-capture': {
+        module: 'fixation-capture',
+        minConfidence: 0.60,
+        targetConfidence: 0.80,
+        minSamples: 50, // minimum good frames
+        targetSamples: 70,
+        maxAttempts: 3,
+        maxDurationPerAttempt: 5000,
+      },
       'alignment': {
         module: 'alignment',
         minConfidence: 0.60,
@@ -137,6 +147,7 @@ export class ExamController {
     const modules: ModuleName[] = [
       'device-qualification',
       'calibration',
+      'fixation-capture',
       'alignment',
       'cover-uncover',
       'motility',
@@ -196,7 +207,7 @@ export class ExamController {
 
   recordModuleResult(
     module: ModuleName,
-    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult
+    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult | FixationCaptureSession
   ): AcquisitionDecision {
     const state = this.sessionState.moduleStates.get(module)
     if (!state) {
@@ -228,8 +239,29 @@ export class ExamController {
 
   private assessModuleQuality(
     module: ModuleName,
-    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult
+    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult | FixationCaptureSession
   ): ModuleConfidence {
+    // Handle fixation-capture separately as it's not in QualityEngine yet
+    if (module === 'fixation-capture') {
+      const fixation = result as FixationCaptureSession
+      const confidence = fixation.summary.averageQuality
+      const qualityIssues: string[] = []
+      
+      if (fixation.summary.goodFrames < 50) {
+        qualityIssues.push(`Only ${fixation.summary.goodFrames} good frames captured (50 minimum)`)
+      }
+      if (fixation.summary.averageQuality < 0.6) {
+        qualityIssues.push('Average frame quality below threshold')
+      }
+      
+      return {
+        module: 'fixation-capture',
+        confidence,
+        shouldRepeat: confidence < 0.6 || fixation.summary.goodFrames < 50,
+        qualityIssues,
+      }
+    }
+    
     // Use existing QualityEngine to assess this module
     // We need to build a full assessment with null for other modules
     const dummyAssessment = this.qualityEngine.assessQuality(
@@ -277,7 +309,7 @@ export class ExamController {
 
   private computeUncertainty(
     module: ModuleName,
-    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult,
+    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult | FixationCaptureSession,
     moduleConfidence: ModuleConfidence
   ): MeasurementUncertainty {
     const uncertainty: MeasurementUncertainty = {
@@ -309,6 +341,10 @@ export class ExamController {
     } else if (module === 'calibration') {
       const cal = result as CalibrationResult
       if (cal.averageError > 50) uncertainty.poorQuality = true
+    } else if (module === 'fixation-capture') {
+      const fix = result as FixationCaptureSession
+      if (fix.summary.goodFrames < rules.minSamples) uncertainty.lowSampleCount = true
+      if (fix.summary.averageQuality < 0.6) uncertainty.poorQuality = true
     } else if (module === 'alignment') {
       const align = result as AlignmentResult
       const goodFrames = align.frames.filter((f) => f.quality > 0.6).length
@@ -333,10 +369,11 @@ export class ExamController {
 
   private getSampleCount(
     module: ModuleName,
-    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult
+    result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult | FixationCaptureSession
   ): number {
     if (module === 'device-qualification') return 1
     if (module === 'calibration') return (result as CalibrationResult).samples.length
+    if (module === 'fixation-capture') return (result as FixationCaptureSession).summary.goodFrames
     if (module === 'alignment') return (result as AlignmentResult).frames.length
     if (module === 'motility') {
       const mot = result as MotilityResult
@@ -430,6 +467,8 @@ export class ExamController {
     // Module-specific coaching
     if (module === 'calibration') {
       prompts.push('💡 Look directly at each dot as it appears on screen.')
+    } else if (module === 'fixation-capture') {
+      prompts.push('💡 Hold your gaze steady on the target for the full duration.')
     } else if (module === 'alignment') {
       prompts.push('💡 Keep looking at the red dot while holding your head steady.')
     } else if (module === 'motility') {
