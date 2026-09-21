@@ -11,6 +11,7 @@ export interface PDFGenerationOptions {
   participantName?: string
   includeMethodology?: boolean
   includeRepeatAttempts?: boolean
+  previousScan?: any // Previous VisionScanResult for longitudinal comparison
 }
 
 /**
@@ -457,20 +458,45 @@ function generatePDFHTML(
   </div>
   ` : ''}
 
-  ${includeMethodology ? `
+  ${includeMethodology && options.previousScan ? `
   <div class="section">
-    <h2 class="section-title">Change from Baseline</h2>
-    <div class="methodology-box" style="background: #FFFBEB; border: 2px dashed #F59E0B;">
-      <div class="methodology-title" style="color: #B45309;">📊 Longitudinal Comparison (Coming Soon)</div>
-      <div style="font-size: 10pt; color: #92400E; margin-top: 8px; line-height: 1.6;">
-        <strong>Placeholder for future feature:</strong> When available, this section will display changes from your baseline screening, including:
+    <h2 class="section-title">Change from Previous Screening</h2>
+    <div class="methodology-box" style="background: #EEF2FF; border-left-color: #4F46E5;">
+      <div class="methodology-title" style="color: #4F46E5;">📊 Longitudinal Comparison</div>
+      <div style="font-size: 10pt; color: #1E3A8A; margin-top: 8px; line-height: 1.6;">
+        <strong>Screening Note:</strong> Comparison with your previous Vision Scan screening session.
       </div>
-      <div class="methodology-item" style="color: #92400E;">• Alignment index trend (current vs. previous sessions)</div>
-      <div class="methodology-item" style="color: #92400E;">• Convergence near-point change over time</div>
-      <div class="methodology-item" style="color: #92400E;">• Data quality consistency across sessions</div>
-      <div class="methodology-item" style="color: #92400E;">• Visual indicators for significant changes</div>
-      <div style="font-size: 9pt; color: #92400E; margin-top: 8px; font-style: italic;">
-        This section will be populated automatically once you complete additional screening sessions.
+      <div class="methodology-item" style="color: #1E40AF;">
+        <strong>Alignment Index:</strong> 
+        ${result.alignment.alignmentIndex.toFixed(0)} (current) vs 
+        ${options.previousScan.alignment.alignmentIndex.toFixed(0)} (previous) — 
+        Change: ${(result.alignment.alignmentIndex - options.previousScan.alignment.alignmentIndex).toFixed(0)} points
+        ${Math.abs(result.alignment.alignmentIndex - options.previousScan.alignment.alignmentIndex) >= 5 
+          ? ' ⚠️ Clinically meaningful change (≥5 points)'
+          : ' ✓ Within normal variation'}
+      </div>
+      ${result.convergence.nearPoint && options.previousScan.convergence?.nearPoint ? `
+      <div class="methodology-item" style="color: #1E40AF;">
+        <strong>Convergence Near Point:</strong> 
+        ${result.convergence.nearPoint.toFixed(0)}mm (current) vs 
+        ${options.previousScan.convergence.nearPoint.toFixed(0)}mm (previous) — 
+        Change: ${(result.convergence.nearPoint - options.previousScan.convergence.nearPoint).toFixed(0)}mm
+      </div>
+      ` : ''}
+      <div class="methodology-item" style="color: #1E40AF;">
+        <strong>Data Quality:</strong> 
+        ${(result.qualityAssessment.overallConfidence * 100).toFixed(0)}% (current) vs 
+        ${(options.previousScan.qualityAssessment.overallConfidence * 100).toFixed(0)}% (previous)
+      </div>
+      ${result.deviceQualification.useSensorBasedMeasurements !== options.previousScan.deviceQualification?.useSensorBasedMeasurements ? `
+      <div class="methodology-item" style="color: #B45309;">
+        ⚠️ <strong>Capability Mode Changed:</strong> 
+        ${result.deviceQualification.useSensorBasedMeasurements ? 'Sensor-based' : 'Camera-based'} (current) vs 
+        ${options.previousScan.deviceQualification?.useSensorBasedMeasurements ? 'Sensor-based' : 'Camera-based'} (previous)
+      </div>
+      ` : ''}
+      <div style="font-size: 9pt; color: #6B7280; margin-top: 8px; font-style: italic;">
+        These comparisons are for screening trend monitoring only. Consult an eye care professional for clinical interpretation.
       </div>
     </div>
   </div>

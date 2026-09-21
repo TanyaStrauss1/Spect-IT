@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase'
 import { generateClinicalSummary, type TestResult, type ClinicalSummary } from '../../lib/results/clinical-summary'
 import { TrendsSection } from '../../components/TrendsSection'
 import { FindCareNearby } from '../../components/FindCareNearby'
+import { exportToCSV, exportBaselineTrendsCSV } from '../../lib/results/csv-export'
 
 export default function ClinicalSummaryScreen() {
   const [results, setResults] = useState<TestResult[]>([])
@@ -63,6 +64,32 @@ export default function ClinicalSummaryScreen() {
       Alert.alert('Error', 'Failed to load results. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleExportCSV = async () => {
+    const participantName = activeParticipant?.display_name || 'User'
+    const result = await exportToCSV(results, {
+      participantName,
+      includeMetadata: true,
+      includeQualityScores: true
+    })
+    
+    if (!result.success) {
+      Alert.alert('Export Failed', result.error || 'Failed to export CSV')
+    }
+  }
+
+  const handleExportBaselineTrends = async () => {
+    const participantName = activeParticipant?.display_name || 'User'
+    const result = await exportBaselineTrendsCSV(results, {
+      participantName,
+      includeMetadata: true,
+      includeQualityScores: true
+    })
+    
+    if (!result.success) {
+      Alert.alert('Export Failed', result.error || 'Failed to export baseline trends')
     }
   }
 
@@ -241,10 +268,21 @@ export default function ClinicalSummaryScreen() {
         </Text>
       </View>
 
-      {/* Share Button */}
-      <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-        <Text style={styles.shareButtonText}>📤 Share Screening Profile</Text>
-      </TouchableOpacity>
+      {/* Export Buttons */}
+      <View style={styles.exportContainer}>
+        <TouchableOpacity style={styles.exportButton} onPress={handleShare}>
+          <Text style={styles.exportButtonText}>📤 Share Summary</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.exportButtonSecondary} onPress={handleExportCSV}>
+          <Text style={styles.exportButtonSecondaryText}>📊 Export CSV</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {results.length >= 2 && (
+        <TouchableOpacity style={styles.baselineTrendsButton} onPress={handleExportBaselineTrends}>
+          <Text style={styles.baselineTrendsButtonText}>📈 Export Baseline + Trends (CSV)</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Vision Trends */}
       <TrendsSection results={results} />
@@ -696,17 +734,47 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: '500',
   },
-  shareButton: {
+  exportContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    gap: 12,
+    marginBottom: 12,
+  },
+  exportButton: {
+    flex: 1,
     backgroundColor: '#4F46E5',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  exportButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  exportButtonSecondary: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  exportButtonSecondaryText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  baselineTrendsButton: {
+    backgroundColor: '#8B5CF6',
     marginHorizontal: 20,
     padding: 12,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 20,
   },
-  shareButtonText: {
+  baselineTrendsButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   section: {

@@ -25,8 +25,9 @@ Advanced Professional Eye Testing Platform with AI-powered vision assessments.
 **⚠️ Deprecated:**
 - `website/` — Static HTML/CSS/JS (superseded by apps/web)
   - Legacy code, NOT the live product
-  - Kept for reference only
+  - Kept for historical reference only
   - Do NOT expand or deploy from this directory
+  - See `website/README.md` for deprecation details
 
 ## 🏗️ Monorepo Structure
 
@@ -200,6 +201,16 @@ ML models and scoring algorithms for vision testing, including TensorFlow.js and
 - **Backend**: Supabase (PostgreSQL, Edge Functions, Auth)
 - **AI/ML**: TensorFlow.js, ONNX, MediaPipe, Face Landmarks Detection
 - **Build System**: Turborepo, npm workspaces
+
+## 📋 Operations & Deployment
+
+**See:** `OPS_GUIDE.md` for:
+- Vercel deployment architecture and recommendations
+- Mobile app store submission workflows
+- Screening-honesty compliance checklist
+- Environment variables and secrets management
+- Monitoring and maintenance procedures
+- Troubleshooting common deployment issues
 
 ## 📄 License
 
