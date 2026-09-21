@@ -39,6 +39,7 @@ export default function VisionScanHome() {
           <View style={styles.moduleList}>
             <Text style={styles.module}>✓ Device & Environment Qualification</Text>
             <Text style={styles.module}>✓ Eye Tracking Calibration</Text>
+            <Text style={styles.module}>✓ Fixation Capture (Hold Steady)</Text>
             <Text style={styles.module}>✓ Resting Eye Alignment</Text>
             <Text style={styles.module}>✓ Cover-Uncover Test (Occlusion Alignment)</Text>
             <Text style={styles.module}>✓ 9-Position Ocular Motility</Text>

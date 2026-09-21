@@ -7,6 +7,7 @@
 import type {
   DeviceQualification,
   CalibrationResult,
+  FixationCaptureSession,
   AlignmentResult,
   CoverUncoverResult,
   MotilityResult,
@@ -24,6 +25,7 @@ export type VisionScanSessionState = {
   // Module results
   deviceQualification: DeviceQualification | null
   calibration: CalibrationResult | null
+  fixationCapture: FixationCaptureSession | null
   alignment: AlignmentResult | null
   coverUncover: CoverUncoverResult | null
   motility: MotilityResult | null
@@ -53,6 +55,7 @@ export type VisionScanSessionActions = {
   startSession: (participantId: string | null) => void
   setDeviceQualification: (result: DeviceQualification) => void
   setCalibration: (result: CalibrationResult) => void
+  setFixationCapture: (result: FixationCaptureSession) => void
   setAlignment: (result: AlignmentResult) => void
   setCoverUncover: (result: CoverUncoverResult) => void
   setMotility: (result: MotilityResult) => void

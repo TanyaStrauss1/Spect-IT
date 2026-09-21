@@ -351,6 +351,22 @@ function generatePDFHTML(
         </div>
       </div>
 
+      ${result.fixationCapture ? `
+      <div class="module-card">
+        <div class="module-header">
+          <span class="module-name">Fixation Capture</span>
+          <span class="module-status" style="color: ${result.fixationCapture.summary.averageQuality >= 0.6 ? '#10B981' : '#F59E0B'};">
+            ${(result.fixationCapture.summary.averageQuality * 100).toFixed(0)}% quality
+          </span>
+        </div>
+        <div class="module-note">
+          ${result.fixationCapture.summary.goodFrames} good frames / ${result.fixationCapture.summary.totalFrames} total,
+          ${(result.fixationCapture.durationMs / 1000).toFixed(1)}s duration
+          ${!result.fixationCapture.summary.usedSensorData ? ' (camera-based)' : ''}
+        </div>
+      </div>
+      ` : ''}
+
       <div class="module-card">
         <div class="module-header">
           <span class="module-name">Resting Alignment</span>
