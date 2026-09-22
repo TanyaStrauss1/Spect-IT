@@ -29,9 +29,9 @@ export default function AboutPage() {
                 or economic circumstances.
               </p>
               <p className="mt-4">
-                By leveraging smartphone cameras, LiDAR sensors, and advanced algorithms, we're bringing preliminary 
-                vision screening capabilities to the palm of your hand. Our goal is to help identify potential vision 
-                concerns early and connect people with the professional care they need.
+                By leveraging smartphone cameras, depth sensing (on supported devices), and advanced algorithms, we're 
+                bringing preliminary vision screening capabilities to the palm of your hand. Our goal is to help identify 
+                potential vision concerns early and connect people with the professional care they need.
               </p>
             </section>
 
@@ -90,8 +90,8 @@ export default function AboutPage() {
               </p>
               <ol className="list-decimal pl-6 mt-4 space-y-3">
                 <li>
-                  <strong>Measures your viewing distance</strong> using LiDAR (on supported devices) or camera-based 
-                  depth estimation to ensure accurate test scaling
+                  <strong>Measures your viewing distance</strong> using depth sensors (TrueDepth/ARKit on supported 
+                  devices) or camera-based distance estimation to ensure accurate test scaling
                 </li>
                 <li>
                   <strong>Detects your face position and eye landmarks</strong> to ensure proper alignment during tests
@@ -125,8 +125,9 @@ export default function AboutPage() {
               </p>
               <ul className="list-disc pl-6 mt-4 space-y-2">
                 <li>
-                  <strong>LiDAR Integration:</strong> On supported devices, we use LiDAR sensors for precise distance 
-                  measurement, ensuring tests are properly scaled
+                  <strong>Depth & Distance Measurement:</strong> On supported devices, we use TrueDepth/ARKit sensors 
+                  (for eye transforms, gaze, depth, and head pose) or camera-based distance estimation to help ensure 
+                  tests are properly scaled
                 </li>
                 <li>
                   <strong>Face Detection & Eye Tracking:</strong> Real-time face positioning and eye landmark detection 
