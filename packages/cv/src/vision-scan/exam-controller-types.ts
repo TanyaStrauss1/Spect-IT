@@ -14,6 +14,8 @@ import type {
   AlignmentResult,
   MotilityResult,
   ConvergenceResult,
+  FixationCaptureSession,
+  QualityIssue,
 } from './types'
 
 // ============================================================================
@@ -52,11 +54,11 @@ export type ModuleMeasurementState = {
   targetSamples: number
   
   // Quality feedback
-  qualityIssues: string[] // human-readable issues
+  qualityIssues: QualityIssue[]
   coachingPrompts: string[] // corrective instructions for next attempt
   
   // Result data
-  result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult | null
+  result: DeviceQualification | CalibrationResult | AlignmentResult | MotilityResult | ConvergenceResult | FixationCaptureSession | null
   
   // Timestamps
   startedAt: number | null

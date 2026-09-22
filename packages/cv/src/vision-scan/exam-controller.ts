@@ -245,13 +245,21 @@ export class ExamController {
     if (module === 'fixation-capture') {
       const fixation = result as FixationCaptureSession
       const confidence = fixation.summary.averageQuality
-      const qualityIssues: string[] = []
+      const qualityIssues: import('./types').QualityIssue[] = []
       
       if (fixation.summary.goodFrames < 50) {
-        qualityIssues.push(`Only ${fixation.summary.goodFrames} good frames captured (50 minimum)`)
+        qualityIssues.push({
+          category: 'insufficient-data',
+          message: `Only ${fixation.summary.goodFrames} good frames captured (50 minimum)`,
+          actionable: 'Hold device steady and keep face visible',
+        })
       }
       if (fixation.summary.averageQuality < 0.6) {
-        qualityIssues.push('Average frame quality below threshold')
+        qualityIssues.push({
+          category: 'low-confidence',
+          message: 'Average frame quality below threshold',
+          actionable: 'Improve lighting and minimize movement',
+        })
       }
       
       return {
@@ -278,7 +286,11 @@ export class ExamController {
         module,
         confidence: 0,
         shouldRepeat: true,
-        qualityIssues: ['Unable to assess module quality'],
+        qualityIssues: [{
+          category: 'insufficient-data',
+          message: 'Unable to assess module quality',
+          actionable: 'Retry the measurement',
+        }],
       }
     }
 
@@ -304,6 +316,7 @@ export class ExamController {
       overallQuality: 'acceptable',
       useSensorBasedMeasurements: false,
       warnings: [],
+      deviceTier: 'standard',
     }
   }
 
