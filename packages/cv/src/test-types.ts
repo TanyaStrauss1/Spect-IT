@@ -18,6 +18,7 @@ export const TEST_TYPE_ID = {
   PRESCRIPTION: 'prescription',
   HEARING: 'hearing',
   VISION_SCAN: 'vision-scan',
+  STEREOACUITY: 'stereoacuity',
 } as const
 
 export type TestTypeId = typeof TEST_TYPE_ID[keyof typeof TEST_TYPE_ID]
@@ -34,6 +35,7 @@ export const TEST_TYPE_DISPLAY: Record<TestTypeId, string> = {
   [TEST_TYPE_ID.PRESCRIPTION]: 'Prescription Screening',
   [TEST_TYPE_ID.HEARING]: 'Hearing Screening',
   [TEST_TYPE_ID.VISION_SCAN]: 'Vision Scan',
+  [TEST_TYPE_ID.STEREOACUITY]: 'Stereoacuity',
 }
 
 /**
@@ -48,6 +50,7 @@ export const TEST_TYPE_CLINICAL: Record<TestTypeId, string> = {
   [TEST_TYPE_ID.PRESCRIPTION]: 'Prescription Screening (Clinical)',
   [TEST_TYPE_ID.HEARING]: 'Hearing Screening (Clinical)',
   [TEST_TYPE_ID.VISION_SCAN]: 'Vision Scan - Ocular Function Screening',
+  [TEST_TYPE_ID.STEREOACUITY]: 'Stereoacuity (Binocular Depth Screening)',
 }
 
 /**

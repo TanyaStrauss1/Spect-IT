@@ -64,6 +64,15 @@ const eyeTests = [
     available: true
   },
   {
+    id: 'stereoacuity',
+    title: 'Stereoacuity (Depth Perception)',
+    description: 'Screen binocular depth perception using random-dot stereograms (requires red-cyan glasses)',
+    icon: '🕶️',
+    duration: '3-5 min',
+    route: '/tests/stereoacuity',
+    available: true
+  },
+  {
     id: 'vision-scan',
     title: 'Vision Scan',
     description: 'Camera-based screening for alignment, motility, and convergence — Mobile App only',
