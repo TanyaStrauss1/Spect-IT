@@ -63,8 +63,14 @@ export function MedicalDisclaimer() {
                 <a href="/terms" className="hover:text-cyan-600 underline transition-colors">
                   Terms of Service
                 </a>
+                <a href="/cookies" className="hover:text-cyan-600 underline transition-colors">
+                  Cookie Policy
+                </a>
                 <a href="/medical-disclaimer" className="hover:text-cyan-600 underline transition-colors">
                   Full Medical Disclaimer
+                </a>
+                <a href="/contact" className="hover:text-cyan-600 underline transition-colors">
+                  Contact
                 </a>
               </div>
             </div>
