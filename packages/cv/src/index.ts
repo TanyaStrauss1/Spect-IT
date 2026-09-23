@@ -142,6 +142,19 @@ export {
   type HearingScreeningResult,
 } from './tests/hearing-screening'
 
+// Stereoacuity test
+export {
+  StereoacuityTest,
+  createStereoacuityTest,
+  STEREO_SHAPES,
+  generateDisparityLevels,
+  type StereoShape,
+  type DisparityLevel,
+  type StereoResponse,
+  type EyeStereoResult,
+  type StereoacuityResult,
+} from './tests/stereoacuity'
+
 // Rendering utilities
 export {
   SLOAN_GEOMETRIES,
