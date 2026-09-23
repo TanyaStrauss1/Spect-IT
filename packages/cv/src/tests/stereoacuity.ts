@@ -138,19 +138,37 @@ export class StereoacuityTest {
   /**
    * Calculate stereo threshold from responses
    * 
-   * Threshold is the finest disparity (smallest arcseconds) at which user correctly identified shape
+   * Adaptive descending staircase: threshold is the finest (smallest arcseconds) correct response
+   * achieved BEFORE the first incorrect response. This prevents a lucky correct at a finer level
+   * after earlier misses from under-reporting threshold.
+   * 
+   * Algorithm:
+   * - Walk responses in presentation order
+   * - Track finest correct so far
+   * - On first incorrect, freeze threshold (do not update from later corrects)
+   * - If first response is incorrect (no corrects before first incorrect), return null
    */
   calculateThreshold(responses: StereoResponse[]): number | null {
-    // Find all correct responses
-    const correctResponses = responses.filter(r => r.correct)
-    
-    if (correctResponses.length === 0) {
-      return null // No stereo detected
+    if (responses.length === 0) {
+      return null
     }
     
-    // Threshold is the finest (smallest arcsec) correct response
-    const thresholds = correctResponses.map(r => r.level.arcseconds)
-    return Math.min(...thresholds)
+    let finestCorrect: number | null = null
+    
+    for (const response of responses) {
+      if (response.correct) {
+        // Update threshold to finest (smallest arcsec) correct so far
+        if (finestCorrect === null || response.level.arcseconds < finestCorrect) {
+          finestCorrect = response.level.arcseconds
+        }
+      } else {
+        // First incorrect encountered - freeze threshold at finest correct achieved so far
+        // Do not update threshold from any subsequent responses
+        break
+      }
+    }
+    
+    return finestCorrect
   }
 
   /**
