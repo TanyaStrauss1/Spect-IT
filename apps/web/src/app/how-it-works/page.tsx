@@ -26,9 +26,9 @@ export default function HowItWorksPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-bold mb-3">LiDAR Depth Sensing</h3>
+                  <h3 className="text-xl font-bold mb-3">Depth Sensing</h3>
                   <p className="text-gray-600">
-                    Uses native LiDAR sensors on supported devices (iPad Pro, iPhone Pro) for 
+                    Uses TrueDepth/ARKit sensors on supported devices (iPad Pro, iPhone Pro) for 
                     accurate distance measurement. Falls back to camera-based depth estimation 
                     on all other devices.
                   </p>

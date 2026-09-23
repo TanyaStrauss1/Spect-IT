@@ -1,6 +1,6 @@
 /**
  * Home Page - World-Class Spect-IT Landing
- * LiDAR-Enhanced Digital Vision Screening for Emerging Markets
+ * Digital Vision Screening for Emerging Markets
  */
 
 'use client'

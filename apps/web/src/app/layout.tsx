@@ -7,6 +7,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { CookieConsent } from '@/components/CookieConsent'
 import { AuthProvider } from '@/lib/auth/auth-context'
 import { ParticipantProvider } from '@/lib/participants/participant-context'
 import './globals.css'
@@ -14,13 +15,13 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Spect-IT – LiDAR-Enhanced Digital Vision Screening for Emerging Markets',
-  description: 'Professional-grade eye testing powered by AI, LiDAR depth sensing, and computer vision. Accessible, accurate, and available anywhere.',
-  keywords: 'vision screening, eye test, LiDAR, computer vision, AI, optometry, emerging markets',
+  title: 'Spect-IT – Digital Vision Screening for Emerging Markets',
+  description: 'Professional-grade eye testing powered by AI, depth sensing, and computer vision. Accessible, accurate, and available anywhere. Screening only, not a diagnosis.',
+  keywords: 'vision screening, eye test, depth sensing, TrueDepth, ARKit, computer vision, AI, optometry, emerging markets',
   authors: [{ name: 'Spect-IT' }],
   openGraph: {
-    title: 'Spect-IT – LiDAR-Enhanced Digital Vision Screening',
-    description: 'Professional-grade eye testing powered by AI and computer vision',
+    title: 'Spect-IT – Digital Vision Screening',
+    description: 'Professional-grade eye testing powered by AI and computer vision. Screening only, not a diagnosis.',
     type: 'website',
   },
 }
@@ -38,6 +39,7 @@ export default function RootLayout({
             <Header />
             <main>{children}</main>
             <Footer />
+            <CookieConsent />
           </ParticipantProvider>
         </AuthProvider>
       </body>

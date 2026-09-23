@@ -60,7 +60,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-sm mb-4">
-              LiDAR-enhanced digital vision screening for emerging markets.
+              Digital vision screening for emerging markets. Screening only, not a diagnosis.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="hover:text-white transition-colors">Twitter</a>
