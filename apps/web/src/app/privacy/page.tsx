@@ -69,7 +69,7 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc pl-6 mt-2 space-y-1">
                 <li>Detect your face position and eye landmarks for accurate test positioning</li>
-                <li>Measure viewing distance using LiDAR (on supported devices) or camera-based depth estimation</li>
+                <li>Measure viewing distance using depth sensors (TrueDepth/ARKit on supported devices) or camera-based depth estimation</li>
                 <li>Ensure proper alignment during visual acuity and refractive screening tests</li>
               </ul>
               <p className="mt-4">

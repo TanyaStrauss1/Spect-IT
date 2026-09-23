@@ -10,7 +10,7 @@ import { Card, CardContent } from '../ui'
 const trustSignals = [
   {
     title: 'Medical-Grade Technology',
-    description: 'Powered by LiDAR depth sensing, computer vision, and validated ML models',
+    description: 'Powered by depth sensing, computer vision, and validated ML models',
     icon: '🏥',
     items: [
       'Clinical validation study in progress',
