@@ -40,6 +40,16 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     route: '/tests/contrast'
   },
   {
+    id: 'stereoacuity',
+    name: 'Stereoacuity (Depth Perception)',
+    icon: '🕶️',
+    duration: '3-5 min',
+    why: 'Screens binocular depth perception using random-dot stereograms — requires red-cyan anaglyph glasses',
+    requires: ['distance', 'lighting', 'glasses'],
+    category: 'recommended',
+    route: '/tests/stereoacuity'
+  },
+  {
     id: 'color-vision',
     name: 'Color Vision',
     icon: '🎨',
@@ -122,6 +132,12 @@ export const CHECKLIST_ITEMS: Record<string, ChecklistItem> = {
     text: 'Remove glasses or contact lenses for this test',
     detail: 'This test measures your uncorrected vision.',
     icon: '👓'
+  },
+  'anaglyph-glasses': {
+    id: 'anaglyph-glasses',
+    text: 'Red-cyan anaglyph 3D glasses required (red over LEFT eye, cyan over RIGHT)',
+    detail: 'Stereoacuity test requires anaglyph glasses to create binocular depth effect. Inexpensive anaglyph glasses available online for $1-5.',
+    icon: '🕶️'
   },
   occlusion: {
     id: 'occlusion',

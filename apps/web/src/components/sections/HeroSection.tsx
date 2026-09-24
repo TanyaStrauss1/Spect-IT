@@ -48,8 +48,8 @@ export function HeroSection() {
 
             {/* Subheadline */}
             <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Clinical-grade vision screening from home. Ten tests — acuity, colour, astigmatism, 
-              contrast and more — with results you can share with an optometrist. Screening only, not a diagnosis.
+              Clinical-grade vision screening from home. Eight validated eye screening tests — acuity, colour, astigmatism, 
+              contrast, stereoacuity, PD and more — with results you can share with an optometrist. Screening only, not a diagnosis.
             </p>
 
             {/* CTA Buttons */}
@@ -89,7 +89,7 @@ export function HeroSection() {
             </div>
             <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
               <span className="text-sm text-cyan-600">✓</span>
-              <span>10 comprehensive tests</span>
+              <span>8 comprehensive eye tests</span>
             </div>
             <div className="flex items-center gap-2 bg-white/80 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
               <span className="text-sm text-cyan-600">✓</span>

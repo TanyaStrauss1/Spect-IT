@@ -73,6 +73,15 @@ const eyeTests = [
     available: true
   },
   {
+    id: 'pd',
+    title: 'Pupillary Distance (PD)',
+    description: 'Measure distance between pupils — screening only, not for ordering glasses',
+    icon: '📏',
+    duration: '2-4 min',
+    route: '/tests/pd',
+    available: true
+  },
+  {
     id: 'vision-scan',
     title: 'Vision Scan',
     description: 'Camera-based screening for alignment, motility, and convergence — Mobile App only',

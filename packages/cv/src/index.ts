@@ -155,6 +155,16 @@ export {
   type StereoacuityResult,
 } from './tests/stereoacuity'
 
+// PD test
+export {
+  PDTest,
+  createPDTest,
+  PD_RANGES,
+  type MarkerPosition,
+  type PDMeasurement,
+  type PDResult,
+} from './tests/pd'
+
 // Rendering utilities
 export {
   SLOAN_GEOMETRIES,

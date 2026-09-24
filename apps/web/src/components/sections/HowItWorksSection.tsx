@@ -23,7 +23,7 @@ const steps = [
   {
     number: '03',
     title: 'Complete clinical tests',
-    description: 'Six validated screening tests: Sloan optotypes for acuity (ETDRS protocol), confusion-line pseudoisochromatic plates (NOT Ishihara) for color, Amsler grid for macular health, contrast sensitivity (logCS), astigmatism screening, and refractive needs detection (pinhole vs uncorrected acuity).',
+    description: 'Eight validated eye screening tests: Visual acuity (Sloan ETDRS), contrast sensitivity (logCS), color vision (confusion-line plates), astigmatism (radial patterns), visual field (Amsler grid), stereoacuity (random-dot stereograms), pupillary distance (PD), and refractive screening (pinhole test). Plus hearing screening with pure-tone audiometry.',
     icon: '👁️'
   },
   {
@@ -70,6 +70,18 @@ const methodology = [
     title: 'Refractive Screening',
     description: 'Compares uncorrected acuity to pinhole acuity to detect refractive blur — tells you if correction may help, NOT a prescription. Does NOT generate sphere, cylinder, or axis values. Results are NOT dispensable. Consult an optometrist for prescriptions and eyewear.',
     color: 'border-cyan-500'
+  },
+  {
+    icon: '🕶️',
+    title: 'Stereoacuity',
+    description: 'Random-dot stereogram test screens binocular depth perception using red-cyan anaglyph display. Measures stereo threshold in arcseconds. Requires anaglyph glasses.',
+    color: 'border-teal-500'
+  },
+  {
+    icon: '📏',
+    title: 'Pupillary Distance',
+    description: 'Manual marker-based PD measurement with calibrated screen. Provides screening estimate of distance between pupil centers. NOT for ordering glasses — professional measurement required.',
+    color: 'border-blue-500'
   }
 ]
 
