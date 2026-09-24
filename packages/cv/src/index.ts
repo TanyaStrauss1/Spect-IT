@@ -149,6 +149,7 @@ export {
   STEREO_SHAPES,
   generateDisparityLevels,
   type StereoShape,
+  type StereoDisplayMode,
   type DisparityLevel,
   type StereoResponse,
   type EyeStereoResult,

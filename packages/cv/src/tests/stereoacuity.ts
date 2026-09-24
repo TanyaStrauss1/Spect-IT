@@ -2,21 +2,29 @@
  * Spect-IT Stereoacuity (Binocular Depth) Screening Test
  * 
  * Random-dot stereogram test for screening binocular depth perception:
- * - Uses anaglyph (red-cyan) display for binocular disparity
+ * - Uses anaglyph (red-cyan) display OR free-fusion for binocular disparity
  * - Tests multiple disparity levels to estimate stereo threshold
  * - Reports threshold in arcseconds (arc seconds of binocular disparity)
  * - Screening only - not diagnostic
  * 
+ * Display methods:
+ * 1. Anaglyph (default, preferred): Red-cyan filters separate left/right eye images
+ * 2. Free-fusion (optional): Side-by-side stereogram for users who can free-fuse without glasses
+ * 
  * Method: Random-dot stereogram with horizontal disparity
- * - Red filter for left eye, cyan filter for right eye
  * - Target shape appears to "float" at different depths
  * - User identifies target shape (circle, square, etc.)
  * - Disparity decreases (threshold increases) until detection fails
  * 
- * Clinical note: Requires red-cyan anaglyph glasses for valid results
+ * Clinical note: Anaglyph is preferred when glasses are available. Free-fusion reliability varies by user.
  */
 
 import type { CalibrationData } from '../calibration/screen-calibrator'
+
+/**
+ * Display mode for stereogram
+ */
+export type StereoDisplayMode = 'anaglyph' | 'free-fusion'
 
 /**
  * Target shapes for stereoacuity test
@@ -66,7 +74,8 @@ export interface StereoacuityResult {
   thresholdArcsec: number | null // null if no stereo detected
   category: 'NORMAL' | 'REDUCED' | 'ABSENT'
   methodology: string
-  hasAnaglyphGlasses: boolean // User confirmed they have red-cyan glasses
+  displayMode: StereoDisplayMode // Display method used
+  hasAnaglyphGlasses: boolean // User confirmed they have red-cyan glasses (anaglyph mode only)
   rightEyeBaseline?: EyeStereoResult
   leftEyeBaseline?: EyeStereoResult
 }
@@ -205,12 +214,17 @@ export class StereoacuityTest {
   createResult(
     calibration: CalibrationData | undefined,
     responses: StereoResponse[],
+    displayMode: StereoDisplayMode,
     hasAnaglyphGlasses: boolean,
     rightEyeBaseline?: EyeStereoResult,
     leftEyeBaseline?: EyeStereoResult
   ): StereoacuityResult {
     const thresholdArcsec = this.calculateThreshold(responses)
     const category = this.categorizeResult(thresholdArcsec)
+
+    const methodology = displayMode === 'anaglyph'
+      ? 'Random-dot stereogram with anaglyph (red-cyan) display. Horizontal disparity creates depth percept. User identifies target shape at various disparity levels. Threshold is finest disparity correctly detected. Requires red-cyan anaglyph glasses for valid results.'
+      : 'Random-dot stereogram with free-fusion (side-by-side) display. Horizontal disparity creates depth percept when user fuses left/right images. User identifies target shape at various disparity levels. Threshold is finest disparity correctly detected. Free-fusion ability varies; anaglyph method preferred when glasses available.'
 
     return {
       testName: 'Stereoacuity (Random-Dot Stereogram)',
@@ -220,7 +234,8 @@ export class StereoacuityTest {
       responses,
       thresholdArcsec,
       category,
-      methodology: 'Random-dot stereogram with anaglyph (red-cyan) display. Horizontal disparity creates depth percept. User identifies target shape at various disparity levels. Threshold is finest disparity correctly detected. Requires red-cyan anaglyph glasses for valid results.',
+      methodology,
+      displayMode,
       hasAnaglyphGlasses,
       rightEyeBaseline,
       leftEyeBaseline,
@@ -249,23 +264,40 @@ export class StereoacuityTest {
   /**
    * Get test instructions
    */
-  getInstructions(): string[] {
-    return [
-      'This test requires red-cyan anaglyph 3D glasses (red filter over LEFT eye, cyan over RIGHT eye)',
-      'Wear your distance glasses if you normally use them',
-      'Look at the random dot pattern on screen',
-      'A shape (circle, square, triangle, or diamond) will appear to "float" in front of or behind the background',
-      'Identify the shape you see in depth',
-      'If you cannot see any shape in depth, select "No shape visible"',
-      'Test progresses from easy (obvious depth) to difficult (subtle depth)',
-    ]
+  getInstructions(displayMode: StereoDisplayMode): string[] {
+    if (displayMode === 'anaglyph') {
+      return [
+        'This test requires red-cyan anaglyph 3D glasses (red filter over LEFT eye, cyan over RIGHT eye)',
+        'Wear your distance glasses if you normally use them',
+        'Look at the random dot pattern on screen',
+        'A shape (circle, square, triangle, or diamond) will appear to "float" in front of or behind the background',
+        'Identify the shape you see in depth',
+        'If you cannot see any shape in depth, select "No shape visible"',
+        'Test progresses from easy (obvious depth) to difficult (subtle depth)',
+      ]
+    } else {
+      return [
+        'This test uses free-fusion (parallel viewing) - NO glasses required',
+        'Position yourself 35-40 cm from the screen',
+        'Relax your eyes and look "through" the screen to fuse the left and right images',
+        'You should see two identical random-dot patterns merge into one central image',
+        'A shape (circle, square, triangle, or diamond) will appear to "float" in depth',
+        'Identify the shape you see in depth',
+        'If you cannot fuse the images or see no shape, select "No shape visible"',
+        'Free-fusion takes practice - if you struggle, try the anaglyph method with glasses',
+      ]
+    }
   }
 
   /**
    * Get screening disclaimer
    */
-  getDisclaimer(): string {
-    return 'This is a screening test only, NOT a diagnostic assessment. Results depend critically on proper red-cyan anaglyph glasses, screen calibration, and viewing conditions. Comprehensive clinical stereoacuity testing (Randot, Titmus, TNO) required for diagnosis. This test does NOT replace clinical binocular vision examination.'
+  getDisclaimer(displayMode: StereoDisplayMode): string {
+    const methodNote = displayMode === 'anaglyph'
+      ? 'Results depend critically on proper red-cyan anaglyph glasses, screen calibration, and viewing conditions.'
+      : 'Results depend on user\'s free-fusion ability, screen calibration, and viewing conditions. Free-fusion ability varies widely; anaglyph method with glasses is preferred when available.'
+    
+    return `This is a screening test only, NOT a diagnostic assessment. ${methodNote} Comprehensive clinical stereoacuity testing (Randot, Titmus, TNO) required for diagnosis. This test does NOT replace clinical binocular vision examination.`
   }
 
   /**

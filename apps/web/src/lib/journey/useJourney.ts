@@ -30,6 +30,16 @@ export const RECOMMENDED_TESTS: TestDefinition[] = [
     route: '/tests/acuity'
   },
   {
+    id: 'pd',
+    name: 'Pupillary Distance (PD)',
+    icon: '📐',
+    duration: '2-3 min',
+    why: 'Measure distance between your pupils — useful for eyewear fitting and binocular vision screening',
+    requires: ['screen'],
+    category: 'recommended',
+    route: '/tests/pd'
+  },
+  {
     id: 'contrast',
     name: 'Contrast Sensitivity',
     icon: '🌓',
