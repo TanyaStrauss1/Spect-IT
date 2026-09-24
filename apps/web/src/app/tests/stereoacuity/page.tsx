@@ -19,9 +19,10 @@ import {
   type StereoShape,
   type StereoResponse,
   type DisparityLevel,
+  type StereoDisplayMode,
 } from '@spect-it/cv'
 
-type TestPhase = 'intro' | 'glasses-check' | 'test' | 'result'
+type TestPhase = 'intro' | 'mode-select' | 'glasses-check' | 'test' | 'result'
 
 export default function StereoacuityTestPage() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function StereoacuityTestPage() {
   const { markTestComplete } = useJourney()
   const [test] = useState(() => createStereoacuityTest())
   const [step, setStep] = useState<TestPhase>('intro')
+  const [displayMode, setDisplayMode] = useState<StereoDisplayMode>('anaglyph')
   const [hasGlasses, setHasGlasses] = useState(false)
   const [levels, setLevels] = useState<DisparityLevel[]>([])
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0)
@@ -63,6 +65,18 @@ export default function StereoacuityTestPage() {
       setLevels(test.getDisparityLevels())
     }
   }, [calibration, test])
+
+  const handleModeSelect = (mode: StereoDisplayMode) => {
+    setDisplayMode(mode)
+    if (mode === 'anaglyph') {
+      setStep('glasses-check')
+    } else {
+      // Free-fusion mode - skip glasses check
+      setHasGlasses(false)
+      setStep('test')
+      setResponseStartTime(Date.now())
+    }
+  }
 
   const handleGlassesConfirm = () => {
     setHasGlasses(true)
@@ -101,6 +115,7 @@ export default function StereoacuityTestPage() {
     const testResult = test.createResult(
       calibration,
       finalResponses,
+      displayMode,
       hasGlasses
     )
     
@@ -119,6 +134,7 @@ export default function StereoacuityTestPage() {
           results: { 
             thresholdArcsec: testResult.thresholdArcsec,
             category: testResult.category,
+            displayMode: testResult.displayMode,
             hasAnaglyphGlasses: testResult.hasAnaglyphGlasses,
           },
         }
@@ -144,13 +160,6 @@ export default function StereoacuityTestPage() {
           <div className="bg-white rounded-lg shadow-xl p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Stereoacuity (Binocular Depth) Screening</h1>
             
-            <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
-              <h3 className="font-semibold text-red-900 mb-2">⚠️ REQUIRES RED-CYAN ANAGLYPH GLASSES</h3>
-              <p className="text-sm text-red-800">
-                This test <strong>REQUIRES</strong> red-cyan anaglyph 3D glasses to work. Without proper anaglyph glasses, you will not see any depth effect and the test will be invalid.
-              </p>
-            </div>
-
             <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
               <h3 className="font-semibold text-yellow-900 mb-2">⚠️ Screening Only - Not Diagnostic</h3>
               <p className="text-sm text-yellow-800">
@@ -159,29 +168,8 @@ export default function StereoacuityTestPage() {
             </div>
 
             <div className="space-y-4 mb-8">
-              <p className="text-gray-700">This test screens your ability to perceive depth using both eyes together (stereopsis). It uses random-dot stereograms displayed through red-cyan anaglyph glasses.</p>
+              <p className="text-gray-700">This test screens your ability to perceive depth using both eyes together (stereopsis). It uses random-dot stereograms to test binocular depth perception.</p>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Required Equipment</h3>
-                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
-                  <li><strong>Red-cyan anaglyph 3D glasses</strong> (red filter over LEFT eye, cyan over RIGHT eye)</li>
-                  <li><strong>Distance:</strong> 35–40 cm from screen</li>
-                  <li><strong>Correction:</strong> Wear distance glasses if you normally use them</li>
-                  <li><strong>Lighting:</strong> Moderate ambient lighting (not too bright or dark)</li>
-                </ul>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">How It Works</h3>
-                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
-                  <li>Look at the random dot pattern with your anaglyph glasses on</li>
-                  <li>A shape (circle, square, triangle, or diamond) will appear to "float" in depth</li>
-                  <li>Identify which shape you see floating</li>
-                  <li>If you see no shape in depth, select "No shape visible"</li>
-                  <li>Test progresses from easy (obvious depth) to difficult (subtle depth)</li>
-                </ul>
-              </div>
-
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                 <h3 className="font-semibold text-purple-900 mb-2">Clinical Note</h3>
                 <p className="text-sm text-purple-800">
@@ -190,9 +178,76 @@ export default function StereoacuityTestPage() {
               </div>
             </div>
             
-            <button onClick={() => setStep('glasses-check')} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700">
+            <button onClick={() => setStep('mode-select')} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700">
               Continue
             </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'mode-select') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 py-12 px-4">
+        <div className="container mx-auto max-w-3xl">
+          <div className="bg-white rounded-lg shadow-xl p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Choose Display Method</h2>
+            
+            <p className="text-gray-700 mb-6">
+              Select how you'd like to view the stereogram. Anaglyph (with glasses) is preferred when available, but free-fusion (no glasses) is also offered for users who can fuse images naturally.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Anaglyph Option */}
+              <button
+                onClick={() => handleModeSelect('anaglyph')}
+                className="bg-gradient-to-br from-red-50 to-cyan-50 border-2 border-indigo-300 rounded-lg p-6 text-left hover:border-indigo-500 hover:shadow-lg transition-all"
+              >
+                <div className="text-4xl mb-3">🕶️</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Anaglyph (Recommended)</h3>
+                <p className="text-sm text-gray-700 mb-3">
+                  Uses red-cyan 3D glasses to separate left and right eye images. This is the <strong>preferred method</strong> and provides more reliable results.
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-3">
+                  <p className="text-xs font-semibold text-blue-900 mb-1">Requirements:</p>
+                  <ul className="text-xs text-blue-800 list-disc list-inside space-y-1">
+                    <li>Red-cyan anaglyph 3D glasses</li>
+                    <li>Red filter over LEFT eye</li>
+                    <li>Cyan filter over RIGHT eye</li>
+                  </ul>
+                </div>
+                <div className="text-sm font-semibold text-indigo-600">✓ Most Reliable</div>
+              </button>
+
+              {/* Free-Fusion Option */}
+              <button
+                onClick={() => handleModeSelect('free-fusion')}
+                className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-gray-300 rounded-lg p-6 text-left hover:border-purple-500 hover:shadow-lg transition-all"
+              >
+                <div className="text-4xl mb-3">👀</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Free-Fusion (No Glasses)</h3>
+                <p className="text-sm text-gray-700 mb-3">
+                  View side-by-side images and fuse them naturally without glasses. Requires practice and ability to "relax" eye focus.
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3">
+                  <p className="text-xs font-semibold text-yellow-900 mb-1">Note:</p>
+                  <ul className="text-xs text-yellow-800 list-disc list-inside space-y-1">
+                    <li>No glasses required</li>
+                    <li>Requires free-fusion ability</li>
+                    <li>May take practice to learn</li>
+                    <li>Results vary by user skill</li>
+                  </ul>
+                </div>
+                <div className="text-sm font-semibold text-purple-600">Alternative Method</div>
+              </button>
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-xs text-gray-600">
+                <strong>Screening Honesty:</strong> Free-fusion ability varies widely among individuals. If you cannot fuse the images or if you're unsure, we recommend using the anaglyph method with glasses for more reliable screening results.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -279,6 +334,9 @@ export default function StereoacuityTestPage() {
               <p className="text-sm text-blue-800">
                 <strong>Screening Result:</strong> {result.methodology}
               </p>
+              <p className="text-xs text-blue-700 mt-2">
+                <strong>Display method:</strong> {result.displayMode === 'anaglyph' ? 'Anaglyph (red-cyan glasses)' : 'Free-fusion (no glasses)'}
+              </p>
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
@@ -306,7 +364,7 @@ export default function StereoacuityTestPage() {
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
               <h4 className="font-semibold text-purple-900 mb-1 text-sm">📋 Screening Disclaimer</h4>
               <p className="text-sm text-purple-800">
-                {test.getDisclaimer()}
+                {test.getDisclaimer(result.displayMode)}
               </p>
             </div>
 
@@ -326,7 +384,8 @@ export default function StereoacuityTestPage() {
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-xs text-yellow-800">
-              <strong>Ensure:</strong> Wearing red-cyan anaglyph glasses (red over LEFT eye, cyan over RIGHT eye) • 
+              <strong>Method:</strong> {displayMode === 'anaglyph' ? 'Anaglyph (red-cyan glasses)' : 'Free-fusion (no glasses)'} • 
+              {displayMode === 'anaglyph' && 'Wearing red-cyan glasses (red over LEFT eye, cyan over RIGHT eye) • '}
               Distance glasses on if needed • 35-40 cm from screen • Moderate ambient lighting
             </p>
           </div>
@@ -338,7 +397,11 @@ export default function StereoacuityTestPage() {
               Disparity: {currentLevel?.disparityPx}px
             </div>
             <h3 className="text-xl text-gray-600 mb-2">What shape do you see floating in depth?</h3>
-            <p className="text-sm text-gray-500">Look at the random dots with your anaglyph glasses</p>
+            <p className="text-sm text-gray-500">
+              {displayMode === 'anaglyph' 
+                ? 'Look at the random dots with your anaglyph glasses'
+                : 'Relax your eyes and fuse the two images into one'}
+            </p>
           </div>
           
           <div className="flex justify-center items-center mb-8">
@@ -346,6 +409,7 @@ export default function StereoacuityTestPage() {
               <RandomDotStereogram
                 shape={currentLevel.shape}
                 disparityPx={currentLevel.disparityPx}
+                displayMode={displayMode}
                 sizePx={400}
                 dotDensity={0.3}
                 className="rounded-lg"
@@ -354,7 +418,7 @@ export default function StereoacuityTestPage() {
           </div>
           
           <p className="text-xs text-gray-500 text-center mb-6">
-            Random-dot stereogram • Anaglyph display • 
+            Random-dot stereogram • {displayMode === 'anaglyph' ? 'Anaglyph display' : 'Free-fusion display'} • 
             Binocular disparity: {currentLevel?.disparityPx}px at {calibration.distanceCm}cm
           </p>
           
